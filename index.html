@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#122f34">
+<meta name="description" content="Home trainer 3D personnalisable avec caméra tactile, routes, haies et décor OpenStreetMap.">
+<title>Vélo 3D v7 – home trainer personnalisable</title>
+<style>
+:root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#b7d4df;color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+button,input,select{font:inherit}
+button{cursor:pointer;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--bd);background:rgba(255,255,255,.055);color:var(--fg);font-size:14px;font-weight:650;transition:background .18s}
+button:hover{background:rgba(255,255,255,.13)}
+button.on,button.primary{background:var(--ac);color:var(--acfg);border-color:var(--ac)}
+button.danger{background:#d9534f;color:#fff;border-color:#d9534f}
+button:disabled{opacity:.4;cursor:wait}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--ac);outline-offset:3px}
+input[type=range]{accent-color:var(--ac);min-height:36px;min-width:0;cursor:pointer}
+.hide{display:none!important}
+#hud{position:fixed;left:16px;top:calc(16px + env(safe-area-inset-top,0px));width:min(430px,calc(100% - 32px));display:grid;grid-template-columns:repeat(3,1fr);gap:1px;border:1px solid var(--bd);border-radius:16px;overflow:hidden;background:var(--card);backdrop-filter:blur(12px)}
+.m{padding:9px 12px;background:rgba(255,255,255,.025)}
+.m b{display:block;font-size:30px;font-weight:650;line-height:1.12;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.m i{font-style:normal;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.m:first-child b{color:var(--ac)}
+#bar{position:fixed;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:820px;margin:auto;padding:10px 14px;border:1px solid var(--bd);border-radius:16px;background:var(--card);backdrop-filter:blur(12px)}
+#msg{font-size:12px;color:var(--muted);min-height:17px;margin-bottom:6px;line-height:1.4}
+.row{display:flex;gap:8px;align-items:center}
+.row button{flex:1;min-width:0}
+#sl{gap:12px;margin-bottom:6px}
+#sl label{font-size:12px;white-space:nowrap;color:var(--muted)}
+#sl label b{color:var(--fg)}
+#sl input{flex:1;width:40%}
+#cameraPanel{position:fixed;right:16px;bottom:calc(var(--bar-height,150px) + 24px + env(safe-area-inset-bottom,0px));width:252px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;backdrop-filter:blur(12px)}
+.panelTitle{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+#cameraPanel .row{gap:6px;margin-top:6px}#cameraPanel button{font-size:12px;min-height:40px;padding:6px}
+.zoomRow button{flex:0 0 40px!important;font-size:20px!important}.zoomRow input{flex:1;width:70px}
+#zoomValue{display:block;color:var(--muted);font-size:11px;margin-top:7px;text-align:center}
+#mapPanel{position:fixed;right:16px;top:calc(16px + env(safe-area-inset-top,0px));width:252px;border:1px solid rgba(28,55,55,.25);border-radius:14px;overflow:hidden;background:#edf1e4;color:#16372f;box-shadow:0 8px 30px rgba(9,25,24,.12)}
+.mapHead{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--card);color:var(--fg);font-size:11px;letter-spacing:.8px}
+.mapHead button{min-height:32px;font-size:11px;padding:4px 8px}
+#miniMap{display:block;width:100%;height:178px;position:relative}
+.mapFoot{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;font-size:9px;background:#edf1e4}
+.mapFoot a{color:#385c4f;text-decoration:none}#mapScale{font-variant-numeric:tabular-nums}
+#mapToggle{position:fixed;right:16px;top:calc(16px + env(safe-area-inset-top,0px));background:var(--card);font-size:12px;backdrop-filter:blur(12px)}
+#location{position:fixed;left:16px;top:calc(165px + env(safe-area-inset-top,0px));background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:8px 12px;max-width:320px;font-size:13px;backdrop-filter:blur(12px);transition:opacity .4s;opacity:1}
+#location.fadeout{opacity:0;pointer-events:none}
+#location small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+#townNotice{position:fixed;top:calc(28% + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-8px);opacity:0;pointer-events:none;background:#fffefa;color:#17201d;border:5px solid #c33736;border-radius:6px;padding:12px 28px;text-align:center;box-shadow:0 12px 45px #102c3533;transition:opacity .4s,transform .4s;max-width:85vw}
+#townNotice.show{opacity:1;transform:translate(-50%,0)}#townNotice b{font-size:clamp(18px,3vw,30px);text-transform:uppercase;letter-spacing:1px}#townNotice small{display:block;font-size:11px;margin-top:4px;color:#58645c}
+#home{position:fixed;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));background:rgba(9,27,30,.68);backdrop-filter:blur(7px);overflow:auto}
+.homeCard{width:100%;max-width:560px;margin:auto;background:rgba(16,37,41,.96);border:1px solid var(--bd);border-radius:22px;padding:26px;box-shadow:0 30px 100px #051c3044}
+.eyebrow{font-size:11px;letter-spacing:2.2px;text-transform:uppercase;color:var(--ac);margin:0 0 12px}
+#home h1{font-size:40px;letter-spacing:-1.8px;line-height:1.05;margin:0 0 12px;font-weight:650}
+#home p{font-size:14px;line-height:1.55;color:var(--muted);margin:0 0 16px}
+#home .row{margin-bottom:8px}
+button.wide{width:100%;display:block;margin-bottom:8px;min-height:48px}
+#pb{height:5px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.12);margin:18px 0 10px}
+#pf{display:block;height:100%;width:0;background:var(--ac);transition:width .3s}
+#hs{font-size:12px;line-height:1.5;min-height:42px;color:var(--muted);margin-bottom:12px;overflow-wrap:anywhere}
+#home details{font-size:12px;line-height:1.5;color:var(--muted);margin-top:12px}#home summary{cursor:pointer;color:var(--fg)}#home details p{font-size:12px;margin:8px 0 0}
+
+/* Écran de fin de séance / Modal Stop */
+#stopModal{position:fixed;inset:0;z-index:15;background:rgba(9,27,30,.88);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px}
+.modalCard{background:rgba(16,37,41,.98);border:1px solid var(--bd);border-radius:20px;padding:24px;width:100%;max-width:440px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modalCard h2{margin:0 0 10px;font-size:24px;color:var(--fg)}
+.modalCard p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.summaryGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;background:rgba(0,0,0,.2);padding:12px;border-radius:12px;border:1px solid var(--bd)}
+.summaryItem b{display:block;font-size:20px;color:var(--ac)}
+.summaryItem span{font-size:11px;color:var(--muted);text-transform:uppercase}
+
+.customize{margin:12px 0 16px;padding:12px;border:1px solid var(--bd);border-radius:14px;background:rgba(255,255,255,.035)}
+.customize>summary{font-size:13px;font-weight:700;padding:3px 0 7px}
+.customGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.choice{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:5px 8px;border:1px solid rgba(206,229,229,.12);border-radius:9px;background:rgba(0,0,0,.11);color:var(--fg);font-size:12px}
+.choice input[type=color]{width:42px;height:30px;padding:2px;border:1px solid var(--bd);border-radius:7px;background:transparent;cursor:pointer}
+.choice select{max-width:94px;padding:5px 8px;border:1px solid var(--bd);border-radius:7px;background:#203d40;color:var(--fg);font-size:12px}
+.resetStyle{display:block;min-height:34px;margin:8px 0 0 auto;padding:4px 10px;font-size:11px;color:var(--muted)}
+#hudToggle{position:fixed;left:10px;top:calc(9px + env(safe-area-inset-top,0px));z-index:6;min-height:34px;padding:5px 10px;border-radius:9px;background:var(--card);font-size:11px;backdrop-filter:blur(12px)}
+#btnFullscreen{position:fixed;left:85px;top:calc(9px + env(safe-area-inset-top,0px));z-index:6;min-height:34px;padding:5px 10px;border-radius:9px;background:var(--card);font-size:11px;backdrop-filter:blur(12px)}
+
+#pp{position:fixed;inset:0;z-index:8;background:rgba(12,29,33,.97);padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+#pp label{font-size:22px;font-weight:650}#pt{flex:1;min-height:100px;font:13px ui-monospace,monospace;background:#061f27;color:var(--fg);border:1px solid var(--bd);border-radius:12px;padding:12px}#pe{font-size:13px;color:#ffa690;min-height:20px}
+#fatal{position:fixed;inset:0;z-index:20;display:grid;place-content:center;text-align:center;padding:30px;background:#132e33;color:#fff}#fatal p{max-width:480px;line-height:1.6}
+
+@media(max-width:700px){
+ #hud{left:10px;top:calc(10px + env(safe-area-inset-top,0px));width:calc(100% - 184px)}
+ .m{padding:8px 6px}.m b{font-size:24px}.m i{font-size:8px;letter-spacing:.3px}
+ #mapPanel{width:158px;right:10px;top:calc(10px + env(safe-area-inset-top,0px))}#miniMap{height:122px}.mapHead{padding:4px 6px;font-size:9px;letter-spacing:0}.mapHead button{min-height:28px;padding:2px 5px;font-size:9px}.mapFoot{font-size:8px;padding:3px 5px}
+ #bar{left:10px;right:10px;padding:9px 10px;bottom:calc(8px + env(safe-area-inset-bottom,0px))}#bar button{padding:8px 4px;font-size:12px}#msg{font-size:10px;margin-bottom:4px}#sl label{font-size:11px}#sl{gap:8px;margin-bottom:3px}
+ #cameraPanel{right:10px;width:210px;bottom:calc(var(--bar-height,145px) + 18px + env(safe-area-inset-bottom,0px));padding:8px}#cameraPanel .panelTitle{margin-bottom:4px;font-size:9px}#cameraPanel .row{margin-top:4px}#cameraPanel button{min-height:36px;font-size:11px}.zoomRow button{flex-basis:32px!important}#zoomValue{font-size:9px;margin-top:4px}
+ #location{left:10px;top:calc(151px + env(safe-area-inset-top,0px));max-width:calc(100% - 184px);font-size:11px;padding:6px 9px}
+ #mapToggle{right:10px;top:calc(10px + env(safe-area-inset-top,0px))}
+ .homeCard{padding:22px}#home h1{font-size:36px}#home p{font-size:13px}
+ .customGrid{gap:6px}.choice{font-size:11px;padding:4px 6px}.choice input[type=color]{width:36px;height:28px}
+}
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Simulation 3D du parcours à vélo" tabindex="0"></canvas>
+<button id="hudToggle" class="hide" aria-label="Afficher les données de la sortie" aria-expanded="false">Données</button>
+<button id="btnFullscreen" aria-label="Passer en plein écran">⛶ Plein écran</button>
+
+<div id="hud" aria-label="Données de la sortie">
+  <div class="m"><b id="sp">0</b><i>km/h</i></div>
+  <div class="m"><b id="po">0</b><i>watts</i></div>
+  <div class="m"><b id="gr">0</b><i>pente %</i></div>
+  <div class="m"><b id="di">0.0</b><i>km parcourus</i></div>
+  <div class="m"><b id="hr">–</b><i>bpm</i></div>
+  <div class="m"><b id="ca">–</b><i>tr/min</i></div>
+</div>
+
+<aside id="mapPanel" aria-label="Mini-carte du parcours">
+  <div class="mapHead"><span>MINI-CARTE · N ↑</span><button id="mapMode" title="Afficher tout le parcours">Tout</button><button id="mapClose" aria-label="Masquer la mini-carte">×</button></div>
+  <canvas id="miniMap" role="img" aria-label="Trace, position du cycliste et éléments OpenStreetMap"></canvas>
+  <div class="mapFoot"><span id="mapScale">200 m</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a></div>
+</aside>
+<button id="mapToggle" class="hide" aria-label="Afficher la mini-carte">Carte</button>
+
+<div id="location" class="hide"><span id="locationName"></span><small id="locationDetail"></small></div>
+<div id="townNotice" role="status" aria-live="polite"><b id="townName"></b><small id="townSource"></small></div>
+
+<aside id="cameraPanel" aria-label="Réglages de la caméra">
+  <p class="panelTitle">Point de vue · glisser pour pivoter</p>
+  <div class="row"><button id="viewFollow" class="on" aria-pressed="true">Suivi</button><button id="viewWide" aria-pressed="false">Paysage</button><button id="viewSide" aria-pressed="false">Profil</button></div>
+  <div class="row zoomRow"><button id="zoomOut" aria-label="Dézoomer">−</button><input id="zoom" type="range" min="3" max="36" step="0.5" value="6" aria-label="Distance de la caméra"><button id="zoomIn" aria-label="Zoomer">+</button></div>
+  <span id="zoomValue">Caméra à 6 m</span>
+</aside>
+
+<div id="bar">
+  <div id="msg" role="status">Parcours prêt.</div>
+  <div class="row" id="sl"><label for="pw">Puissance <b id="pv">150</b> W</label><input id="pw" type="range" min="0" max="500" step="5" value="150"></div>
+  <div class="row">
+    <button id="pause" aria-label="Mettre en pause">Pause</button>
+    <button id="stop" class="danger" aria-label="Arrêter la séance">⏹️ Stop</button>
+    <button id="bt">Trainer</button>
+    <button id="hb">Cardio</button>
+    <button id="mn">Menu</button>
+  </div>
+</div>
+
+<!-- Modal Stop / Exporter -->
+<div id="stopModal" class="hide">
+  <div class="modalCard">
+    <h2>Séance terminée !</h2>
+    <p>Voici le récapitulatif de votre entraînement :</p>
+    <div class="summaryGrid">
+      <div class="summaryItem"><b id="sumDist">0.0</b><span>km</span></div>
+      <div class="summaryItem"><b id="sumTime">00:00</b><span>Temps</span></div>
+      <div class="summaryItem"><b id="sumPower">0</b><span>W Mins</span></div>
+      <div class="summaryItem"><b id="sumSpeed">0.0</b><span>km/h moy</span></div>
+    </div>
+    <div class="row" style="flex-direction:column; gap:10px;">
+      <button id="exportFit" class="wide primary">📥 Exporter la séance (.FIT)</button>
+      <button id="exportStrava" class="wide" style="background:#fc4c02; border-color:#fc4c02; color:white;">🧡 Partager sur Strava</button>
+      <button id="closeStopModal" class="wide">Fermer et retourner au menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Input fichier GPX caché -->
+<input id="fi" type="file" class="hide" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml">
+
+<div id="home">
+  <div class="homeCard">
+    <div class="eyebrow">Home trainer · OpenStreetMap</div>
+    <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
+    <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
+    
+    <details id="customize" class="customize" open>
+      <summary>Personnaliser le vélo et la tenue</summary>
+      <div class="customGrid">
+        <label class="choice">Cadre vélo<input id="frameColor" type="color" value="#163e4b"></label>
+        <label class="choice">Couleur jantes<input id="rimColor" type="color" value="#5b6670"></label>
+        <label class="choice">Profil jantes<select id="rimDepth"><option value="50">50 mm</option><option value="60">60 mm</option><option value="80">80 mm</option></select></label>
+        <label class="choice">Casque<input id="helmetColor" type="color" value="#128f9a"></label>
+        <label class="choice">Lunettes soleil<input id="glassesColor" type="color" value="#111a22"></label>
+        <label class="choice">Maillot<input id="jerseyColor" type="color" value="#007d91"></label>
+        <label class="choice">Cuissard<input id="shortColor" type="color" value="#13171c"></label>
+        <label class="choice">Chaussures<input id="shoeColor" type="color" value="#e2e6e4"></label>
+        <label class="choice">Chaussettes<input id="sockColor" type="color" value="#e7ecea"></label>
+      </div>
+      <button id="resetStyle" class="resetStyle" type="button">Réinitialiser les couleurs</button>
+    </details>
+
+    <div class="row"><button id="gp">Choisir un GPX</button><button id="pg">Coller un GPX</button></div>
+    <button id="dm" class="wide">Essayer la démonstration</button>
+    <div id="pb" role="progressbar" aria-label="Chargement du décor" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="pf"></i></div>
+    <div id="hs" role="status"></div>
+    <button id="go" class="wide primary" disabled>Lancer le parcours</button>
+    <button id="skipScenery" class="wide hide">Lancer sans attendre le décor</button>
+  </div>
+</div>
+
+<!-- Modale de collage de texte GPX -->
+<div id="pp" class="hide"><label for="pt">Importer une trace GPX</label><textarea id="pt" spellcheck="false" placeholder="Collez ici le contenu complet du fichier GPX"></textarea><div id="pe" role="alert"></div><div class="row"><button id="pl" class="primary">Charger</button><button id="px">Annuler</button></div></div>
+<div id="fatal" class="hide" role="alert"><h2>La scène 3D ne peut pas démarrer</h2><p id="fatalText"></p></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+<script>
+(() => {
+'use strict';
+try {
+const $=id=>document.getElementById(id),ST=8,MASS=85,CDA=.32,RHO=1.2,CRR=.004,G0=9.81;
+const toast=text=>{$('msg').textContent=text;$('hs').textContent=text};
+const prog=(fraction,text)=>{const percent=Math.max(0,Math.min(100,Math.round(fraction*100)));$('pf').style.width=percent+'\%';$('pb').setAttribute('aria-valuenow',String(percent));toast(text)};
+if(typeof THREE==='undefined')throw new Error('La bibliothèque Three.js n’a pas pu être chargée.');
+
+const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true,powerPreference:'high-performance'});
+R.setPixelRatio(Math.min(devicePixelRatio||1,1.75));R.outputEncoding=THREE.sRGBEncoding;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.05;
+R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+
+const S=new THREE.Scene();S.background=new THREE.Color(0xb8d7e3);S.fog=new THREE.Fog(0xb8d7e3,160,750);
+const cam=new THREE.PerspectiveCamera(55,1,.1,1800);
+S.add(new THREE.HemisphereLight(0xf3f9ff,0x777b4f,.85));
+const sun=new THREE.DirectionalLight(0xfff4df,1.2);sun.position.set(35,60,-25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:160});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;S.add(sun,sun.target);
+
+const V3=THREE.Vector3,UPV=new V3(0,1,0);
+
+function resize(){
+  const width=Math.max(1,document.documentElement.clientWidth||innerWidth),height=Math.max(1,document.documentElement.clientHeight||innerHeight);
+  R.setSize(width,height,false);cam.aspect=width/height;cam.updateProjectionMatrix();
+}
+addEventListener('resize',resize);resize();
+
+/* ---------- Mode Plein écran ---------- */
+$('btnFullscreen').onclick=()=>{
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(err=>console.error(err));
+  }else{
+    document.exitFullscreen();
+  }
+};
+
+/* ---------- Modélisation détaillée du cycliste & vélo ---------- */
+function r4Seg(mesh, a, b, radius) {
+  const delta = new V3().subVectors(b, a);
+  const length = delta.length();
+  mesh.position.copy(a).add(b).multiplyScalar(0.5);
+  if (length > 0.00001) {
+    mesh.quaternion.setFromUnitVectors(UPV, delta.multiplyScalar(1 / length));
+    mesh.scale.set(radius, length, radius);
+  } else {
+    mesh.scale.set(radius, 0.00001, radius);
+  }
+  return mesh;
+}
+
+function r4Aim(group, a, b) {
+  const delta = new V3().subVectors(b, a);
+  group.position.copy(a);
+  if (delta.lengthSq() > 0.0000001) group.quaternion.setFromUnitVectors(UPV, delta.normalize());
+  return group;
+}
+
+function r4AeroRimGeometry(depthMm) {
+  const segments=64,outer=.310,inner=Math.max(.205,outer-depthMm/1000),outerHalf=.012,innerHalf=.019,rings=[];
+  for(let i=0;i<=segments;i++){
+    const angle=i/segments*Math.PI*2,cos=Math.cos(angle),sin=Math.sin(angle);
+    rings.push([[-outerHalf,outer*cos,oute
