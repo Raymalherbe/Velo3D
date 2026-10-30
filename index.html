@@ -1,0 +1,1087 @@
+
+
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d2327">
+<meta name="description" content="VéloRoute 3D — home trainer : roulez librement sur les routes d'OpenStreetMap, choisissez votre direction aux carrefours, cycliste articulé et décor réaliste.">
+<title>VéloRoute 3D v1 — navigation libre</title>
+<style>
+:root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(13,35,39,.92);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#b7d4df;color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+button,input,select{font:inherit}
+button{cursor:pointer;min-height:46px;padding:8px 12px;border-radius:12px;border:1px solid var(--bd);background:rgba(255,255,255,.06);color:var(--fg);font-size:14px;font-weight:650}
+button:hover{background:rgba(255,255,255,.14)}
+button.primary{background:var(--ac);color:var(--acfg);border-color:var(--ac)}
+button:disabled{opacity:.4;cursor:wait}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--ac);outline-offset:3px}
+input[type=range]{accent-color:var(--ac);min-width:0;cursor:pointer}
+.hide{display:none!important}
+/* ---------- HUD ---------- */
+#hud{position:fixed;left:14px;top:calc(14px + env(safe-area-inset-top,0px));width:min(460px,calc(100% - 28px));display:grid;grid-template-columns:repeat(3,1fr);gap:1px;border:1px solid var(--bd);border-radius:16px;overflow:hidden;background:var(--card);backdrop-filter:blur(12px);z-index:5}
+.m{padding:9px 12px;background:rgba(255,255,255,.025)}
+.m b{display:block;font-size:29px;font-weight:650;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.m i{font-style:normal;font-size:9px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase}
+.m:first-child b{color:var(--ac)}
+/* ---------- Barre de contrôle ---------- */
+#bar{position:fixed;left:14px;right:14px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-width:780px;margin:auto;padding:10px 12px;border:1px solid var(--bd);border-radius:16px;background:var(--card);backdrop-filter:blur(12px);z-index:6}
+#msg{font-size:12px;color:var(--muted);min-height:17px;margin-bottom:6px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row button{flex:1;min-width:0}
+#sl{margin-bottom:6px}
+#sl label{font-size:12px;color:var(--muted);white-space:nowrap}
+#sl label b{color:var(--fg)}
+#posture{max-width:96px;min-height:38px;padding:4px 7px;border:1px solid var(--bd);border-radius:8px;background:#203d40;color:var(--fg);font-size:11px}
+#quitBtn{background:#7a2e2e;border-color:#a44;color:#fff}
+/* ---------- Panneaux de direction ---------- */
+#arrows{position:fixed;z-index:10;left:50%;top:calc(8px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;gap:6px;width:min(96vw,640px);flex-wrap:wrap;justify-content:center}
+.panel{flex:1 1 120px;max-width:210px;min-height:82px;padding:6px 8px;border:2px solid #f3f5e9;border-radius:8px;background:linear-gradient(155deg,#2b7a52,#12503a);color:#fff;box-shadow:0 3px 10px #0009;display:flex;flex-direction:column;gap:2px;cursor:pointer;font-weight:650}
+.panel:active{transform:scale(.97)}
+.panel.sel{outline:3px solid #f6d36b;outline-offset:1px}
+.panel .meters{font-size:12px;font-weight:900;color:#ffe28a;font-variant-numeric:tabular-nums}
+.panel .glyph{font-size:27px;line-height:1}
+.panel .where{font-size:10px;font-weight:750;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#junctionInfo{flex:0 0 100%;text-align:center;font-size:11px;color:#ffe28a;text-shadow:0 1px 2px #0008}
+/* ---------- Caméra ---------- */
+#camPanel{position:fixed;right:14px;bottom:calc(var(--bar-h,120px) + 20px + env(safe-area-inset-bottom,0px));width:230px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px;backdrop-filter:blur(12px);z-index:6}
+#camPanel .row{margin-top:6px}
+#camPanel button{font-size:12px;min-height:40px}
+/* ---------- Mini-carte ---------- */
+#mapPanel{position:fixed;right:14px;top:calc(14px + env(safe-area-inset-top,0px));width:240px;border:1px solid var(--bd);border-radius:14px;overflow:hidden;background:#edf1e4;box-shadow:0 8px 30px rgba(9,25,24,.14);z-index:6}
+.mapHead{display:flex;justify-content:space-between;align-items:center;gap:4px;padding:6px 8px;background:var(--card);color:var(--fg);font-size:10px;letter-spacing:.8px}
+.mapHead button{min-height:30px;font-size:10px;padding:2px 7px}
+#rideMap{height:170px}
+.mapFoot{display:flex;justify-content:space-between;padding:3px 7px;font-size:8px;background:#edf1e4}
+.mapFoot a{color:#385c4f}
+/* ---------- Écran d'accueil ---------- */
+#home{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));background:rgba(9,27,30,.72);backdrop-filter:blur(7px);overflow:auto}
+.homeCard{width:100%;max-width:540px;background:rgba(15,36,40,.97);border:1px solid var(--bd);border-radius:22px;padding:24px;box-shadow:0 30px 100px #051c3055}
+.eyebrow{font-size:11px;letter-spacing:2.2px;text-transform:uppercase;color:var(--ac);margin:0 0 10px}
+h1{font-size:36px;letter-spacing:-1.6px;line-height:1.05;margin:0 0 10px;font-weight:680}
+h1 span{color:var(--ac)}
+#home p.lead{font-size:13.5px;line-height:1.55;color:var(--muted);margin:0 0 14px}
+.block{margin:12px 0;padding:12px;border:1px solid var(--bd);border-radius:14px;background:rgba(255,255,255,.035)}
+.block summary{cursor:pointer;font-weight:700;font-size:13px}
+.block .hint{font-size:12px;color:var(--muted);line-height:1.5;margin:6px 0}
+#freeMap{width:100%;height:230px;border-radius:12px;border:1px solid var(--bd);margin:8px 0}
+button.wide{width:100%;display:block;margin-bottom:8px;min-height:50px}
+#pb{height:5px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.12);margin:14px 0 8px}
+#pf{display:block;height:100%;width:0;background:var(--ac);transition:width .3s}
+#hs{font-size:12px;line-height:1.5;min-height:38px;color:var(--muted);margin-bottom:12px}
+#home details p{font-size:12px;color:var(--muted);line-height:1.5;margin:8px 0 0}
+/* ---------- Dialogues ---------- */
+.dialog{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:16px;background:rgba(4,17,20,.7);backdrop-filter:blur(6px)}
+.card{width:min(440px,100%);padding:20px;border:1px solid var(--bd);border-radius:18px;background:#10292d;box-shadow:0 22px 70px #0008;text-align:center}
+.card h2{margin:0 0 8px;font-size:22px}
+.card p{margin:0 0 14px;color:var(--muted);font-size:13.5px;line-height:1.5}
+.card .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.card .grid2 button{min-height:58px}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 14px;text-align:left}
+.summary div{padding:8px 10px;border:1px solid var(--bd);border-radius:10px;background:rgba(255,255,255,.04);font-size:12px}
+.summary b{display:block;font-size:18px;color:var(--ac);font-variant-numeric:tabular-nums}
+#fatal{position:fixed;inset:0;z-index:40;display:grid;place-content:center;text-align:center;padding:30px;background:#132e33}
+#pt{width:100%;min-height:120px;font:13px ui-monospace,monospace;background:#061f27;color:var(--fg);border:1px solid var(--bd);border-radius:12px;padding:12px}
+@media(max-width:700px){
+ #hud{left:10px;top:calc(10px + env(safe-area-inset-top,0px));width:calc(100% - 186px)}
+ .m{padding:7px 6px}.m b{font-size:22px}.m i{font-size:7px}
+ #mapPanel{width:160px;right:10px}#rideMap{height:118px}
+ #bar{left:10px;right:10px;padding:8px}
+ #camPanel{width:200px;right:10px}
+ .homeCard{padding:18px}h1{font-size:30px}
+ .row button{min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="Scène 3D du parcours"></canvas>
+
+<div id="hud" role="status">
+  <div class="m"><b id="sp">0</b><i>km/h</i></div>
+  <div class="m"><b id="po">0</b><i>watts</i></div>
+  <div class="m"><b id="gr">0.0</b><i>pente %</i></div>
+  <div class="m"><b id="di">0.0</b><i>km</i></div>
+  <div class="m"><b id="du">00:00</b><i>durée</i></div>
+  <div class="m"><b id="avg">0.0</b><i>moy. km/h</i></div>
+  <div class="m"><b id="hr">–</b><i>bpm</i></div>
+  <div class="m"><b id="ca">–</b><i>tr/min</i></div>
+  <div class="m"><b id="dp">+0</b><i>dénivelé m</i></div>
+</div>
+
+<div id="arrows" class="hide" role="group" aria-label="Choisir une direction"></div>
+
+<aside id="mapPanel">
+  <div class="mapHead"><span>CARTE · N ↑</span><button id="mapFit">Tout</button><button id="mapClose" aria-label="Masquer la carte">×</button></div>
+  <div id="rideMap"></div>
+  <div class="mapFoot"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a><a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a></div>
+</aside>
+<button id="mapToggle" class="hide" style="position:fixed;right:14px;top:calc(14px + env(safe-area-inset-top,0px));z-index:6">Carte</button>
+
+<aside id="camPanel">
+  <p style="margin:0;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted)">Point de vue · glisser pour pivoter</p>
+  <div class="row"><button id="vFollow" class="primary">Suivi</button><button id="vWide">Paysage</button><button id="vSide">Profil</button><button id="vCockpit">Cintre</button></div>
+</aside>
+
+<div id="bar">
+  <div id="msg" role="status">Choisis un point de départ puis lance la sortie.</div>
+  <div class="row" id="sl"><label for="pw">Puissance <b id="pv">0</b> W</label><input id="pw" type="range" min="0" max="500" step="5" value="0" style="flex:1"><select id="posture" aria-label="Posture"><option value="auto">Auto</option><option value="seated">Assis</option><option value="standing">Danseuse</option><option value="aero">Aéro</option></select></div>
+  <div class="row"><button id="pause">Pause</button><button id="stopBtn" title="Arrêter">⏹</button><button id="reverse">↶ Demi-tour</button><button id="fsBtn">⛶</button><button id="bt">Trainer</button><button id="hb">Cardio</button><button id="quitBtn">✕ Quitter</button></div>
+</div>
+
+<div id="home">
+  <div class="homeCard">
+    <div class="eyebrow">Home trainer · OpenStreetMap</div>
+    <h1>VéloRoute<span> 3D.</span></h1>
+    <p class="lead">Roulez librement sur les vraies routes. Clique sur la carte pour choisir ton secteur, l'app télécharge routes et décor, et tu choisis ta direction à chaque carrefour.</p>
+    <details class="block" open><summary>🗺️ Rouler libre — choisir un secteur</summary>
+      <div class="hint">Le cercle montre la zone téléchargée : toutes les routes, bâtiments, haies et arbres cartographiés.</div>
+      <div id="freeMap"></div>
+      <div class="row" style="justify-content:space-between">
+        <label style="font-size:12px;color:var(--muted)">Rayon
+          <select id="radius" style="font-size:14px;padding:4px;border-radius:8px;background:#203d40;color:var(--fg);border:1px solid var(--bd)">
+            <option value="2000" selected>2 km</option><option value="5000">5 km</option><option value="10000">10 km</option><option value="20000">20 km</option>
+          </select></label>
+        <button id="locateMe" style="flex:0 0 auto">📍 Ma position</button>
+      </div>
+      <span id="freeInfo" style="font-size:12px;color:var(--muted)"></span>
+    </details>
+    <details class="block"><summary>📂 Charger un parcours GPX</summary>
+      <div class="hint">Trace GPS au format .gpx : le décor OSM autour du tracé est téléchargé automatiquement.</div>
+      <div class="row"><button id="gpxFile">Choisir un fichier</button><button id="gpxPaste">Coller le GPX</button></div>
+    </details>
+    <button id="demo" class="wide">Essayer la démonstration</button>
+    <div id="pb" role="progressbar" aria-valuenow="0"><i id="pf"></i></div>
+    <div id="hs" role="status"></div>
+    <button id="go" class="wide primary" disabled>Lancer la sortie</button>
+    <details><summary>Astuces, capteurs et export</summary>
+      <p>Glisse un doigt sur la scène pour regarder autour, pince pour zoomer, double-tape pour changer de point de vue. La sortie démarre au premier watt : vélo immobile et chrono à l'arrêt jusqu'à la première puissance.</p>
+      <p>Trainer et cardio : Chrome Android ou navigateur avec Web Bluetooth (FTMS + fréquence cardiaque). La pente du terrain est envoyée au trainer en mode simulation.</p>
+      <p>À l'arrêt, la séance s'exporte en .TCX (compatible Strava). Héberge ce fichier en HTTPS — GitHub Pages convient.</p>
+    </details>
+  </div>
+</div>
+
+<div id="pp" class="dialog hide"><div class="card" style="text-align:left">
+  <h2>Importer une trace GPX</h2>
+  <textarea id="pt" spellcheck="false" placeholder="Colle ici le contenu complet du fichier GPX"></textarea>
+  <p id="pe" style="min-height:16px;color:#ffa690"></p>
+  <div class="row"><button id="pl" class="primary">Charger</button><button id="px">Annuler</button></div>
+</div></div>
+
+<div id="startDialog" class="dialog hide" role="dialog" aria-modal="true"><div class="card">
+  <h2>Dans quel sens partir ?</h2><p id="startInfo">Le secteur est prêt.</p>
+  <div class="grid2"><button id="startFwd" class="primary">▶ Dans ce sens</button><button id="startBwd">◀ Autre sens</button></div>
+</div></div>
+
+<div id="stopDialog" class="dialog hide" role="dialog" aria-modal="true"><div class="card">
+  <h2>Séance terminée 🎉</h2><p id="stopMsg"></p>
+  <div class="summary" id="summary"></div>
+  <div class="grid2"><button id="tcx" class="primary">⬇ Exporter .TCX</button><button id="strava">Strava ↗</button></div>
+  <div class="grid2" style="margin-top:9px"><button id="resume">▶ Reprendre</button><button id="quitStop">⏹ Quitter</button></div>
+</div></div>
+
+<div id="fatal" class="hide" role="alert"><h2>La scène 3D ne démarre pas</h2><p id="fatalText"></p></div>
+<input id="file" type="file" accept=".gpx,.xml" style="position:fixed;left:-9999px;top:-9999px">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+<script>
+(()=>{'use strict';
+try{
+/* ==================================================================
+   0. OUTILS
+================================================================== */
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const toast=t=>{$('msg').textContent=t;$('hs').textContent=t};
+const prog=(f,t)=>{const p=clamp(Math.round(f*100),0,100);$('pf').style.width=p+'%';$('pb').setAttribute('aria-valuenow',p);if(t)toast(t)};
+const buzz=p=>{try{if(navigator.vibrate)navigator.vibrate(p)}catch(_){}}
+if(typeof THREE==='undefined')throw new Error('Three.js n’a pas pu être chargé. Vérifie la connexion Internet puis recharge la page.');
+const MASS=85,CDA=.32,RHO=1.2,CRR=.004,G0=9.81,ST=8;
+
+/* ==================================================================
+   1. SCÈNE 3D
+================================================================== */
+const R3=new THREE.WebGLRenderer({canvas:$('c'),antialias:true,powerPreference:'high-performance'});
+R3.setPixelRatio(Math.min(devicePixelRatio||1,1.75));
+R3.outputEncoding=THREE.sRGBEncoding;R3.toneMapping=THREE.ACESFilmicToneMapping;R3.toneMappingExposure=1.06;
+R3.shadowMap.enabled=true;R3.shadowMap.type=THREE.PCFSoftShadowMap;
+const S=new THREE.Scene();S.background=new THREE.Color(0xb8d7e3);S.fog=new THREE.Fog(0xb8d7e3,170,780);
+const cam=new THREE.PerspectiveCamera(55,1,.1,1900);
+S.add(new THREE.HemisphereLight(0xf3f9ff,0x777b4f,.88));
+const sun=new THREE.DirectionalLight(0xfff4df,1.25);sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:180});
+sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;S.add(sun,sun.target);
+{const m=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:.92});
+for(let i=0;i<9;i++){const g=new THREE.Group();for(let k=0;k<4;k++){const s=new THREE.Mesh(new THREE.SphereGeometry(8+Math.random()*6,10,8),m);s.position.set(k*7-10,Math.random()*2,Math.random()*3);s.scale.y=.45;g.add(s)}g.position.set((Math.random()-.5)*420,65+Math.random()*25,(Math.random()-.5)*420);S.add(g)}}
+function resize(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);R3.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix()}
+addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);resize();
+
+/* ==================================================================
+   2. VÉLO ET CYCLISTE (procédural, jambes et bras en IK)
+================================================================== */
+const UPV=new THREE.Vector3(0,1,0);
+function seg(m,a,b,r){const d=new THREE.Vector3().subVectors(b,a),L=d.length()||.001;m.position.copy(a).addScaledVector(d,.5);m.quaternion.setFromUnitVectors(UPV,d.divideScalar(L));m.scale.set(r,L,r);return m}
+function ik(a,b,l1,l2,bias){ /* position du genou/coude entre la racine et la cible */
+  const d=new THREE.Vector3().subVectors(b,a),D=Math.max(.0001,Math.min(d.length(),l1+l2-.002));d.normalize();
+  const t=(l1*l1-l2*l2+D*D)/(2*D),h=Math.sqrt(Math.max(0,l1*l1-t*t));
+  const j=new THREE.Vector3().copy(a).addScaledVector(d,t);
+  if(bias){const bv=new THREE.Vector3().fromArray(bias);bv.addScaledVector(d,-bv.dot(d));if(bv.lengthSq()>1e-6)j.addScaledVector(bv.normalize(),h)}
+  return j;
+}
+function tube(parent,a,b,r,mat){const m=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,14),mat);parent.add(m);return seg(m,a,b,r)}
+function buildRider(style){
+  const g=new THREE.Group(),M=(c,r,m)=>new THREE.MeshStandardMaterial({color:c,roughness:r==null?.6:r,metalness:m||0});
+  const mat={frame:M(style.frame,.32,.45),rim:M(style.rim,.25,.75),tyre:M(0x16181b,.9),bar:M(0x23262c,.55,.25),
+    body:M(style.jersey,.85),skin:M(0xd9a184,.85),shorts:M(style.shorts,.85),helmet:M(style.helmet,.3),shoe:M(style.shoe||0x18181a,.55),glove:M(0x23262c,.8),sock:M(0xf2f4f2,.85),dark:M(0x0d0e10,.35,.4)};
+  const cast=m=>{m.castShadow=true;return m};
+  const bike=new THREE.Group();g.add(bike);
+  /* roues : pneu, jante, rayons, moyeu */
+  const wheels=[];
+  const mkWheel=z=>{const w=new THREE.Group();w.position.set(0,.34,z);
+    const tyre=new THREE.Mesh(new THREE.TorusGeometry(.336,.026,10,36),mat.tyre);tyre.rotation.y=Math.PI/2;tyre.castShadow=true;w.add(tyre);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(.30,.012,8,36),mat.rim);rim.rotation.y=Math.PI/2;w.add(rim);
+    for(let i=0;i<8;i++){const sp=new THREE.Mesh(new THREE.CylinderGeometry(.0028,.0028,.60,5),mat.rim);sp.rotation.x=i*Math.PI/8;w.add(sp)}
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.09,10),mat.rim);hub.rotation.z=Math.PI/2;w.add(hub);
+    bike.add(w);wheels.push(w);return w};
+  mkWheel(-.52);mkWheel(.53);
+  /* cadre de route */
+  const BB=new THREE.Vector3(0,.28,-.06),HTB=new THREE.Vector3(0,.55,.44),HTT=new THREE.Vector3(0,.72,.42),
+        CL=new THREE.Vector3(0,.86,-.34),RH=new THREE.Vector3(0,.34,-.52),FH=new THREE.Vector3(0,.34,.53);
+  tube(bike,BB,RH,.013,mat.frame);                       /* base arrière */
+  tube(bike,RH,CL,.012,mat.frame);                        /* haubans */
+  tube(bike,BB,CL,.017,mat.frame);                        /* tube de selle */
+  tube(bike,BB,HTB,.019,mat.frame);                       /* tube diagonal */
+  tube(bike,CL,HTT,.014,mat.frame);                       /* tube horizontal */
+  tube(bike,HTB,HTT,.02,mat.frame);                       /* douille de direction */
+  for(const sd of[-1,1])tube(bike,HTT,new THREE.Vector3(sd*.05,.34,.53),.011,mat.frame); /* fourche */
+  tube(bike,CL,new THREE.Vector3(0,.925,-.35),.013,mat.dark);   /* tige de selle */
+  const saddle=cast(new THREE.Mesh(new THREE.BoxGeometry(.048,.028,.27),mat.dark));saddle.position.set(0,.945,-.35);bike.add(saddle);
+  /* potence + cintre route avec cocottes */
+  tube(bike,HTT,new THREE.Vector3(0,.90,.47),.012,mat.dark);
+  for(const sd of[-1,1]){
+    tube(bike,new THREE.Vector3(0,.90,.47),new THREE.Vector3(sd*.105,.90,.49),.011,mat.bar);
+    tube(bike,new THREE.Vector3(sd*.105,.90,.49),new THREE.Vector3(sd*.118,.915,.55),.011,mat.bar);
+    tube(bike,new THREE.Vector3(sd*.118,.915,.55),new THREE.Vector3(sd*.118,.855,.585),.011,mat.bar);
+    tube(bike,new THREE.Vector3(sd*.118,.855,.585),new THREE.Vector3(sd*.118,.79,.53),.011,mat.bar);
+  }
+  /* transmission : plateaux, cassette, chaîne */
+  for(const r of[.065,.048]){const ring=new THREE.Mesh(new THREE.TorusGeometry(r,.007,8,22),mat.dark);ring.rotation.y=Math.PI/2;ring.position.set(.062,BB.y,BB.z);bike.add(ring)}
+  const cog=new THREE.Mesh(new THREE.CylinderGeometry(.048,.048,.028,16),mat.dark);cog.rotation.z=Math.PI/2;cog.position.set(-.068,.34,-.52);bike.add(cog);
+  tube(bike,new THREE.Vector3(.062,BB.y+.05,BB.z),new THREE.Vector3(-.06,.388,-.52),.0035,mat.dark);
+  tube(bike,new THREE.Vector3(.062,BB.y-.05,BB.z),new THREE.Vector3(-.06,.292,-.52),.0035,mat.dark);
+  /* manivelles : bras droit vers le bas quand l'angle est nul, pédale droite en bas */
+  const cranks=new THREE.Group();cranks.position.copy(BB);bike.add(cranks);
+  for(const sd of[-1,1]){const c=new THREE.Mesh(new THREE.CylinderGeometry(.010,.010,.168,8),mat.dark);c.position.set(sd*.042,-sd*.084,0);cranks.add(c)}
+  const pedals=[];
+  for(const sd of[-1,1]){const p=new THREE.Mesh(new THREE.BoxGeometry(.068,.011,.095),mat.dark);p.userData.side=sd;bike.add(p);pedals.push(p)}
+  /* corps du cycliste */
+  const body=new THREE.Group();g.add(body);
+  const hips=new THREE.Vector3(0,1.00,-.33);
+  const hipsMesh=cast(new THREE.Mesh(new THREE.SphereGeometry(.145,12,10),mat.shorts));hipsMesh.scale.set(1,.68,.88);body.add(hipsMesh);
+  const torso=cast(new THREE.Mesh(new THREE.SphereGeometry(.14,16,12),mat.body));torso.scale.set(1.05,1.75,.70);body.add(torso);
+  const chest=cast(new THREE.Mesh(new THREE.SphereGeometry(.125,12,10),mat.body));chest.scale.set(1.4,.72,.78);body.add(chest);
+  const neck=cast(new THREE.Mesh(new THREE.CylinderGeometry(.046,.05,.16,10),mat.skin));body.add(neck);
+  const head=new THREE.Group();body.add(head);
+  const skull=cast(new THREE.Mesh(new THREE.SphereGeometry(.073,14,12),mat.skin));head.add(skull);
+  const helmet=cast(new THREE.Mesh(new THREE.SphereGeometry(.088,16,12,0,Math.PI*2,0,Math.PI*.62),mat.helmet));
+  helmet.scale.set(1,.95,1.22);helmet.position.set(0,.028,-.015);head.add(helmet);
+  const tail=new THREE.Mesh(new THREE.CylinderGeometry(.008,.032,.11,8),mat.helmet);tail.rotation.x=.62;tail.position.set(0,.062,-.105);head.add(tail);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(.118,.028,.018),mat.dark);visor.position.set(0,.008,.066);head.add(visor);
+  const legs=[],arms=[];
+  for(const sd of[-1,1]){
+    legs.push({side:sd,
+      thigh:cast(new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,10),mat.shorts)),
+      knee:cast(new THREE.Mesh(new THREE.SphereGeometry(.054,10,8),mat.shorts)),
+      calf:cast(new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,10),mat.skin)),
+      sock:cast(new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,10),mat.sock)),
+      shoe:cast(new THREE.Mesh(new THREE.BoxGeometry(.055,.042,.21),mat.shoe))});
+    arms.push({side:sd,
+      upper:cast(new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,10),mat.body)),
+      elbow:cast(new THREE.Mesh(new THREE.SphereGeometry(.045,10,8),mat.body)),
+      fore:cast(new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,10),mat.skin)),
+      glove:cast(new THREE.Mesh(new THREE.SphereGeometry(.033,8,8),mat.glove))});
+  }
+  for(const l of legs)for(const k of['thigh','knee','calf','sock','shoe'])body.add(l[k]);
+  for(const a of arms)for(const k of['upper','elbow','fore','glove'])body.add(a[k]);
+  g.userData={bike,body,wheels,cranks,pedals,legs,arms,torso,chest,head,neck,hipsMesh,hips,crankAngle:0,lean:1.15};
+  return g;
+}
+let rider=buildRider({frame:0xa3272a,rim:0x5b6670,jersey:0x007d91,shorts:0x13171c,helmet:0x128f9a,shoe:0xe2e6e4});
+S.add(rider);
+function poseRider(dt){
+  const u=rider.userData,posture=$('posture').value,power=ctlPower();
+  const stand=posture==='standing'||(posture==='auto'&&power>380);
+  const aero=!stand&&(posture==='aero'||(posture==='auto'&&power>250));
+  u.crankAngle=(u.crankAngle+(v>0?v/.34*dt:(power>0?5.5*dt:0)))%(Math.PI*2);
+  u.cranks.rotation.x=u.crankAngle;
+  const CR=.165,phase=sd=>u.crankAngle+(sd>0?0:Math.PI);
+  const pedalPos=(sd,a)=>new THREE.Vector3(sd*.065,.28-Math.cos(a)*CR,-.06-Math.sin(a)*CR);
+  for(const p of u.pedals)p.position.copy(pedalPos(p.userData.side,phase(p.userData.side)));
+  const hipY=stand?u.hips.y+.07:u.hips.y,hipZ=stand?u.hips.z+.05:u.hips.z;
+  for(const leg of u.legs){
+    const a=phase(leg.side),pedal=pedalPos(leg.side*.92,a); /* pied légèrement sur l'intérieur de la pédale */
+    const ankle=pedal.clone().add(new THREE.Vector3(0,.052,.05));
+    const hip=new THREE.Vector3(leg.side*.085,hipY,hipZ);
+    const knee=ik(hip,ankle,.48,.46,[leg.side*.11,0,.32]);
+    seg(leg.thigh,hip,knee,.058);
+    leg.knee.position.copy(knee);
+    seg(leg.calf,knee,ankle,.037);
+    seg(leg.sock,ankle.clone().lerp(knee,.30),ankle,.043);
+    leg.shoe.position.copy(pedal).add(new THREE.Vector3(0,.03,.052));
+  }
+  /* torse et tête : posture de course, plus allongée en aéro */
+  u.lean+=((stand?1.28:aero?1.34:1.15)-u.lean)*Math.min(1,dt*4);
+  const dir=new THREE.Vector3(0,Math.cos(u.lean),Math.sin(u.lean));
+  const hipTop=new THREE.Vector3(0,hipY+.05,hipZ+.03);
+  const shoulder=hipTop.clone().addScaledVector(dir,.46);
+  u.hipsMesh.position.set(0,hipY,hipZ+.02);
+  u.torso.position.copy(hipTop).addScaledVector(dir,.23);
+  u.torso.quaternion.setFromUnitVectors(UPV,dir);
+  u.chest.position.copy(shoulder).addScaledVector(dir,.05);
+  const headPos=shoulder.clone().add(new THREE.Vector3(0,.148,.052));
+  seg(u.neck,shoulder.clone().addScaledVector(dir,.04),headPos,.048);
+  u.head.position.copy(headPos);
+  u.head.rotation.set((1.15-u.lean)*.45,0,0);
+  /* bras vers les cocottes (ou les bases du cintre en aéro) */
+  for(const arm of u.arms){
+    const sh=shoulder.clone().add(new THREE.Vector3(arm.side*.152,-.02,-.03));
+    const hand=aero?new THREE.Vector3(arm.side*.118,.80,.545):new THREE.Vector3(arm.side*.118,.90,.53);
+    const elbow=ik(sh,hand,.29,.27,[arm.side*.035,.02,-.02]);
+    seg(arm.upper,sh,elbow,.048);
+    arm.elbow.position.copy(elbow);
+    seg(arm.fore,elbow,hand,.036);
+    arm.glove.position.copy(hand);
+  }
+  u.body.position.y=stand?Math.sin(performance.now()/85)*.015:0;
+  u.body.rotation.z=stand?Math.sin(performance.now()/85)*.03:0;
+  for(const w of u.wheels)w.rotation.x+=v*dt/.336;
+}
+
+/* ==================================================================
+   3. ÉTAT DE LA SORTIE
+================================================================== */
+let route=null,s=0,v=0,totalDistance=0,running=false,proj=null;
+let sessionSamples=[],sessionStart=0,lastSampleT=0;
+window._rideElapsed=0;window._rideGain=0;window._powerStarted=false;window._maxSpeed=0;
+let free=null; /* état de la navigation libre */
+let last=performance.now();
+function at(d){const{X,Y,Z,G,n,len,step}=route,t=clamp(d,0,len),f=t/step,i=Math.min(n-1,Math.floor(f)),k=Math.min(1,f-i);
+  return[X[i]+(X[i+1]-X[i])*k,Y[i]+(Y[i+1]-Y[i])*k,Z[i]+(Z[i+1]-Z[i])*k,G[i]+(G[i+1]-G[i])*k]}
+function geoAt(d){if(!proj)return null;const p=at(d);return{lat:proj.la-p[2]/proj.kz,lon:proj.lo+p[0]/proj.kx,alt:p[1]}}
+function integrateRideSpeed(speed,power,grade,dt){
+  const slope=Math.atan(grade||0),force=MASS*G0*(CRR*Math.cos(slope)+Math.sin(slope))+.5*RHO*CDA*speed*speed;
+  const drive=power>0?Math.max(0,Math.min(power*.975/Math.max(speed,.5),Math.max(0,force+MASS*2.2))):0;
+  return Math.max(0,speed+((drive-force)/MASS)*dt);
+}
+function sm(a,r,keepEnds){for(let k=0;k<r;k++){const b=a.slice();for(let i=0;i<a.length;i++){const p=b[Math.max(0,i-1)],n=b[Math.min(a.length-1,i+1)];a[i]=keepEnds&&(i===0||i===a.length-1)?b[i]:(p+b[i]*2+n)/4}}}
+function ctlPower(){return ctl?lastP:+$('pw').value}
+function buildRoute(pts){
+  const filtered=pts.filter((p,i)=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.z)&&(i===0||Math.hypot(p.x-pts[i-1].x,p.z-pts[i-1].z)>.05));
+  if(filtered.length<2)throw new Error('La trace est trop courte.');
+  const L=[0];for(let i=1;i<filtered.length;i++)L[i]=L[i-1]+Math.hypot(filtered[i].x-filtered[i-1].x,filtered[i].z-filtered[i-1].z);
+  const tot=L[L.length-1];if(tot<1)throw new Error('Parcours trop court.');
+  const n=Math.max(2,Math.ceil(tot/ST)),step=tot/n,X=[],Y=[],Z=[];let j=0;
+  for(let i=0;i<=n;i++){const d=i*step;while(j<filtered.length-2&&L[j+1]<d)j++;const a=filtered[j],b=filtered[j+1],f=(d-L[j])/((L[j+1]-L[j])||1);
+    X.push(a.x+(b.x-a.x)*f);Y.push(a.y+(b.y-a.y)*f);Z.push(a.z+(b.z-a.z)*f)}
+  sm(Y,3,true);sm(Y,3,true);sm(X,2,true);sm(Z,2,true);
+  const G=Y.map((_,i)=>{const a=Math.max(0,i-1),b=Math.min(n,i+1);return clamp((Y[b]-Y[a])/((b-a)*step),-.2,.2)});sm(G,2);
+  route={X,Y,Z,G,n,step,len:tot};
+}
+
+/* ==================================================================
+   4. MONDE 3D : chaussée, bornes kilométriques, décor
+================================================================== */
+let world=new THREE.Group();S.add(world);
+function disposeWorld(g){g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(m.map)m.map.dispose();m.dispose()})});S.remove(g)}
+let roadTex=null;
+function makeWorld(){
+  disposeWorld(world);world=new THREE.Group();S.add(world);if(!route)return;
+  const{X,Y,Z,n,step}=route;
+  const tan=i=>{const a=Math.max(0,i-1),b=Math.min(n,i+1),dx=X[b]-X[a],dz=Z[b]-Z[a],l=Math.hypot(dx,dz)||1;return[-dz/l,dx/l]};
+  const ribbon=(w,dy,color,tex)=>{const pos=[],uv=[],idx=[];
+    for(let i=0;i<=n;i++){const[nx,nz]=tan(i);for(const sd of[-1,1]){pos.push(X[i]+nx*w*sd,Y[i]+dy,Z[i]+nz*w*sd);uv.push(sd<0?0:1,i*step/6)}if(i<n){const k=i*2;idx.push(k,k+1,k+2,k+1,k+3,k+2)}}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
+    const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,map:tex||null,side:THREE.DoubleSide}));m.receiveShadow=true;world.add(m)};
+  if(!roadTex){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#646968';x.fillRect(0,0,128,128);let seed=91;const rnd=()=>(seed=seed*16807%2147483647)/2147483647;for(let i=0;i<4000;i++){const gg=70+Math.floor(rnd()*50);x.fillStyle=`rgba(${gg},${gg},${gg},.3)`;x.fillRect(rnd()*128,rnd()*128,1,1)}roadTex=new THREE.CanvasTexture(c);roadTex.wrapS=roadTex.wrapT=THREE.RepeatWrapping}
+  ribbon(160,-.45,0x769b52);
+  ribbon(4.4,-.05,0xb9b199);
+  ribbon(3.3,0,0xffffff,roadTex);
+  const edges=[];for(let i=0;i<n;i++){const[nx,nz]=tan(i),[bx,bz]=tan(i+1);for(const sd of[-1,1]){
+    const p=[[X[i]+nx*2.95*sd,Y[i]+.015,Z[i]+nz*2.95*sd],[X[i]+nx*3.05*sd,Y[i]+.015,Z[i]+nz*3.05*sd],[X[i+1]+bx*3.05*sd,Y[i+1]+.015,Z[i+1]+bz*3.05*sd],[X[i+1]+bx*2.95*sd,Y[i+1]+.015,Z[i+1]+bz*2.95*sd]];
+    for(const k of[0,1,2,0,2,3])edges.push(...p[k])}}
+  const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(edges,3));eg.computeVertexNormals();
+  world.add(new THREE.Mesh(eg,new THREE.MeshLambertMaterial({color:0xe8e5d7,side:THREE.DoubleSide})));
+  /* bornes kilométriques */
+  for(let d=1000;d<route.len;d+=1000){const p=at(d);if(!p)continue;const i=clamp(Math.round(d/step),0,n),[nx,nz]=tan(i);
+    const post=new THREE.Mesh(new THREE.BoxGeometry(.07,.55,.07),new THREE.MeshLambertMaterial({color:0xf4f4ee}));
+    post.position.set(p[0]+nx*4.1,p[1]+.27,p[2]+nz*4.1);world.add(post);
+    const top=new THREE.Mesh(new THREE.BoxGeometry(.16,.16,.02),new THREE.MeshLambertMaterial({color:0xd74436}));
+    top.position.set(0,.42,0);post.add(top)}
+  let y0=Infinity,x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;
+  for(let i=0;i<=n;i++){y0=Math.min(y0,Y[i]);x0=Math.min(x0,X[i]);x1=Math.max(x1,X[i]);z0=Math.min(z0,Z[i]);z1=Math.max(z1,Z[i])}
+  const base=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0+1400,z1-z0+1400),new THREE.MeshLambertMaterial({color:0x71964c}));
+  base.rotation.x=-Math.PI/2;base.position.set((x0+x1)/2,y0-12,(z0+z1)/2);world.add(base);
+}
+function applyDecor(elements){
+  if(!elements||!elements.length||!route)return 0;
+  const kx=proj?proj.kx:free.kx,kz=proj?proj.kz:free.kz,lo0=proj?proj.lo:free.center.lon,la0=proj?proj.la:free.center.lat;
+  const P=p=>[(p.lon-lo0)*kx,-(p.lat-la0)*kz];
+  const buildings=[],trees=[],roads=[],waters=[],hedges=[];
+  for(const e of elements||[]){
+    if(!e||!e.tags||!Array.isArray(e.geometry))continue;const t=e.tags;
+    const pts=e.geometry.filter(p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)).map(P);
+    if(pts.length<2)continue;
+    if(t.highway)roads.push(pts);
+    else if(t.building)buildings.push({pts,lv:Number(t['building:levels'])||1,h:Number(t.height)||0});
+    else if(t.natural==='tree')trees.push(pts[0]);
+    else if(t.landuse==='forest'||t.natural==='wood'){let x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;for(const p of pts){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])}
+      for(let i=0,m=Math.min(160,Math.floor(Math.abs((x1-x0)*(z1-z0))/450));i<m;i++)trees.push([x0+Math.random()*(x1-x0),z0+Math.random()*(z1-z0)])}
+    else if(t.natural==='water'||t.landuse==='reservoir')waters.push(pts);
+    else if(t.natural==='hedge'||t.barrier==='hedge'||t.landuse==='hedge')hedges.push(pts);
+    else if(t.natural==='tree_row')for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],L2=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let d=0;d<L2;d+=9)trees.push([a[0]+(b[0]-a[0])*d/L2,a[1]+(b[1]-a[1])*d/L2])}
+  }
+  const near=(x,z)=>{let best=null;for(let i=0;i<route.n;i+=4){const dx=x-route.X[i],dz=z-route.Z[i],d2=dx*dx+dz*dz;if(!best||d2<best.d2)best={y:route.Y[i],d2}}return best?best.y:0};
+  let b=0;const bx=new THREE.BoxGeometry(1,1,1);
+  for(const bd of buildings.slice(0,700)){
+    let x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;for(const p of bd.pts){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);z0=Math.min(z0,p[1]);z1=Math.max(z1,p[1])}
+    if(x1-x0>240||z1-z0>240)continue;
+    const cx=(x0+x1)/2,cz=(z0+z1)/2;
+    const y=near(cx,cz),h=clamp(bd.h||bd.lv*3.2||4,2.5,22);
+    const m=new THREE.Mesh(bx,new THREE.MeshLambertMaterial({color:new THREE.Color().setHSL(.09,.18,.42+((cx*7+cz*3)%1)*.14)}));
+    m.scale.set(Math.max(1.5,x1-x0),h,Math.max(1.5,z1-z0));m.position.set(cx,y+h/2,cz);m.castShadow=true;world.add(m);b++;
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(Math.max(x1-x0,z1-z0)*.72,Math.min(3,h*.4),4),new THREE.MeshLambertMaterial({color:0x8a4a38}));
+    roof.rotation.y=Math.PI/4;roof.position.set(cx,y+h+.4,cz);world.add(roof);
+  }
+  const good=trees.filter(p=>p&&isFinite(p[0])&&isFinite(p[1])).slice(0,1500);
+  if(good.length){
+    const trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.18,.28,3.2,6),new THREE.MeshStandardMaterial({color:0x5a3d26,roughness:.9}),good.length);
+    const leaf=new THREE.InstancedMesh(new THREE.SphereGeometry(1.9,9,7),new THREE.MeshStandardMaterial({color:0x2e7a34,roughness:.85}),good.length);
+    const m4=new THREE.Matrix4();
+    good.forEach((p,i)=>{const y=near(p[0],p[1])-.4,sc=.8+Math.random()*1.1;
+      m4.makeScale(sc,sc,sc);m4.setPosition(p[0],y+1.6,p[1]);trunk.setMatrixAt(i,m4);
+      m4.makeScale(sc*1.6,sc*1.4,sc*1.6);m4.setPosition(p[0],y+3.6,p[1]);leaf.setMatrixAt(i,m4)});
+    trunk.instanceMatrix.needsUpdate=leaf.instanceMatrix.needsUpdate=true;world.add(trunk,leaf);
+  }
+  const wmat=new THREE.MeshLambertMaterial({color:0x3b87c7,side:THREE.DoubleSide});
+  for(const pts of waters.slice(0,50)){try{const sh=new THREE.Shape(pts.map(p=>new THREE.Vector2(p[0],-p[1])));
+    const g=new THREE.ShapeGeometry(sh);g.rotateX(-Math.PI/2);g.translate(0,near(pts[0][0],pts[0][1])-.15,0);
+    world.add(new THREE.Mesh(g,wmat))}catch(_){}}
+  const hmat=new THREE.MeshLambertMaterial({color:0x2c5e33});
+  for(const pts of hedges.slice(0,350)){for(let i=1;i<pts.length;i++){const a=pts[i-1],b2=pts[i],L2=Math.hypot(b2[0]-a[0],b2[1]-a[1]);if(L2<1||L2>200)continue;
+    const m=new THREE.Mesh(bx,hmat);m.scale.set(L2,1.6,1.3);m.position.set((a[0]+b2[0])/2,near((a[0]+b2[0])/2,(a[1]+b2[1])/2)+.8,(a[1]+b2[1])/2);
+    m.rotation.y=-Math.atan2(b2[1]-a[1],b2[0]-a[0]);world.add(m)}}
+  let r=0;const rmat=new THREE.MeshLambertMaterial({color:0x5e6460,side:THREE.DoubleSide});
+  for(const pts of roads.slice(0,800)){
+    const pos=[];let used=false;
+    for(let i=1;i<pts.length;i++){const a=pts[i-1],b2=pts[i];if(Math.hypot(a[0]-b2[0],a[1]-b2[1])<.5)continue;
+      const ya=near(a[0],a[1]),yb=near(b2[0],b2[1]);
+      const dx=b2[0]-a[0],dz=b2[1]-a[1],l=Math.hypot(dx,dz)||1,nx=-dz/l*1.9,nz=dx/l*1.9;
+      pos.push(a[0]+nx,ya+.03,a[1]+nz,a[0]-nx,ya+.03,a[1]-nz,b2[0]-nx,yb+.03,b2[1]-nz,a[0]+nx,ya+.03,a[1]+nz,b2[0]-nx,yb+.03,b2[1]-nz,b2[0]+nx,yb+.03,b2[1]+nz);used=true}
+    if(!used)continue;r++;
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.computeVertexNormals();
+    world.add(new THREE.Mesh(g,rmat));
+  }
+  return b+r+good.length;
+}
+
+/* ==================================================================
+   5. NAVIGATION LIBRE OSM
+================================================================== */
+const nodeKey=p=>p.nodeId!=null?String(p.nodeId):(p.lat.toFixed(6)+','+p.lon.toFixed(6));
+const distLL=(a,b)=>Math.hypot((a.lon-b.lon)*free.kx,(a.lat-b.lat)*free.kz);
+function projectLL(p){return{x:(p.lon-free.center.lon)*free.kx,z:-(p.lat-free.center.lat)*free.kz}}
+async function fetchSector(center,radius,progress){
+  const servers=['https://overpass.openstreetmap.fr/api/interpreter','https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter'];
+  const q=`[out:json][timeout:25];(way["highway"](around:${radius},${center.lat},${center.lon});way["building"](around:${radius},${center.lat},${center.lon});way["natural"~"^(water|wood|hedge|tree_row)$"](around:${radius},${center.lat},${center.lon});way["landuse"~"^(forest|hedge|reservoir|residential)$"](around:${radius},${center.lat},${center.lon});way["barrier"="hedge"](around:${radius},${center.lat},${center.lon});node["natural"="tree"](around:${radius},${center.lat},${center.lon}););out body geom 12000;`;
+  let lastErr='';
+  for(let i=0;i<servers.length;i++){
+    try{
+      progress(.1+i*.14,'Téléchargement routes et décor · serveur '+(i+1)+'/'+servers.length+'…');
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),28000);
+      let res;try{res=await fetch(servers[i]+'?data='+encodeURIComponent(q),{signal:ctrl.signal,cache:'no-store'})}finally{clearTimeout(timer)}
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const data=await res.json();if(!data||!Array.isArray(data.elements))throw new Error('réponse invalide');
+      return data.elements.filter(e=>e&&(e.type==='way'||e.type==='node'));
+    }catch(e){lastErr=String(e&&e.name==='AbortError'?'délai dépassé':(e.message||e))}
+  }
+  throw new Error(lastErr||'serveurs Overpass indisponibles');
+}
+const ROUTEABLE=new Set(['cycleway','footway','path','pedestrian','track','service','residential','unclassified','tertiary','secondary','primary','living_street']);
+function buildGraph(elements,center){
+  const kx=111320*Math.cos(center.lat*Math.PI/180),kz=110540;
+  const ways=[];
+  for(const e of elements){
+    if(!e||e.type!=='way'||!e.tags||!e.tags.highway||!Array.isArray(e.geometry))continue;
+    if(!ROUTEABLE.has(String(e.tags.highway)))continue;
+    if(/^(no|private)$/.test(String(e.tags.access||'')))continue;
+    const pts=e.geometry.filter(p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon));
+    if(pts.length<2)continue;
+    ways.push({id:e.id,name:e.tags.name||e.tags.ref||'Route sans nom',pts,oneway:e.tags.oneway==='yes'});
+  }
+  const nodes=new Map();
+  for(const w of ways)for(const p of w.pts){const k=nodeKey(p);if(!nodes.has(k))nodes.set(k,{key:k,ways:[]});const n=nodes.get(k);if(!n.ways.some(a=>a.way===w))n.ways.push({way:w,pt:p})}
+  const junctions=new Map();for(const[k,n]of nodes)if(new Set(n.ways.map(a=>a.way)).size>1)junctions.set(k,n);
+  return{ways,junctions,kx,kz};
+}
+function insideRadius(p){return Math.hypot((p.lon-free.center.lon)*free.kx,(p.lat-free.center.lat)*free.kz)<=free.radius}
+function arm(way,fromPt,dir){
+  /* avance depuis fromPt jusqu'au prochain carrefour (ou la fin de la route) */
+  let idx=-1;
+  for(let i=0;i<way.pts.length;i++)if(nodeKey(way.pts[i])===nodeKey(fromPt)){idx=i;break}
+  if(idx<0){let bd=Infinity;way.pts.forEach((p,i)=>{const d=Math.hypot((p.lon-free.center.lon)*free.kx,(p.lat-free.center.lat)*free.kz);if(d<bd){bd=d;idx=i}})}
+  const pts=[way.pts[idx]];
+  for(let i=idx+dir;i>=0&&i<way.pts.length;i+=dir){const p=way.pts[i];
+    if(Math.hypot((p.lon-pts[pts.length-1].lon)*free.kx,(p.lat-pts[pts.length-1].lat)*free.kz)>.04)pts.push(p);
+    const k=nodeKey(p);if(k!==nodeKey(fromPt)&&free.graph.junctions.has(k)&&insideRadius(p))break;
+  }
+  return pts;
+}
+function optionsAt(key,heading){
+  const node=free.graph.junctions.get(key);if(!node)return[];
+  const out=[],seen=new Set();
+  for(const inc of node.ways){
+    for(const dir of[-1,1]){
+      if(inc.way.oneway&&dir!==1)continue; /* oneway : seul le sens direct */
+      const token=inc.way.id+':'+dir;if(seen.has(token))continue;seen.add(token);
+      const pts=arm(inc.way,inc.pt,dir);
+      if(pts.length<2)continue;
+      const a=projectLL(inc.pt),b2=projectLL(pts[Math.min(pts.length-1,5)]);
+      const hv={x:Math.sin(heading),z:Math.cos(heading)},dv={x:b2.x-a.x,z:b2.z-a.z},dl=Math.hypot(dv.x,dv.z)||1;
+      const cross=hv.x*dv.z-hv.z*dv.x,dot=(hv.x*dv.x+hv.z*dv.z)/dl,angle=Math.atan2(cross,dot);
+      out.push({way:inc.way,dir,pts,angle,name:inc.way.name,arrow:glyph(angle)});
+    }
+  }
+  return out.sort((a,b2)=>Math.abs(a.angle)-Math.abs(b2.angle));
+}
+function glyph(a){const d=a*180/Math.PI;
+  if(d>-25&&d<25)return'⬆';if(d>=25&&d<65)return'↗';if(d>65)return'➡';if(d<=-65)return'⬅';if(d<=-25)return'↖';return'⬆'}
+function legOptions(){
+  const endKey=nodeKey(free.path[free.path.length-1]);
+  if(!free.graph.junctions.has(endKey))return[];
+  return optionsAt(endKey,free.heading).filter(o=>!(o.way===free.currentWay&&o.dir===-free.currentDir));
+}
+async function fetchElevations(points){
+  /* altitudes réelles (Copernicus ~90 m) interpolées sur les points du tronçon */
+  const d=[0];for(let i=1;i<points.length;i++)d[i]=d[i-1]+distLL(points[i-1],points[i]);
+  const list=[];let lastD=-1e9;
+  for(let i=0;i<points.length;i++){if(i===0||i===points.length-1||d[i]-lastD>=90){list.push({i,lat:points[i].lat,lon:points[i].lon});lastD=d[i]}}
+  const arr=[];
+  for(let i=0;i<list.length;i+=100){
+    const sl=list.slice(i,i+100);
+    const url='https://api.open-meteo.com/v1/elevation?latitude='+sl.map(p=>p.lat.toFixed(6)).join(',')+'&longitude='+sl.map(p=>p.lon.toFixed(6)).join(',');
+    const res=await fetch(url);if(!res.ok)throw new Error('API altitude indisponible');
+    const js=await res.json();if(!js||!Array.isArray(js.elevation))throw new Error('réponse altitude invalide');
+    js.elevation.forEach((e,k)=>arr.push({i:sl[k].i,ele:e}));
+  }
+  for(let k=0;k<arr.length-1;k++){const a=arr[k],b2=arr[k+1];
+    for(let i=a.i;i<=b2.i;i++)points[i].ele=a.ele+(b2.ele-a.ele)*((i-a.i)/Math.max(1,b2.i-a.i))}
+  return true;
+}
+function seedElevation(points,fromY,grade){let dd=0;for(let i=0;i<points.length;i++){if(i)dd+=distLL(points[i-1],points[i]);if(points[i].ele==null||!Number.isFinite(points[i].ele))points[i].ele=fromY+grade*dd}}
+function setLeg(points,preserve){
+  const raw=points.map(p=>{const q=projectLL(p);return{x:q.x,z:q.z,y:Number.isFinite(p.ele)?p.ele:0}});
+  const keep={v,totalDistance,elapsed:window._rideElapsed,gain:window._rideGain,started:window._powerStarted,max:window._maxSpeed,run:running};
+  free.path=points;
+  buildRoute(raw);makeWorld();applyDecor(free.decor);
+  s=0;v=preserve?keep.v:0;totalDistance=preserve?keep.totalDistance:0;
+  window._rideElapsed=preserve?keep.elapsed:0;window._rideGain=preserve?keep.gain:0;
+  window._powerStarted=preserve?keep.started:false;window._maxSpeed=preserve?keep.max:0;
+  running=preserve?keep.run:false;
+  drawMiniMap(true);placeRider(true);
+}
+function decorFor(points){
+  const out=new Map();const add=e=>{if(e&&e.id!=null)out.set(e.id,e)};
+  const bx={x0:Infinity,x1:-Infinity,z0:Infinity,z1:-Infinity};
+  for(const p of points){const q=projectLL(p);bx.x0=Math.min(bx.x0,q.x);bx.x1=Math.max(bx.x1,q.x);bx.z0=Math.min(bx.z0,q.z);bx.z1=Math.max(bx.z1,q.z)}
+  for(const e of free.elements||[]){
+    if(!e||!Array.isArray(e.geometry))continue;let x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity,ok=false;
+    for(const p of e.geometry){if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))continue;ok=true;
+      const x=(p.lon-free.center.lon)*free.kx,z=-(p.lat-free.center.lat)*free.kz;
+      x0=Math.min(x0,x);x1=Math.max(x1,x);z0=Math.min(z0,z);z1=Math.max(z1,z)}
+    if(ok&&x1>=bx.x0-260&&x0<=bx.x1+260&&z1>=bx.z0-260&&z0<=bx.z1+260)add(e);
+  }
+  for(const end of[points[0],points[points.length-1]]){
+    const n=free.graph.junctions.get(nodeKey(end));if(!n)continue;
+    for(const inc of n.ways){const e=(free.elements||[]).find(el=>el&&el.id===inc.way.id);if(e)add(e)}
+  }
+  return[...out.values()];
+}
+let reloading=false;
+async function reloadSector(){
+  if(reloading||!free||!route||free.mode!=='free')return;
+  const g=geoAt(s);
+  const d0=Math.hypot((g.lon-free.center.lon)*free.kx,(g.lat-free.center.lat)*free.kz);
+  if(d0<free.radius-400)return; /* encore assez de décor chargé */
+  reloading=true;
+  try{
+    const center={lat:g.lat,lon:g.lon};
+    const elements=await fetchSector(center,free.radius,()=>toast('Nouveau secteur en chargement autour de ta position…'));
+    const graph=buildGraph(elements,center);
+    free={...free,center,elements,graph};
+    proj={la:center.lat,lo:center.lon,kx:free.kx,kz:free.kz};
+    /* reprojette le tronçon courant : on garde seulement la partie non parcourue */
+    let acc=0,cut=0;
+    for(let i=1;i<free.path.length;i++){acc+=distLL(free.path[i-1],free.path[i]);if(acc>=s){cut=i;break}}
+    const rest=free.path.slice(cut);
+    if(rest.length>=2){
+      free.decor=decorFor(rest);
+      setLeg(rest,true);
+      toast('Nouveau secteur chargé · parcours poursuivi.');
+    }else{
+      /* fin du tronçon : endOfLeg utilisera le nouveau graphe */
+      toast('Nouveau secteur chargé.');
+    }
+  }catch(e){toast('Rechargement du secteur impossible : '+(e.message||e))}
+  reloading=false;
+}
+
+/* ==================================================================
+   6. MINI-CARTE
+================================================================== */
+let miniMap=null,routeLine=null,riddenLine=null,riderDot=null,mapFitAll=false;
+function initMiniMap(){
+  if(miniMap)return;
+  miniMap=L.map('rideMap',{zoomControl:false,attributionControl:false});
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(miniMap);
+  routeLine=L.polyline([],{color:'#d94135',weight:4,opacity:.92}).addTo(miniMap);
+  riddenLine=L.polyline([],{color:'#8d241f',weight:5,opacity:.95}).addTo(miniMap);
+  riderDot=L.circleMarker([48.85,2.35],{radius:7,color:'#fff',weight:2,fillColor:'#d74436',fillOpacity:1}).addTo(miniMap);
+  miniMap.setView([48.85,2.35],13);
+}
+function drawMiniMap(force){
+  if(!miniMap||!route)return;
+  const pts=[];for(let d=0;d<=route.len;d+=Math.max(20,route.step*2)){const g=geoAt(d);if(g)pts.push([g.lat,g.lon])}
+  /* continuation choisie : affichée tout de suite, avant le carrefour */
+  if(free&&choiceMade&&choiceMade._points)for(const p of choiceMade._points)pts.push([p.lat,p.lon]);
+  routeLine.setLatLngs(pts);
+  const done=[];for(let d=0;d<=s;d+=Math.max(20,route.step*2)){const g=geoAt(d);if(g)done.push([g.lat,g.lon])}
+  riddenLine.setLatLngs(done);
+  const g=geoAt(s);if(g)riderDot.setLatLng([g.lat,g.lon]);
+  if(force){if(pts.length){miniMap.fitBounds(L.latLngBounds(pts).pad(.15));mapFitAll=false}}
+  else if(g&&!miniMap.getBounds().pad(-.2).contains([g.lat,g.lon]))miniMap.setView([g.lat,g.lon],Math.max(miniMap.getZoom(),14));
+}
+$('mapFit').onclick=()=>{drawMiniMap(true)};
+$('mapClose').onclick=()=>{$('mapPanel').classList.add('hide');$('mapToggle').classList.remove('hide')};
+$('mapToggle').onclick=()=>{$('mapPanel').classList.remove('hide');$('mapToggle').classList.add('hide');drawMiniMap(true)};
+
+/* ==================================================================
+   7. CAPTEURS BLE (trainer FTMS + cardio)
+================================================================== */
+let ctl=null,hrStrap=null,lastP=0,cad=0,hr=0;
+$('bt').onclick=async()=>{
+  try{
+    const device=await navigator.bluetooth.requestDevice({filters:[{services:['00001826-0000-1000-8000-00805f9b34fb']}],optionalServices:['00001826-0000-1000-8000-00805f9b34fb']});
+    const server=await device.gatt.connect();
+    const sv=await server.getPrimaryService('00001826-0000-1000-8000-00805f9b34fb');
+    const ch=await sv.getCharacteristic('00002ad2-0000-1000-8000-00805f9b34fb');
+    await ch.startNotifications();
+    ch.addEventListener('characteristicvaluechanged',e=>{
+      const dv=e.target.value;if(dv.byteLength<4)return;
+      const flags=dv.getUint8(0),p=dv.getInt16(2,true);
+      if(p>0&&p<2500)lastP=p;
+      if(dv.byteLength>=6&&(flags&2))cad=Math.round(dv.getUint16(4,true)/2)||cad;
+      $('bt').classList.add('primary');
+    });
+    ctl={device,server,sv};
+    ctl.cp=await sv.getCharacteristic('00002ad9-0000-1000-8000-00805f9b34fb').catch(()=>null);
+    if(ctl.cp){sendGrade(0);toast('Trainer connecté · puissance, cadence et pente en mode simulation.')}
+    else toast('Trainer connecté · puissance et cadence en direct (mode simulation non disponible).');
+  }catch(e){toast('Trainer non connecté : '+(e.message||e))}
+};
+function sendGrade(grade){
+  if(!ctl||!ctl.cp)return;
+  try{const dv=new DataView(new ArrayBuffer(7));
+    dv.setUint8(0,0x11);dv.setInt16(1,Math.round(clamp(grade,-.35,.35)*10000),true);dv.setInt16(3,0,true);
+    dv.setUint8(5,Math.min(255,Math.round(CRR*10000)));dv.setUint8(6,60);
+    ctl.cp.writeValue(dv.buffer)}catch(_){}
+}
+$('hb').onclick=async()=>{
+  try{
+    const device=await navigator.bluetooth.requestDevice({filters:[{services:['0000180d-0000-1000-8000-00805f9b34fb']}]});
+    const server=await device.gatt.connect();
+    const sv=await server.getPrimaryService('0000180d-0000-1000-8000-00805f9b34fb');
+    const ch=await sv.getCharacteristic('00002a37-0000-1000-8000-00805f9b34fb');
+    await ch.startNotifications();
+    ch.addEventListener('characteristicvaluechanged',e=>{const dv=e.target.value;
+      if(dv.byteLength>=2){const h=dv.getUint8(1);if(h>20&&h<250)hr=h}});
+    hrStrap={device,server};$('hb').classList.add('primary');toast('Cardio connecté.');
+  }catch(e){toast('Cardio non connecté : '+(e.message||e))}
+};
+
+/* ==================================================================
+   8. PANNEAUX DE DIRECTION + AVANCEMENT
+================================================================== */
+let pendingOptions=null,choiceMade=null;
+function showArrows(meters){
+  const el=$('arrows');el.replaceChildren();
+  const info=document.createElement('div');info.id='junctionInfo';info.textContent='Carrefour dans '+meters+' m — touche une direction';el.appendChild(info);
+  for(const opt of pendingOptions){
+    const b=document.createElement('div');b.className='panel';b.setAttribute('role','button');b.tabIndex=0;
+    const m=document.createElement('span');m.className='meters';m.textContent=meters+' m';
+    const g=document.createElement('span');g.className='glyph';g.textContent=opt.arrow;
+    const w=document.createElement('span');w.className='where';w.textContent=opt.name;
+    b.append(m,g,w);
+    b.onclick=()=>choose(opt,b);
+    el.appendChild(b);opt._btn=b;
+  }
+  el.classList.remove('hide');buzz(35);
+}
+function choose(opt,btn){
+  choiceMade=opt;
+  if(pendingOptions)for(const o of pendingOptions)if(o._btn)o._btn.classList.toggle('sel',o===opt);
+  buzz(25);toast('Direction choisie : '+(opt.name||'route')+' · tronçon préparé.');
+  prepareNextLeg(opt);
+}
+function hideArrows(){$('arrows').classList.add('hide');pendingOptions=null}
+async function prepareNextLeg(opt){
+  opt._ready=false;opt._error=null;
+  try{
+    const g=geoAt(s),y=at(s)[1];
+    const pts=[{lat:g.lat,lon:g.lon,ele:y},...opt.pts];
+    /* altitude de secours AVANT l'appel réseau : en cas d'échec de l'API,
+       le tronçon garde une pente continue au lieu de descendre vers zéro */
+    seedElevation(pts,y,at(s)[3]||0);
+    opt._points=pts;opt._decor=decorFor(pts);
+    try{await fetchElevations(pts);opt._error=null}
+    catch(e){opt._error='altitude estimée'}
+    opt._ready=true;
+    if(choiceMade===opt)toast('Tronçon suivant prêt'+(opt._error?' ('+opt._error+')':'')+'.');
+  }catch(e){opt._points=opt._pts_backup||opt.pts;opt._decor=decorFor(opt._points);opt._ready=true;opt._error=e.message}
+}
+function endOfLeg(){
+  if(!free)return false;
+  const opts=legOptions();
+  const chosen=choiceMade||opts.find(o=>Math.abs(o.angle)<.48);
+  if(chosen&&chosen._ready){
+    free.currentWay=chosen.way;free.currentDir=chosen.dir;
+    free.decor=chosen._decor||decorFor(chosen._points||chosen.pts);
+    const p0=projectLL(chosen._points?chosen._points[0]:chosen.pts[0]);
+    const p1=projectLL((chosen._points||chosen.pts)[Math.min(2,(chosen._points||chosen.pts).length-1)]);
+    free.heading=Math.atan2(p1.x-p0.x,p1.z-p0.z);
+    setLeg(chosen._points||chosen.pts,true);
+    choiceMade=null;hideArrows();
+    return true;
+  }
+  if(opts.length&&!choiceMade){running=false;v=0;$('pause').textContent='Reprendre';buzz([70,50,70]);toast('Choisis une direction pour continuer.');return false}
+  if(!reloading){running=false;v=0;$('pause').textContent='Reprendre';toast('Fin de route cartographiée dans ce secteur.');return false}
+  return false;
+}
+function navigationTick(){
+  if(!free||!route)return;
+  const remaining=route.len-s;
+  if(remaining<=350&&remaining>0&&!pendingOptions){
+    pendingOptions=legOptions();
+    if(pendingOptions.length){showArrows(Math.ceil(remaining/10)*10);for(const o of pendingOptions)prepareNextLeg(o)}
+  }
+  if(pendingOptions&&remaining>0){
+    const m=Math.ceil(remaining/10)*10;
+    for(const o of pendingOptions)if(o._btn){const mm=o._btn.querySelector('.meters');if(mm)mm.textContent=m+' m'}
+    const info=$('junctionInfo');if(info)info.textContent='Carrefour dans '+m+' m — touche une direction';
+  }
+  const g=geoAt(s);
+  if(!reloading)reloadSector();
+  if(s>=route.len-.3&&running)endOfLeg();
+}
+
+/* ==================================================================
+   9. CAMÉRA ET CONTRÔLES TACTILES
+================================================================== */
+let camState={view:'follow',yaw:0,pitch:.32,distance:6,ready:false,look:new THREE.Vector3()};
+const camPointers=new Map();let prevPinch=0,lastTap=0,tapMove=0;
+$('c').addEventListener('pointerdown',e=>{camPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});try{$('c').setPointerCapture(e.pointerId)}catch(_){}
+  if(camPointers.size===2){const p=[...camPointers.values()];prevPinch=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)}
+  else if(camPointers.size===1){const t=Date.now();
+    if(t-lastTap<320&&tapMove<12&&route&&$('home').classList.contains('hide')){const vs=['follow','wide','side','cockpit'];setView(vs[(vs.indexOf(camState.view)+1)%vs.length]);buzz(15)}
+    lastTap=t;tapMove=0}});
+$('c').addEventListener('pointermove',e=>{const p=camPointers.get(e.pointerId);if(!p)return;
+  const dx=e.clientX-p.x,dy=e.clientY-p.y;camPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});tapMove+=Math.abs(dx)+Math.abs(dy);
+  if(camPointers.size===1){camState.yaw+=dx*.008;camState.pitch=clamp(camState.pitch+dy*.006,-.1,1.1)}
+  else if(camPointers.size===2){const p2=[...camPointers.values()],gap=Math.hypot(p2[0].x-p2[1].x,p2[0].y-p2[1].y);if(prevPinch>0)setZoom(camState.distance*prevPinch/gap);prevPinch=gap}});
+for(const t of['pointerup','pointercancel','lostpointercapture'])$('c').addEventListener(t,e=>{camPointers.delete(e.pointerId);prevPinch=0});
+$('c').addEventListener('wheel',e=>{e.preventDefault();setZoom(camState.distance*Math.exp(clamp(e.deltaY,-120,120)*.002))},{passive:false});
+function setZoom(d){camState.distance=clamp(d,2.5,40)}
+function setView(view){camState.view=view;camState.yaw=0;camState.pitch=view==='wide'?.18:.32;
+  camState.distance=view==='wide'?23:view==='side'?10:view==='cockpit'?3:6;
+  for(const[id,vv]of[['vFollow','follow'],['vWide','wide'],['vSide','side'],['vCockpit','cockpit']])$(id).classList.toggle('primary',vv===view)}
+$('vFollow').onclick=()=>setView('follow');$('vWide').onclick=()=>setView('wide');$('vSide').onclick=()=>setView('side');$('vCockpit').onclick=()=>setView('cockpit');
+addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||!$('home').classList.contains('hide'))return;
+  if(e.code==='Space'){e.preventDefault();$('pause').click()}if(e.key==='+')setZoom(camState.distance*.85);if(e.key==='-')setZoom(camState.distance/.85)});
+function placeRider(snap,dt=.016){
+  if(!route)return;
+  const p=at(s),before=at(s-2),after=at(s+2),dx=after[0]-before[0],dz=after[2]-before[2],l=Math.hypot(dx,dz)||1;
+  const angle=Math.atan2(dx/l,dz/l);
+  const bend=at(s+12),cross=(dx/l)*(bend[2]-p[2])-(dz/l)*(bend[0]-p[0]);
+  rider.rotation.set(-Math.atan(p[3]),angle,clamp(-cross*.004*v,-.1,.1),'YXZ');
+  rider.position.set(p[0],p[1]+.03,p[2]);
+  if(sun){sun.position.set(p[0]+35,p[1]+60,p[2]-25);sun.target.position.set(p[0],p[1],p[2]);sun.target.updateMatrixWorld()}
+  const cs=camState;
+  if(cs.view==='cockpit'){
+    const eye=new THREE.Vector3(0,1.46,.32).applyQuaternion(rider.quaternion).add(rider.position);
+    const look=new THREE.Vector3(p[0]+(dx/l)*30,rider.position.y+1.1,p[2]+(dz/l)*30);
+    const a=1-Math.exp(-dt*6);
+    if(snap||!cs.ready){cam.position.copy(eye);cs.look.copy(look);cs.ready=true}else{cam.position.lerp(eye,a);cs.look.lerp(look,a)}
+    cam.fov=72;cam.updateProjectionMatrix();cam.lookAt(cs.look);
+    rider.userData.torso.visible=rider.userData.head.visible=true;
+    return;
+  }
+  const yaw=(cs.view==='side'?Math.PI/2:0)+cs.yaw;
+  const px=p[0]-Math.sin(yaw)*cs.distance*Math.cos(cs.pitch),pz=p[2]-Math.cos(yaw)*cs.distance*Math.cos(cs.pitch);
+  const py=p[1]+Math.max(.6,cs.distance*Math.sin(cs.pitch)+1.15);
+  const a=snap?1:1-Math.exp(-dt*5);
+  if(snap||!cs.ready){cam.position.set(px,py,pz);cs.look.set(p[0],p[1]+1,p[2]);cs.ready=true}
+  else{cam.position.lerp(new THREE.Vector3(px,py,pz),a);cs.look.lerp(new THREE.Vector3(p[0],p[1]+1,p[2]),a)}
+  cam.fov=55;cam.updateProjectionMatrix();cam.lookAt(cs.look);
+}
+
+/* ==================================================================
+   10. WAKE LOCK + PLEIN ÉCRAN
+================================================================== */
+let wl=null,wlWanted=false;
+async function wakeLock(){wlWanted=true;if(!('wakeLock'in navigator)||document.hidden||wl)return;
+  try{wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null;if(wlWanted&&!document.hidden)setTimeout(wakeLock,250)})}catch(_){}}
+document.addEventListener('visibilitychange',()=>{last=performance.now();if(wlWanted&&!document.hidden)wakeLock()});
+$('fsBtn').onclick=()=>{try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(_){}};
+
+/* ==================================================================
+   11. EXPORT TCX
+================================================================== */
+function exportTCX(){
+  if(!sessionSamples.length){toast('Aucune donnée à exporter.');return}
+  const pts=sessionSamples.filter(q=>q.lat!=null).map(q=>
+    `      <Trackpoint><Time>${new Date(sessionStart+q.t*1000).toISOString()}</Time>`+
+    `<Position><LatitudeDegrees>${q.lat.toFixed(6)}</LatitudeDegrees><LongitudeDegrees>${q.lon.toFixed(6)}</LongitudeDegrees></Position>`+
+    `<AltitudeMeters>${(q.alt||0).toFixed(1)}</AltitudeMeters><DistanceMeters>${q.dist.toFixed(1)}</DistanceMeters>`+
+    (q.hr?`<HeartRateBpm><Value>${q.hr}</Value></HeartRateBpm>`:'')+
+    `<Cadence>${q.cad||0}</Cadence><Extensions><PowerInWatts>${Math.round(q.power)}</PowerInWatts></Extensions></Trackpoint>`).join('\n');
+  const tcx=`<?xml version="1.0" encoding="UTF-8"?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+ <Activities><Activity Sport="Biking"><Id>${new Date(sessionStart).toISOString()}</Id>
+  <Lap StartTime="${new Date(sessionStart).toISOString()}"><TotalTimeSeconds>${Math.round(window._rideElapsed)}</TotalTimeSeconds><DistanceMeters>${totalDistance.toFixed(1)}</DistanceMeters><Calories>0</Calories><Intensity>Active</Intensity><TriggerMethod>Manual</TriggerMethod>
+   <Track>\n${pts}\n   </Track>
+  </Lap>
+ </Activity></Activities>
+</TrainingCenterDatabase>`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([tcx],{type:'application/vnd.garmin.tcx+xml'}));
+  a.download='veloroute-seance.tcx';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  toast('Fichier .TCX téléchargé · importe-le sur Strava (Upload → Fichier).');
+}
+
+/* ==================================================================
+   12. ACCUEIL : carte, GPX, démo, lancement
+================================================================== */
+let homeMap=null,homeMarker=null,homeCircle=null,freeCenter={lat:49.4736,lon:-1.5125};
+function initHomeMap(){
+  if(homeMap||!L)return;
+  homeMap=L.map('freeMap',{zoomControl:false,attributionControl:false});
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(homeMap);
+  homeMap.setView([freeCenter.lat,freeCenter.lon],13);
+  homeMarker=L.circleMarker([freeCenter.lat,freeCenter.lon],{radius:8,color:'#fff',weight:2,fillColor:'#d74436',fillOpacity:1}).addTo(homeMap);
+  homeCircle=L.circle([freeCenter.lat,freeCenter.lon],{radius:2000,color:'#79dfc5',weight:2,fill:false}).addTo(homeMap);
+  homeMap.on('click',e=>{freeCenter={lat:e.latlng.lat,lon:e.latlng.lng};homeMarker.setLatLng(e.latlng);homeCircle.setLatLng(e.latlng);
+    $('freeInfo').textContent='Point choisi · appuie sur « Lancer la sortie ».'});
+}
+$('radius').onchange=()=>{if(homeCircle)homeCircle.setRadius(+$('radius').value)};
+$('locateMe').onclick=()=>{navigator.geolocation?.getCurrentPosition(p=>{
+  freeCenter={lat:p.coords.latitude,lon:p.coords.longitude};
+  homeMap&&homeMap.setView([freeCenter.lat,freeCenter.lon],14);
+  homeMarker&&homeMarker.setLatLng([freeCenter.lat,freeCenter.lon]);
+  homeCircle&&homeCircle.setLatLng([freeCenter.lat,freeCenter.lon]);
+  $('freeInfo').textContent='Ta position · appuie sur « Lancer la sortie ».';
+},()=>toast('Position indisponible (autorisation ?)'),{enableHighAccuracy:true,timeout:12000})};
+$('gpxFile').onclick=()=>$('file').click();
+$('file').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{await loadGPX(await f.text())}catch(err){toast('GPX illisible : '+err.message)}e.target.value=''};
+$('gpxPaste').onclick=()=>$('pp').classList.remove('hide');
+$('px').onclick=()=>$('pp').classList.add('hide');
+$('pl').onclick=async()=>{try{await loadGPX($('pt').value);$('pp').classList.add('hide')}catch(err){$('pe').textContent=err.message}};
+async function loadGPX(txt){
+  const P=[];
+  for(const m of(txt.match(/<trkpt[\s\S]*?(?:<\/trkpt>|\/>)/g)||[])){
+    const lat=Number((/lat="([-\d.]+)"/.exec(m)||[])[1]),lon=Number((/lon="([-\d.]+)"/.exec(m)||[])[1]);
+    const em=/<ele>\s*([\d.+-]+)\s*<\/ele>/.exec(m);
+    if(Number.isFinite(lat)&&Number.isFinite(lon))P.push({lat,lon,ele:em?Number(em[1]):null});
+  }
+  if(P.length<2)throw new Error('aucun point de trace trouvé');
+  free=null;window._gpxReady=false;
+  const la=P.reduce((a,p)=>a+p.lat,0)/P.length,lo=P.reduce((a,p)=>a+p.lon,0)/P.length;
+  const kx=111320*Math.cos(la*Math.PI/180),kz=110540;
+  proj={la,lo,kx,kz};
+  buildRoute(P.map(p=>({x:(p.lon-lo)*kx,z:-(p.lat-la)*kz,y:Number.isFinite(p.ele)?p.ele:0})));
+  makeWorld();
+  try{
+    prog(.7,'Décor OpenStreetMap autour de la trace…');
+    const elements=await fetchSector({lat:P[0].lat,lon:P[0].lon},Math.min(3000,route.len/2||3000),f=>prog(.7+f*.25));
+    applyDecor(elements);
+  }catch(e){toast('Décor OSM indisponible · parcours utilisable sans décor.')}
+  window._gpxReady=true;
+  $('go').disabled=false;prog(1,'Parcours chargé : '+(route.len/1000).toFixed(1)+' km · prêt à lancer.');
+}
+$('demo').onclick=()=>{
+  const pts=[];let x=0,z=0,heading=0;
+  for(let i=0;i<600;i++){heading+=Math.sin(i*.03)*.04+.004;x+=Math.cos(heading)*10;z+=Math.sin(heading)*10;
+    pts.push({x,z,y:26+22*Math.sin(i*.018)+6*Math.sin(i*.05)})}
+  free=null;proj=null;window._gpxReady=false;buildRoute(pts);makeWorld();$('go').disabled=false;
+  prog(1,'Démonstration prête · 6 km de route vallonnée fictive.');
+};
+$('go').onclick=async()=>{
+  if((window._gpxReady||!free)&&route){launchRide();return}
+  $('go').disabled=true;
+  try{
+    const radius=+$('radius').value;
+    const elements=await fetchSector(freeCenter,radius,f=>prog(.05+f*.55));
+    const graph=buildGraph(elements,freeCenter);
+    if(!graph.ways.length)throw new Error('aucune route cyclable dans ce secteur');
+    free={mode:'free',center:{...freeCenter},kx:graph.kx,kz:graph.kz,radius,elements,graph,path:null,heading:0,decor:null};
+    proj={la:free.center.lat,lo:free.center.lon,kx:free.kx,kz:free.kz};
+    /* route la plus proche du point choisi */
+    let best=null,bd=Infinity;
+    for(const w of graph.ways)for(let i=0;i<w.pts.length-1;i++){
+      const a=projectLL(w.pts[i]),b2=projectLL(w.pts[i+1]),dx=b2.x-a.x,dz=b2.z-a.z,l2=dx*dx+dz*dz||1;
+      const t=clamp(((0-a.x)*dx+(0-a.z)*dz)/l2,0,1);
+      const d=Math.hypot(a.x+dx*t,a.z+dz*t);
+      if(d<bd){bd=d;best={w,i}}}
+    if(!best||bd>radius*.35)throw new Error('aucune route près du point choisi');
+    const A=best.w.pts[best.i],B=best.w.pts[best.i+1];
+    const snap={lat:A.lat+(B.lat-A.lat)*.5,lon:A.lon+(B.lon-A.lon)*.5,ele:null};
+    prog(.62,'Préparation des deux sens de départ…');
+    const dirF=arm(best.w,snap.nodeId!=null?snap:A,1),dirB=arm(best.w,snap.nodeId!=null?snap:A,-1);
+    const opts=[dirF.length>1?[snap,...dirF.slice(1)]:null,dirB.length>1?[snap,...dirB.slice(1)]:null].filter(Boolean);
+    if(!opts.length)throw new Error('la route ne permet pas de partir ici');
+    for(const o of opts)seedElevation(o,30,0);
+    prog(.68,'Altitudes réelles du secteur (Copernicus)…');
+    try{await Promise.all(opts.map(o=>fetchElevations(o)))}catch(e){toast('Altitudes indisponibles · profil estimé.')}
+    free.pendingLegs=opts;free.pendingWay=best.w;
+    prog(1,'Secteur prêt · choisis ton sens de départ.');
+    $('startInfo').textContent='Le secteur autour de ton point est prêt. Le vélo attendra ton premier watt.';
+    $('startDialog').classList.remove('hide');
+  }catch(e){toast('Impossible de préparer le secteur : '+(e.message||e));prog(0)}
+  $('go').disabled=false;
+};
+function launchRide(){
+  $('home').classList.add('hide');$('startDialog').classList.add('hide');
+  hideArrows();initMiniMap();
+  running=true;last=performance.now();$('pause').textContent='Pause';
+  sessionSamples=[];sessionStart=Date.now();lastSampleT=0;
+  window._rideElapsed=0;window._rideGain=0;window._powerStarted=false;window._maxSpeed=0;
+  wakeLock();updateBarHeight();drawMiniMap(true);placeRider(true);
+}
+$('startFwd').onclick=()=>startLeg(0);
+$('startBwd').onclick=()=>startLeg(1);
+function startLeg(which){
+  const opts=free.pendingLegs;if(!opts||!opts.length)return;
+  const pts=opts[Math.min(which,opts.length-1)];
+  free.currentWay=free.pendingWay;free.currentDir=which===0?1:-1;
+  free.decor=decorFor(pts);free.heading=0;
+  setLeg(pts,false);
+  const q0=projectLL(pts[0]),q1=projectLL(pts[Math.min(2,pts.length-1)]);
+  free.heading=Math.atan2(q1.x-q0.x,q1.z-q0.z);
+  free.pendingLegs=null;
+  launchRide();
+}
+
+/* ==================================================================
+   13. PAUSE / STOP / DEMI-TOUR / QUITTER
+================================================================== */
+$('pause').onclick=()=>{
+  if(!route)return;
+  if(pendingOptions&&!choiceMade){toast('Choisis une direction pour repartir.');return}
+  running=!running;$('pause').textContent=running?'Pause':'Reprendre';
+  toast(running?'Sortie en cours.':'Sortie en pause.');buzz(15);
+  if(ctl&&!running)sendGrade(0);
+};
+$('stopBtn').onclick=()=>{
+  running=false;$('pause').textContent='Reprendre';if(ctl)sendGrade(0);
+  $('summary').innerHTML=
+    `<div><b>${(totalDistance/1000).toFixed(2)}</b>km</div>`+
+    `<div><b>${Math.floor(window._rideElapsed/60)}:${String(Math.floor(window._rideElapsed)%60).padStart(2,'0')}</b>durée</div>`+
+    `<div><b>${(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1)}</b>km/h moy.</div>`+
+    `<div><b>${Math.round(window._rideGain)}</b>m D+</div>`+
+    `<div><b>${Math.round(window._maxSpeed*3.6)}</b>km/h max</div>`+
+    `<div><b>${hr||'–'}</b>bpm cardio</div>`;
+  $('stopDialog').classList.remove('hide');
+};
+$('resume').onclick=()=>{$('stopDialog').classList.add('hide');running=true;$('pause').textContent='Pause';last=performance.now();wakeLock()};
+$('quitStop').onclick=()=>{$('stopDialog').classList.add('hide');quitToHome()};
+$('tcx').onclick=exportTCX;
+$('strava').onclick=()=>{window.open('https://www.strava.com/upload/select','_blank','noopener');toast('Sur Strava : Upload → Fichier → ton .TCX.')};
+$('quitBtn').onclick=quitToHome;
+function quitToHome(){
+  running=false;if(ctl)sendGrade(0);window._gpxReady=false;
+  $('home').classList.remove('hide');hideArrows();
+  $('pause').textContent='Pause';
+  toast('Choisis un point de départ puis lance la sortie.');
+}
+$('reverse').onclick=()=>{
+  if(!free||!free.path||free.path.length<2){toast('Demi-tour indisponible ici.');return}
+  if(pendingOptions&&!choiceMade){toast("Choisis d'abord une direction.");return}
+  const g=geoAt(s),here=at(s);
+  const snap={lat:g.lat,lon:g.lon,ele:here[1]};
+  const rev=[snap];
+  for(let i=free.path.length-1;i>=0;i--){const p=free.path[i];
+    if(Math.hypot((p.lon-snap.lon)*free.kx,(p.lat-snap.lat)*free.kz)>.05)rev.push(p);
+    const k=nodeKey(p);
+    if(k!==nodeKey(free.path[free.path.length-1])&&free.graph.junctions.has(k)&&insideRadius(p))break}
+  if(rev.length<2){toast('Demi-tour impossible : route trop courte ici.');return}
+  free.currentDir=-(free.currentDir||1);
+  const q0=projectLL(rev[0]),q1=projectLL(rev[1]);
+  free.heading=Math.atan2(q0.x-q1.x,q0.z-q1.z);
+  free.decor=decorFor(rev);
+  setLeg(rev,true);
+  hideArrows();choiceMade=null;
+  toast('Demi-tour · sens inverse.');buzz(20);
+};
+
+/* ==================================================================
+   14. BOUCLE PRINCIPALE
+================================================================== */
+function updateBarHeight(){document.documentElement.style.setProperty('--bar-h',($('bar').offsetHeight||120)+'px')}
+function loop(t){
+  requestAnimationFrame(loop);
+  const dt=clamp((t-last)/1000,0,.1);last=t;
+  if(!route){R3.render(S,cam);return}
+  const power=ctlPower(),grade=at(s)[3];
+  const moving=running&&window._powerStarted;
+  if(power>0)window._powerStarted=true;
+  if(moving){
+    v=integrateRideSpeed(v,power,grade,dt);
+    const advance=Math.min(v*dt,route.len-s);
+    s+=advance;totalDistance+=advance;
+    window._rideGain+=Math.max(0,grade)*advance;
+    window._maxSpeed=Math.max(window._maxSpeed,v);
+    if(ctl&&Math.floor(t/1000)!==Math.floor((t-dt*1000)/1000))sendGrade(grade);
+  }
+  if(free)navigationTick();
+  if(running&&window._powerStarted&&t-lastSampleT>1000){
+    lastSampleT=t;const g=geoAt(s);
+    sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power,hr,cad:cad||0,lat:g?g.lat:null,lon:g?g.lon:null,alt:g?g.alt:null});
+  }
+  if(running&&window._powerStarted)window._rideElapsed+=dt;
+  placeRider(false,dt);
+  if(moving||power>0)poseRider(dt);
+  drawMiniMap(false);
+  $('sp').textContent=Math.round(v*3.6);$('po').textContent=Math.round(power);$('gr').textContent=(grade*100).toFixed(1);
+  $('di').textContent=(totalDistance/1000).toFixed(1);
+  $('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');
+  $('avg').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);
+  $('hr').textContent=hr||'–';$('ca').textContent=cad||'–';
+  $('dp').textContent='+'+Math.round(window._rideGain);
+  R3.render(S,cam);
+}
+updateBarHeight();initHomeMap();
+$('pw').oninput=e=>$('pv').textContent=e.target.value;
+toast('Choisis un point de départ sur la carte puis lance la sortie.');
+requestAnimationFrame(loop);
+}catch(err){
+  console.error(err);
+  const f=document.getElementById('fatalText');if(f)f.textContent=(err&&err.message||err)+' — essaie Chrome avec WebGL activé.';
+  const d=document.getElementById('fatal');if(d)d.classList.remove('hide');
+}
+})();
+</script>
+</body>
+</html>
