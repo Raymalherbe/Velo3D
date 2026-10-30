@@ -12,28 +12,28 @@
 html,body{height:100%;margin:0;background:#b7d4df;color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
 #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
 button,input{font:inherit}
-button{cursor:pointer;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--bd);background:rgba(255,255,255,.055);color:var(--fg);font-size:14px;font-weight:650;transition:background .18s}
-button:hover{background:rgba(255,255,255,.13)}
-button.on,button.primary{background:var(--ac);color:var(--acfg);border-color:var(--ac)}
-button:disabled{opacity:.4;cursor:wait}
-button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--ac);outline-offset:3px}
-input[type=range]{accent-color:var(--ac);min-height:36px;min-width:0;cursor:pointer}
-.hide{display:none!important}
-#hud{position:fixed;left:16px;top:calc(16px + env(safe-area-inset-top,0px));width:min(430px,calc(100% - 32px));display:grid;grid-template-columns:repeat(3,1fr);gap:1px;border:1px solid var(--bd);border-radius:16px;overflow:hidden;background:var(--card);backdrop-filter:blur(12px)}
-.m{padding:9px 12px;background:rgba(255,255,255,.025)}
-.m b{display:block;font-size:30px;font-weight:650;line-height:1.12;font-variant-numeric:tabular-nums;letter-spacing:-1px}
-.m i{font-style:normal;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
-.m:first-child b{color:var(--ac)}
-#bar{position:fixed;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:760px;margin:auto;padding:10px 14px;border:1px solid var(--bd);border-radius:16px;background:var(--card);backdrop-filter:blur(12px)}
-#msg{font-size:12px;color:var(--muted);min-height:17px;margin-bottom:6px;line-height:1.4}
-.row{display:flex;gap:8px;align-items:center}
-.row button{flex:1;min-width:0}
-#sl{gap:12px;margin-bottom:6px}
-#sl label{font-size:12px;white-space:nowrap;color:var(--muted)}
-#sl label b{color:var(--fg)}
-#sl input{flex:1;width:40%}
-#postureMode{flex:0 0 auto;max-width:100px;min-height:34px;padding:4px 7px;border:1px solid var(--bd);border-radius:8px;background:#203d40;color:var(--fg);font-size:11px}
-#cameraPanel{position:fixed;right:16px;bottom:calc(var(--bar-height,150px) + 24px + env(safe-area-inset-bottom,0px));width:252px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;backdrop-filter:blur(12px)}
+bouton { curseur : pointeur ; hauteur minimale : 44 px ; marge intérieure : 8 px  12 px ; rayon de bordure : 10 px ; bordure : 1 px  solide  var ( --bd ) ; arrière-plan : rgba ( 255 , 255 , 255 , .055 ) ; couleur : var ( --fg ) ; taille de police : 14 px ; épaisseur de police : 650 ; transition : arrière-plan  .18 s }
+bouton : survol { arrière-plan : rgba ( 255 , 255 , 255 , .13 ) }
+bouton.on , bouton.primaire { arrière - plan : var ( --ac ) ; couleur : var ( --acfg ) ; couleur - bordure : var ( --ac ) }
+bouton : désactivé { opacité : 0,4 ; curseur : attendre }
+bouton : focus-visible , entrée : focus-visible , zone de texte : focus-visible , résumé : focus-visible { contour : 3 px  solide  var ( --ac ) ; décalage du contour : 3 px }
+input [ type = range ] { accent-color : var ( --ac ) ; min - height : 36px ; min-width : 0 ; cursor : pointer }
+.hide { display : none ! important }
+# hud { position : fixed ; left : 16 px ; top : calc ( 16 px + env ( safe-area-inset-top , 0 px ) ) ; width : min ( 430 px , calc ( 100 % - 32 px ) ) ; display : grid ; grid-template-columns : repeat ( 3 , 1 fr ) ; gap : 1 px ; border : 1 px  solid  var ( --bd ) ; border-radius : 16 px ; overflow : hidden ; background : var ( --card ) ; backdrop-filter : blur ( 12 px ) }
+.m { padding : 9 px 12 px ; background : rgba ( 255 , 255 , 255 , .025 ) }​ 
+.mb { display : block ; font-size : 30 px ; font -weight : 650 ; line-height : 1.12 ; font-variant-numeric : tabular-nums ;  letter -spacing : -1 px }
+.m i  { font -style : normal ; font-size : 10 px ; color : var ( --muted ) ; letter-spacing : 1 px ; text-transform : uppercase }
+. m : premier-enfant  b { couleur : var ( --ac ) }
+#bar { position : fixed ; left : 16 px ; right : 16 px ; bottom : calc ( 12 px + env ( safe-area-inset-bottom , 0 px ) ) ; max-width : 760 px ; margin : auto ; padding : 10 px 14 px ; border : 1 px solid var ( --bd ) ; border-radius : 16 px ; background : var ( --card ) ; backdrop -filter : blur ( 12 px ) }   
+# msg { font-size : 12 px ; color : var ( --muted ) ; min-height : 17 px ; margin-bottom : 6 px ; line-height : 1.4 }
+.row { display : flex ; gap : 8px ; align - items : center }
+.row button { flex : 1 ; min - width :  0 }
+# sl { gap : 12 px ; margin-bottom : 6 px }
+# sl  label { font-size : 12 px ; white-space : nowrap ; color : var ( --muted ) }
+# étiquette sl  b { couleur : var ( --fg ) } 
+# sl  input { flex : 1 ; width : 40 % }
+# postureMode { flex : 0  0  auto ; max-width : 100 px ; min-height : 34 px ; padding : 4 px  7 px ; border : 1 px  solid  var ( --bd ) ; border-radius : 8 px ; background :#203d40; color : var ( --fg ) ; font-size : 11 px }
+#cameraPanel { position : fixed ; right : 16 px ; bottom : calc ( var ( --bar-height , 150 px ) + 24 px + env ( safe -area-inset-bottom , 0 px ) ) ; width : 252 px ; background : var ( --card ) ; border : 1 px solid var ( --bd ) ; border-radius : 14 px ; padding : 12 px ; backdrop-filter : blur ( 12 px ) }  
 .panelTitle{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
 #cameraPanel .row{gap:6px;margin-top:6px}#cameraPanel button{font-size:12px;min-height:40px;padding:6px}
 .zoomRow button{flex:0 0 40px!important;font-size:20px!important}.zoomRow input{flex:1;width:70px}
