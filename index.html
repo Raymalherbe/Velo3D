@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v129 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
+<title>Vélo 3D v130 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -449,7 +449,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v129</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v130</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -4184,10 +4184,13 @@ function buildBridges(spans,overpasses,targetWorld){
   const quad=(arr,a,b,c,d)=>{arr.push(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2],a[0],a[1],a[2],c[0],c[1],c[2],d[0],d[1],d[2]);};
   for(const sp of spans||[]){
     const pts=[];
-    for(let s2=sp.s0;s2<=sp.s1+0.01;s2=Math.min(sp.s1,s2+2)){
-      const p=at(s2),a=at(Math.max(0,s2-1)),b=at(Math.min(route.len,s2+1)),dx=b[0]-a[0],dz=b[2]-a[2],l=Math.hypot(dx,dz)||1,nx=-dz/l,nz=dx/l,y=p[1];
+    for(let s2=sp.s0;s2<=sp.s1+0.01;s2+=2){ /* v130 : s2+=2 toujours, jamais de min() qui fige la boucle */
+      const ss=Math.min(sp.s1,s2);
+      const p=at(ss),a=at(Math.max(0,ss-1)),b=at(Math.min(route.len,ss+1)),dx=b[0]-a[0],dz=b[2]-a[2],l=Math.hypot(dx,dz)||1,nx=-dz/l,nz=dx/l,y=p[1];
       pts.push({x:p[0],z:p[2],y,nx,nz});
+      if(ss>=sp.s1)break;
     }
+    if(pts.length<2)continue;
     for(let i=1;i<pts.length;i++){
       const A=pts[i-1],B=pts[i];
       quad(deckV,[A.x+A.nx*(half+.4),A.y+.02,A.z+A.nz*(half+.4)],[A.x-A.nx*(half+.4),A.y+.02,A.z-A.nz*(half+.4)],[B.x-B.nx*(half+.4),B.y+.02,B.z-B.nz*(half+.4)],[B.x+B.nx*(half+.4),B.y+.02,B.z+B.nz*(half+.4)]);
@@ -4847,130 +4850,4 @@ function tcxText(){
   const{start,pts}=sessionData(),st=sessionStats(),iso=ms=>new Date(ms).toISOString();
   const tp=pts.map(q=>{const geo=Number.isFinite(q.lat)&&Number.isFinite(q.lon);
     return'<Trackpoint><Time>'+iso(start+q.sec*1000)+'</Time>'+(geo?'<Position><LatitudeDegrees>'+q.lat.toFixed(7)+'</LatitudeDegrees><LongitudeDegrees>'+q.lon.toFixed(7)+'</LongitudeDegrees></Position>':'')+(Number.isFinite(q.alt)?'<AltitudeMeters>'+q.alt.toFixed(1)+'</AltitudeMeters>':'')+'<DistanceMeters>'+q.dist.toFixed(1)+'</DistanceMeters>'+(q.hr?'<HeartRateBpm><Value>'+q.hr+'</Value></HeartRateBpm>':'')+'<Cadence>'+Math.min(254,q.cad)+'</Cadence><Extensions><ns3:TPX><ns3:Speed>'+q.v.toFixed(2)+'</ns3:Speed><ns3:Watts>'+q.p+'</ns3:Watts></ns3:TPX></Extensions></Trackpoint>'}).join('');
-  return'<?xml version="1.0" encoding="UTF-8"?>\n<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2" xmlns:ns3="http://www.garmin.com/xmlschemas/ActivityExtension/v2"><Activities><Activity Sport="Biking"><Id>'+iso(start)+'</Id><Lap StartTime="'+iso(start)+'"><TotalTimeSeconds>'+Math.max(1,st.dur)+'</TotalTimeSeconds><DistanceMeters>'+st.dist.toFixed(1)+'</DistanceMeters><MaximumSpeed>'+st.maxV.toFixed(2)+'</MaximumSpeed><Calories>'+st.kj+'</Calories>'+(st.avgH?'<AverageHeartRateBpm><Value>'+st.avgH+'</Value></AverageHeartRateBpm><MaximumHeartRateBpm><Value>'+st.maxH+'</Value></MaximumHeartRateBpm>':'')+'<Intensity>Active</Intensity><Cadence>'+Math.min(254,st.avgC)+'</Cadence><TriggerMethod>Manual</TriggerMethod><Track>'+tp+'</Track></Lap></Activity></Activities></TrainingCenterDatabase>';
-}
-function gpxText(){
-  const{start,pts}=sessionData(),iso=ms=>new Date(ms).toISOString();
-  const trk=pts.filter(q=>Number.isFinite(q.lat)&&Number.isFinite(q.lon)).map(q=>'<trkpt lat="'+q.lat.toFixed(7)+'" lon="'+q.lon.toFixed(7)+'">'+(Number.isFinite(q.alt)?'<ele>'+q.alt.toFixed(1)+'</ele>':'')+'<time>'+iso(start+q.sec*1000)+'</time><extensions><gpxtpx:TrackPointExtension>'+(q.hr?'<gpxtpx:hr>'+q.hr+'</gpxtpx:hr>':'')+'<gpxtpx:cad>'+Math.min(254,q.cad)+'</gpxtpx:cad></gpxtpx:TrackPointExtension></extensions></trkpt>').join('');
-  return'<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Vélo 3D" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"><metadata><time>'+iso(start)+'</time></metadata><trk><name>Sortie Vélo 3D</name><type>cycling</type><trkseg>'+trk+'</trkseg></trk></gpx>';
-}
-function sessionFileName(ext){const d=new Date(sessionStart||Date.now()),p=n=>String(n).padStart(2,'0');return'velo3d-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+'.'+ext}
-function downloadBlob(data,name,type){const blob=new Blob([data],{type}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
-let summaryMap=null;
-function drawSessionTrack(){
-  const box=$('stopMap');if(!box)return;
-  if(summaryMap){try{summaryMap.remove()}catch(e){}summaryMap=null}
-  box.innerHTML='';
-  const{pts}=sessionData(),geo=pts.filter(q=>Number.isFinite(q.lat)&&Number.isFinite(q.lon)).map(q=>[q.lat,q.lon]);
-  if(geo.length>=2&&window.L){
-    const el=document.createElement('div');el.style.cssText='position:absolute;inset:0';box.appendChild(el);
-    try{
-      const bounds=L.latLngBounds(geo);
-      summaryMap=L.map(el,{zoomControl:false,attributionControl:true}).fitBounds(bounds,{padding:[18,18]});
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(summaryMap);
-      L.polyline(geo,{color:'#d94135',weight:5,opacity:.95,lineCap:'round',lineJoin:'round'}).addTo(summaryMap);
-      L.circleMarker(geo[0],{radius:7,color:'#fff',weight:2,fillColor:'#2e9e4f',fillOpacity:1}).addTo(summaryMap);
-      L.circleMarker(geo[geo.length-1],{radius:7,color:'#fff',weight:2,fillColor:'#d74436',fillOpacity:1}).addTo(summaryMap);
-      setTimeout(()=>{if(summaryMap){summaryMap.invalidateSize();summaryMap.fitBounds(bounds,{padding:[18,18]})}},250);
-      return;
-    }catch(e){box.innerHTML=''}
-  }
-  /* Repli : tracé dessiné sans fond de carte (parcours de démonstration ou bibliothèque de carte indisponible). */
-  const loc=pts.filter(q=>Number.isFinite(q.x)&&Number.isFinite(q.z));if(loc.length<2)return;
-  const cv=document.createElement('canvas'),r=box.getBoundingClientRect(),W=Math.max(200,Math.round(r.width||320)),H=Math.max(140,Math.round(r.height||200)),dpr=Math.min(window.devicePixelRatio||1,2);
-  cv.width=W*dpr;cv.height=H*dpr;box.appendChild(cv);
-  const g=cv.getContext('2d');g.scale(dpr,dpr);
-  let x0=1e12,x1=-1e12,z0=1e12,z1=-1e12;for(const q of loc){x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);z0=Math.min(z0,q.z);z1=Math.max(z1,q.z)}
-  const pad=22,sc=Math.min((W-2*pad)/Math.max(1,x1-x0),(H-2*pad)/Math.max(1,z1-z0)),ox=(W-(x1-x0)*sc)/2,oz=(H-(z1-z0)*sc)/2,X=q=>ox+(q.x-x0)*sc,Z=q=>oz+(q.z-z0)*sc;
-  g.lineJoin='round';g.lineCap='round';g.strokeStyle='#d94135';g.lineWidth=4;g.beginPath();loc.forEach((q,i)=>i?g.lineTo(X(q),Z(q)):g.moveTo(X(q),Z(q)));g.stroke();
-  for(const[q,c]of[[loc[0],'#2e9e4f'],[loc[loc.length-1],'#d74436']]){g.fillStyle=c;g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();g.arc(X(q),Z(q),6,0,Math.PI*2);g.fill();g.stroke()}
-}
-function renderSessionSummary(mode){
-  const st=sessionStats(),ok=st.n>=5,d=new Date(sessionStart||Date.now());
-  $('stopTitle').textContent=mode==='quit'?'Séance terminée':'Entraînement arrêté';
-  $('stopInfo').textContent=ok?d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'Séance trop courte pour être enregistrée (moins de 5 secondes).';
-  const cells=[['Durée',fmtDur(st.dur)],['Distance',(st.dist/1000).toFixed(2)+' km'],['Vitesse moy.',(st.avgV*3.6).toFixed(1)+' km/h'],['Vitesse max',(st.maxV*3.6).toFixed(1)+' km/h'],['Dénivelé +',st.asc+' m'],['Puissance moy.',st.avgP+' W'],['Puissance max',st.maxP+' W'],['Énergie',st.kj+' kJ'],['FC moy.',st.avgH?st.avgH+' bpm':'–'],['FC max',st.maxH?st.maxH+' bpm':'–'],['Cadence moy.',st.avgC?st.avgC+' tr/min':'–'],['Cadence max',st.maxC?st.maxC+' tr/min':'–']];
-  $('stopStats').innerHTML=ok?cells.map(([k,val])=>'<div>'+k+'<b>'+val+'</b></div>').join(''):'';
-  $('resumeStop').classList.toggle('hide',mode==='quit');
-  for(const id of['exportFit','exportTcx','stopMap'])$(id).classList.toggle('hide',!ok);
-  $('exportGpx').classList.toggle('hide',!ok||!st.hasGps);
-  $('stopDialog').classList.remove('hide');
-  if(ok)drawSessionTrack();
-}
-$('exportFit').onclick=()=>{downloadBlob(fitBytes(),sessionFileName('fit'),'application/octet-stream');toast('Fichier .FIT téléchargé (Garmin, Strava).')};
-$('exportTcx').onclick=()=>{downloadBlob(tcxText(),sessionFileName('tcx'),'application/vnd.garmin.tcx+xml');toast('Fichier .TCX téléchargé (import Garmin Connect).')};
-$('exportGpx').onclick=()=>{downloadBlob(gpxText(),sessionFileName('gpx'),'application/gpx+xml');toast('Fichier .GPX téléchargé (tracé).')};
-$('openStrava').onclick=()=>{window.open('https://www.strava.com/upload/select','_blank','noopener');toast('Sur Strava : Upload → Fichier, puis choisis le .FIT téléchargé.');};
-$('go').addEventListener('click',()=>{sessionSamples=[];sessionStart=Date.now();lastSampleT=0;$('exportPanel').classList.add('hide');$('stopDialog').classList.add('hide');requestWakeLock();window._rideElapsed=0;window._powerStarted=false;window._rideGain=0;window._rideDir=1;if($('turnAround'))$('turnAround').disabled=false; /* v127 : demi-tour aussi disponible en mode démo */})
-$('skipScenery').onclick=()=>{++osmTok;$('skipScenery').classList.add('hide');$('go').disabled=false;prog(1,'Chargement interrompu. Parcours prêt sans décor supplémentaire.')};
-$('pw').oninput=e=>{$('pv').textContent=e.target.value};
-$('gearEasier').onclick=()=>{if(virtualRearIndex<VIRTUAL_COGS.length-1){virtualRearIndex++;updateGearUI()}};
-$('gearHarder').onclick=()=>{if(virtualRearIndex>0){virtualRearIndex--;updateGearUI()}};
-$('frontGear').onclick=()=>{virtualFront=virtualFront===48?35:48;updateGearUI()};
-const heldCocottes=new Map();let cocottesPairHandled=false;
-function shiftFromCocotte(side){
-  /* v127 : sens inversé — cocotte gauche = pignon plus PETIT (plus dur), droite = plus GRAND (plus facile) */
-  if(side==='left'&&virtualRearIndex>0)virtualRearIndex--;
-  else if(side==='right'&&virtualRearIndex<VIRTUAL_COGS.length-1)virtualRearIndex++;
-  updateGearUI();
-}
-function bindCocotte(id,side){
-  const button=$(id);if(!button)return;
-  button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}if(!heldCocottes.size)cocottesPairHandled=false;heldCocottes.set(e.pointerId,side);if(!cocottesPairHandled&&new Set(heldCocottes.values()).size>=2){virtualFront=virtualFront===48?35:48;cocottesPairHandled=true;updateGearUI();buzz(35);toast('Plateau '+virtualFront+' dents.');}});
-  button.addEventListener('pointerup',e=>{const pressed=heldCocottes.get(e.pointerId);if(pressed&&!cocottesPairHandled&&heldCocottes.size===1)shiftFromCocotte(pressed);heldCocottes.delete(e.pointerId);if(!heldCocottes.size)cocottesPairHandled=false;});
-  for(const type of ['pointercancel','lostpointercapture'])button.addEventListener(type,e=>{heldCocottes.delete(e.pointerId);if(!heldCocottes.size)cocottesPairHandled=false;});
-  button.addEventListener('click',e=>{if(e.detail===0)shiftFromCocotte(side)});
-}
-bindCocotte('cocotteLeft','left');bindCocotte('cocotteRight','right');
-$('cassetteTeeth').addEventListener('click',e=>{const cog=e.target.closest('[data-cog-index]');if(!cog)return;virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI()});
-$('cassetteTeeth').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const cog=e.target.closest('[data-cog-index]');if(cog){e.preventDefault();virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();}}});
-updateGearUI();
-/* ---------- Boucle ---------- */
-
-let _wakeLock=null,_wakeLockWanted=false;
-async function requestWakeLock(){_wakeLockWanted=true;if(!('wakeLock' in navigator)||document.hidden||_wakeLock)return;try{_wakeLock=await navigator.wakeLock.request('screen');_wakeLock.addEventListener('release',()=>{_wakeLock=null;if(_wakeLockWanted&&!document.hidden)setTimeout(requestWakeLock,250)});}catch(e){}}
-async function releaseWakeLock(){_wakeLockWanted=false;const lock=_wakeLock;_wakeLock=null;if(lock)try{await lock.release()}catch(e){}}
-window._rideElapsed=0;
-let last=performance.now();
-function integrateRideSpeed(speed,power,grade,dt){const slope=Math.atan(Number(grade)||0),force=MASS*G0*(CRR*Math.cos(slope)+Math.sin(slope))+.5*RHO*CDA*speed*speed;const drive=power>0?Math.max(0,Math.min(power*.975/Math.max(speed,.5),Math.max(0,force+MASS*2.2))):0;return Math.max(0,speed+((drive-force)/MASS)*dt);}
-function loop(t){
-  requestAnimationFrame(loop);const dt=Math.max(0,Math.min((t-last)/1000,.1));last=t;
-  updateSky(dt);
-  if(route){
-    const power=ctl?lastP:+$('pw').value,grade=at(s)[3];
-    const _hasPower=power>0,_effRunning=running;
-    /* v73 : la sortie ne démarre vraiment qu'au premier watt de puissance.
-       Avant cela : vélo immobile et chrono à l'arrêt. Ensuite, la vitesse
-       découle de la puissance et de la topographie (pente), jamais de la cadence. */
-    if(_hasPower)window._powerStarted=true;
-    if(running&&window._powerStarted){v=integrateRideSpeed(v,power,grade,dt);const _dir=window._rideDir||1;let advance=window._uTurn?0:v*dt*_dir; /* v128 : s gelé pendant le demi-tour animé, le vélo tourne sur son arc */if(_dir<0)advance=Math.max(advance,-s);else advance=Math.min(advance,route.len-s);s+=advance;if(advance>0)totalDistance+=advance;if(advance>0)window._rideGain=(window._rideGain||0)+Math.max(0,grade)*advance;if(s>=route.len||s<=0){s=Math.max(0,Math.min(route.len,s));const freeNav=window._freeNavigation;if(!(freeNav&&freeNav.active)){running=false;v=0;$('pause').textContent='Repartir';toast((s<=0?'Début du parcours atteint · ':'Parcours terminé · ')+(totalDistance/1000).toFixed(2)+' km. Cliquez sur Repartir pour recommencer.');if(ctl)sendGrade(0)}}}
-    if(window._freeNavigation&&window._freeNavigation.active)freeAdvanceNavigation();
-    if(_effRunning&&t-lastSampleT>1000){lastSampleT=t;if(!sessionStart)sessionStart=Date.now();const here=at(s),gps=proj?here:null,lat=gps?proj.la-gps[2]/proj.kz:null,lon=gps?proj.lo+gps[0]/proj.kx:null;sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power:ctl?lastP:+$('pw').value,hr,cad:rideCadence(v,power),lat,lon,alt:gps?gps[1]:null,spd:v,x:here[0],z:here[2]});}
-    if(_effRunning&&window._powerStarted)window._rideElapsed+=dt;place(false,dt);if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
-    $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
-  }
-  R.render(S,cam);
-}
-document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wakeLockWanted&&!document.hidden)requestWakeLock()});
-/* v71 : panneaux masqués sur l'accueil, HUD décalé, défilement des trois villes */
-(function(){
-  const home=$('home'),arrows=$('routeArrows');
-  const upd=()=>{const on=!!arrows&&!arrows.classList.contains('hide')&&!document.body.classList.contains('homeOpen');document.body.classList.toggle('arrowsOn',on);document.documentElement.style.setProperty('--arrowsH',on?(arrows.offsetHeight+8)+'px':'0px')};
-  const homeSync=()=>{document.body.classList.toggle('homeOpen',!!home&&!home.classList.contains('hide'));upd()};
-  if(home){new MutationObserver(homeSync).observe(home,{attributes:true,attributeFilter:['class']})}
-  if(arrows){new MutationObserver(upd).observe(arrows,{attributes:true,attributeFilter:['class'],childList:true});if(window.ResizeObserver)new ResizeObserver(upd).observe(arrows)}
-  homeSync();
-  setInterval(()=>{if(document.hidden)return;for(const box of document.querySelectorAll('#routeArrows .routeTowns')){const roll=box.firstElementChild,n=roll?roll.children.length:0;if(n<2)continue;box._i=((box._i||0)+1)%n;const h=box.getBoundingClientRect().height||13;roll.style.transition=box._i===0?'none':'transform .45s ease';roll.style.transform='translateY(-'+box._i*h+'px)'}},2600);
-})();
-demo();requestAnimationFrame(loop);
-
-/* TEST_HOOK */
-} catch(error) {
-  console.error(error);
-  document.getElementById('fatalText').textContent=error.message+' Si le problème persiste, essayez Chrome avec WebGL activé.';
-  document.getElementById('fatal').classList.remove('hide');
-}
-})();
-</script>
-</body>
-</html>
+  return'<?xml version="1.0" encoding="UTF-8"?>\n<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2" xmlns:ns3="http://www.garmin.com/xmlschemas/ActivityExt
