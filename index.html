@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v123 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
+<title>Vélo 3D v124 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -318,12 +318,12 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #hud{top:calc(48px + env(safe-area-inset-top,0px))!important}
 @media(max-width:700px){#hud{top:calc(48px + env(safe-area-inset-top,0px))!important}}
 @media(orientation:landscape) and (max-height:620px){#topTools{left:8px;top:calc(5px + env(safe-area-inset-top,0px))}#hud{top:calc(43px + env(safe-area-inset-top,0px))!important}#hudToggle{left:auto;right:auto;top:auto;bottom:auto;transform:none}}
-#gearDock{position:fixed;z-index:8;left:50%;transform:translateX(-50%);bottom:calc(48px + env(safe-area-inset-bottom,0px));display:flex;max-width:calc(100vw - 12px);padding:6px;border:1px solid var(--bd);border-radius:12px;background:var(--card);backdrop-filter:blur(12px)}
+#gearDock{position:fixed;z-index:8;left:10px;transform:none;bottom:calc(48px + env(safe-area-inset-bottom,0px));display:flex;max-width:calc(100vw - 12px);padding:6px;border:1px solid var(--bd);border-radius:12px;background:var(--card);backdrop-filter:blur(12px)} /* v124 : dock vitesses ancré en bas à gauche */
 #gearDock #gearControls{gap:4px;margin:0;flex-wrap:nowrap}
 #gearDock #gearControls button{min-height:40px;padding:4px 9px}
 #gearDock #gearControls .gearCaption{display:none}
 #gearDock #gearReadout{min-width:64px}
-@media(orientation:landscape) and (max-height:620px){#gearDock{left:50%;transform:translateX(-50%);bottom:calc(48px + env(safe-area-inset-bottom,0px));padding:3px}#gearDock #gearControls button{min-height:32px;padding:2px 6px}#gearDock #gearReadout{min-width:56px;font-size:10px}} /* v122 : bandeau replié — cassette/plateaux restent centrés en bas, au-dessus du bouton ▴ */
+@media(orientation:landscape) and (max-height:620px){#gearDock{left:8px;transform:none;bottom:calc(48px + env(safe-area-inset-bottom,0px));padding:3px}#gearDock #gearControls button{min-height:32px;padding:2px 6px}#gearDock #gearReadout{min-width:56px;font-size:10px}} /* v124 : bandeau replié — cassette/plateaux en bas à gauche */
 @media(max-width:390px){#gearDock{max-width:calc(100vw - 8px);padding:4px}#gearDock #gearControls button{min-width:30px;padding:3px 6px}#gearDock #gearControls #frontGear{min-width:64px}}
 .photoUploadRow{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;min-width:0}
 .photoUploadRow .choice{min-width:0}
@@ -339,7 +339,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #bar{position:fixed}
 #bar #barHide{position:absolute;left:50%;top:-24px;transform:translateX(-50%);z-index:14;display:grid;place-items:center;width:58px;min-width:58px;height:22px;min-height:22px;padding:0;border:1px solid var(--bd);border-bottom:0;border-radius:12px 12px 0 0;background:var(--card);color:var(--ac);font-size:17px;line-height:1;backdrop-filter:blur(12px)}
 #barShow{left:50%;bottom:calc(5px + env(safe-area-inset-bottom,0px));z-index:18;width:58px;min-width:58px;height:27px;min-height:27px;padding:0;border-radius:14px;background:var(--card);color:var(--ac);font-size:17px;line-height:1}
-#gearDock{position:fixed;left:50%;bottom:calc(35px + env(safe-area-inset-bottom,0px));z-index:18;transform:translateX(-50%);max-width:calc(100vw - 12px);padding:5px 8px;border:1px solid var(--bd);border-radius:14px;background:rgba(14,31,34,.94);box-shadow:0 8px 24px #0007;backdrop-filter:blur(12px)}
+#gearDock{position:fixed;left:10px;bottom:calc(35px + env(safe-area-inset-bottom,0px));z-index:18;transform:none;max-width:calc(100vw - 12px);padding:5px 8px;border:1px solid var(--bd);border-radius:14px;background:rgba(14,31,34,.94);box-shadow:0 8px 24px #0007;backdrop-filter:blur(12px)} /* v124 : ancré à gauche */
 #gearControls{gap:8px;justify-content:center;align-items:center;margin:0;min-width:0}
 .frontGearAssembly{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex:0 0 auto}
 .frontGearAssembly .chainringButton{flex:0 0 auto!important}.chainringButton{position:relative;display:grid;place-items:center;width:52px;height:52px;min-width:52px;min-height:52px;padding:0;border:4px solid #84949a;border-radius:50%;background:radial-gradient(circle,#23383c 0 39%,transparent 41%),repeating-conic-gradient(#8b969a 0deg 4deg,#35474c 4deg 9deg);color:#fff;font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;box-shadow:0 2px 6px #0008}
@@ -359,7 +359,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #gearDock #gearControls{gap:7px}
 @media(max-width:700px){#gearControls{gap:6px}.chainringButton{width:45px;height:45px;min-width:45px;min-height:45px}.cassetteScale>button{flex-basis:27px!important;width:27px;min-width:27px!important}.cassetteCog{width:clamp(17px,4.4vw,25px);height:clamp(17px,4.4vw,25px);font-size:6px}#gearReadout{min-width:48px;font-size:10px}#gearDock{max-width:calc(100vw - 6px);padding:4px 5px}}
 @media(max-width:390px){.cassetteCog{width:14px;height:14px;font-size:5px}#gearControls{gap:4px}#gearDock{padding:3px}}
-@media(orientation:landscape) and (max-height:620px){#gearReadout{display:none}#previewDock{top:2px;padding:4px 3px 3px}#previewCanvas{height:clamp(128px,38vh,210px)}#previewHint{font-size:9px}#bar #barHide{top:-22px;width:54px;min-width:54px;height:20px;min-height:20px}#gearDock{left:50%;transform:translateX(-50%);bottom:calc(48px + env(safe-area-inset-bottom,0px));padding:3px 5px}#gearControls{gap:4px}.chainringButton{width:39px;height:39px;min-width:39px;min-height:39px;font-size:13px}.gearPartLabel{font-size:7px}.cassetteHeader{font-size:8px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:27px;min-height:27px;font-size:16px}.cassetteCog{width:clamp(16px,3vw,23px);height:clamp(16px,3vw,23px);font-size:6px}#gearReadout{min-width:44px;font-size:9px;padding:3px}#bar>#gearControls{grid-column:1;grid-row:2;justify-content:flex-start;gap:4px;min-width:0;margin:0}#bar>#gearControls .gearCaption{display:none}#bar>#gearControls .chainringButton{width:37px;height:37px;min-width:37px;min-height:37px}#bar>#gearControls #gearReadout{min-width:42px;padding:3px;font-size:9px}#bar>#gearControls .cassetteHeader{font-size:7px}#bar>#gearControls .cassetteScale{gap:1px}#bar>#gearControls .cassetteCog{flex:0 0 clamp(12px,1.9vw,16px);min-width:0!important;width:clamp(12px,1.9vw,16px);height:clamp(12px,1.9vw,16px);font-size:5px}#bar>#gearControls .cassetteScale>button{flex-basis:23px!important;width:23px;min-width:23px!important;height:24px;min-height:24px;font-size:14px}}
+@media(orientation:landscape) and (max-height:620px){#gearReadout{display:none}#previewDock{top:2px;padding:4px 3px 3px}#previewCanvas{height:clamp(128px,38vh,210px)}#previewHint{font-size:9px}#bar #barHide{top:-22px;width:54px;min-width:54px;height:20px;min-height:20px}#gearDock{left:8px;transform:none;bottom:calc(48px + env(safe-area-inset-bottom,0px));padding:3px 5px}#gearControls{gap:4px}.chainringButton{width:39px;height:39px;min-width:39px;min-height:39px;font-size:13px}.gearPartLabel{font-size:7px}.cassetteHeader{font-size:8px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:27px;min-height:27px;font-size:16px}.cassetteCog{width:clamp(16px,3vw,23px);height:clamp(16px,3vw,23px);font-size:6px}#gearReadout{min-width:44px;font-size:9px;padding:3px}#bar>#gearControls{grid-column:1;grid-row:2;justify-content:flex-start;gap:4px;min-width:0;margin:0}#bar>#gearControls .gearCaption{display:none}#bar>#gearControls .chainringButton{width:37px;height:37px;min-width:37px;min-height:37px}#bar>#gearControls #gearReadout{min-width:42px;padding:3px;font-size:9px}#bar>#gearControls .cassetteHeader{font-size:7px}#bar>#gearControls .cassetteScale{gap:1px}#bar>#gearControls .cassetteCog{flex:0 0 clamp(12px,1.9vw,16px);min-width:0!important;width:clamp(12px,1.9vw,16px);height:clamp(12px,1.9vw,16px);font-size:5px}#bar>#gearControls .cassetteScale>button{flex-basis:23px!important;width:23px;min-width:23px!important;height:24px;min-height:24px;font-size:14px}}
 
 
 /* v117 — vue cassette empilée et commande accessible en mode paysage. */
@@ -443,7 +443,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v123</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v124</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
