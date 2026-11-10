@@ -312,7 +312,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 @media(orientation:landscape) and (max-height:620px){#previewCanvas{height:clamp(230px,42vh,310px)}}
 
 /* v115 : commandes d’affichage regroupées en haut à gauche */
-#topTools{position:fixed;z-index:16;left:calc(8px + env(safe-area-inset-left,0px));top:calc(8px + env(safe-area-inset-top,0px));display:flex;gap:5px}
+#topTools{position:fixed;z-index:16;left:calc(8px + env(safe-area-inset-left,0px));top:calc(8px + env(safe-area-inset-top,0px));display:flex!important;gap:5px}
 #topTools button{min-height:32px;min-width:36px;padding:3px 8px;border-radius:9px;background:var(--card);backdrop-filter:blur(12px);font-size:15px}
 #topTools button[aria-pressed="false"]{opacity:.72}
 #hud{top:calc(48px + env(safe-area-inset-top,0px))!important}
@@ -390,6 +390,7 @@ body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0
 @media(max-width:390px){.cassetteDiagram{width:102px;height:102px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:29px!important;width:29px;min-width:29px!important;height:34px;min-height:34px}#gearControls{gap:4px}}
 @media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:center;gap:clamp(270px,41vw,350px);padding:0}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
 
+#bar.barHidden #gearControls {display: flex!important; position: fixed!important; left: 10px!important; bottom: calc(12px + env(safe-area-inset-bottom,0px))!important; z-index: 15!important;}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
 <body>
@@ -3273,7 +3274,7 @@ function place(snap,dt=.016){
     const head=rider.userData.headGroup,eye=new THREE.Vector3();
     rider.updateMatrixWorld(true);head.getWorldPosition(eye);
     const fwd=new THREE.Vector3(0,0,1).applyQuaternion(rider.quaternion);
-    eye.y+=0.12; /* Position des yeux au-dessus de la tête */
+    eye.y+=0.25; /* Position des yeux au-dessus de la tête - augmentée pour vue cintre plus haute */
     cam.position.copy(eye);
     cam.quaternion.setFromEuler(new THREE.Euler(-cameraState.pitch,angle+Math.PI-cameraState.yaw,0,'YXZ'));
     
