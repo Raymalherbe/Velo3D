@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v125 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
+<title>Vélo 3D v126 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -343,7 +343,8 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #previewHint{display:block;font-size:10px;color:var(--muted);line-height:1.25}
 #bar{position:fixed}
 #bar #barHide{position:absolute;left:50%;top:-24px;transform:translateX(-50%);z-index:14;display:grid;place-items:center;width:58px;min-width:58px;height:22px;min-height:22px;padding:0;border:1px solid var(--bd);border-bottom:0;border-radius:12px 12px 0 0;background:var(--card);color:var(--ac);font-size:17px;line-height:1;backdrop-filter:blur(12px)}
-#barShow{left:50%;bottom:calc(5px + env(safe-area-inset-bottom,0px));z-index:18;width:58px;min-width:58px;height:27px;min-height:27px;padding:0;border-radius:14px;background:var(--card);color:var(--ac);font-size:17px;line-height:1}
+#barShow{left:50%;bottom:calc(5px + env(safe-area-inset-bottom,0px));z-index:18;width:58px;min-width:58px;height:27px;min-height:27px;padding:0;border-radius:14px;background:var(--card);color:var(--ac);font-size:17px;line-height:1;opacity:.55} /* v126 : flèche de réouverture du bandeau visible mais transparente */
+#cockpitShifters{display:none!important} /* v126 : les boutons +/- flottants sont remplacés par le tap directement sur les cocottes 3D en vue cintre */
 #gearDock{position:fixed;left:10px;bottom:calc(35px + env(safe-area-inset-bottom,0px));z-index:18;transform:none;max-width:calc(100vw - 12px);padding:5px 8px;border:1px solid var(--bd);border-radius:14px;background:rgba(14,31,34,.94);box-shadow:0 8px 24px #0007;backdrop-filter:blur(12px)} /* v124 : ancré à gauche */
 #gearControls{gap:8px;justify-content:center;align-items:center;margin:0;min-width:0}
 .frontGearAssembly{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex:0 0 auto}
@@ -448,7 +449,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v125</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v126</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -828,7 +829,7 @@ function makeModernBike(M){
   for(const s of[-1,1]){
     curve([P(s*.02,.988,.492),P(s*.10,.99,.498),P(s*.185,.99,.505),P(s*.215,.985,.505),P(s*.218,.96,.522),P(s*.212,.885,.505),P(s*.20,.868,.462),P(s*.192,.88,.425)],.0125,M.carbon,36);
     curve([P(s*.02,.988,.492),P(s*.10,.99,.498),P(s*.185,.99,.505)],.015,M.glove,20);
-    ball(s*.215,.955,.515,.026,.040,.074,M.carbon,-.32);
+    const _hood=ball(s*.215,.955,.515,.026,.040,.074,M.carbon,-.32);_hood.userData.cocotte=s<0?'left':'right';(window._cocotteHoods=window._cocotteHoods||[]).push(_hood); /* v126 : cocotte tactile (vélo moderne) */
     box(s*.215,.99,.528,.020,.006,.050,M.orange,-.32);
     tube(P(s*.218,.93,.55),P(s*.22,.87,.54),.006,.005,M.steel);
     ball(s*.192,.88,.425,.0155,.0155,.0155,M.orange);
@@ -1035,6 +1036,7 @@ function makeCyclist() {
     addTube(g, h2, h3, 0.014, darkMetalMat);
     const hood = addMesh(g, new THREE.BoxGeometry(0.055, 0.055, 0.070), gloveMat, new V3(side * 0.215, 1.000, 0.500));
     hood.rotation.y = side * 0.12;
+    hood.userData.cocotte=side<0?'left':'right';(window._cocotteHoods=window._cocotteHoods||[]).push(hood); /* v126 : cocotte tactile en vue cintre */
   }
   /* Bidon + porte-bidon, câble de frein / dérailleur, haubans aéro */
   const cage = new THREE.Mesh(new THREE.TorusGeometry(0.038,0.008,6,16), darkMetalMat); cage.position.set(0,0.56,0.150); cage.rotation.x=0.93; g.add(cage); /* v113 : bidon collé au tube diagonal, aligné dessus */
@@ -1393,6 +1395,8 @@ function animRider(dt) {
 
 
 const rider=makeCyclist();rider.traverse(o=>{if(o.isMesh)o.castShadow=true});S.add(rider);
+/* v126 : petits points clignotants au-dessus des cocottes, montrés quelques secondes à l'entrée en vue cintre */
+rider.userData.cocotteMarkers=[];for(const sd of[-1,1]){const mk=new THREE.Mesh(new THREE.SphereGeometry(0.02,12,10),new THREE.MeshBasicMaterial({color:0x79dfc5}));mk.position.set(sd*.215,1.03,0.50);mk.visible=false;rider.userData.bike.add(mk);rider.userData.cocotteMarkers.push(mk);}
 
 /* ---------- Personnalisation du vélo et de la tenue ---------- */
 const defaultRiderStyle={bikeModel:'classic',riderWeight:85,riderHeight:175,ftp:200,frameColor:'#2b2f33',rimColor:'#5b6670',rimDepth:50,helmetColor:'#e8e8e8',jerseyColor:'#eef1f0',shortColor:'#13171c',shoeColor:'#e6e9e7',sockColor:'#e7ecea',sunglassesColor:'#111a22',sunglassesStyle:'dark',hairColor:'#2e1f14',beardColor:'#2b1a10',beardOn:false}; /* v113 : cheveux, barbe et lunettes photo */
@@ -2918,7 +2922,10 @@ function freeReverseCurrent(nav=freeNavigation){
   /* v73 : on complète les altitudes manquantes à partir de l'altitude et de la pente actuelles,
      sinon la route inversée plonge vers 0 m et le cycliste semble descendre au demi-tour */
   freeSeedElevation(points,nav,s);
-  nav.reloading=false;nav.prompt=null;nav.lastReloadAttempt=Date.now();freeBuildLeg(nav.currentWay,points,nav,true,direction);freeHideRouteArrows();toast('Demi-tour : retour sur la route OSM en sens inverse.');return true;
+  const _ob=at(s-2),_oa=at(s+2);const _uFrom=Math.atan2(_oa[0]-_ob[0],_oa[2]-_ob[2]); /* v126 : angle actuel pour animer le demi-tour */
+  nav.reloading=false;nav.prompt=null;nav.lastReloadAttempt=Date.now();freeBuildLeg(nav.currentWay,points,nav,true,direction);freeHideRouteArrows();
+  window._uTurn={t0:performance.now(),dur:2600,from:_uFrom}; /* v126 : le cycliste effectue visiblement son demi-tour avant de repartir */
+  toast('Demi-tour : retour sur la route OSM en sens inverse.');return true;
 }
 async function freeReloadSectorAtCurrent(nav){
   if(!nav||nav.reloading||freeNavigation!==nav)return;nav.reloading=true;nav.lastReloadAttempt=Date.now();
@@ -3218,8 +3225,11 @@ $('viewFollow').onclick=()=>setView('follow');$('viewWide').onclick=()=>setView(
 $('c').addEventListener('wheel',e=>{e.preventDefault();setZoom(cameraState.distance*Math.exp(Math.max(-120,Math.min(120,e.deltaY))*.002))},{passive:false});
 const cameraPointers=new Map();let previousPinch=0;
 /* v73 : double-tap (touch) sur la scène pour cycler les points de vue sans viser le panneau caméra */
+const _ray=new THREE.Raycaster(),_ndc=new THREE.Vector2();
+function cocotteAtPoint(cx,cy){const r=$('c').getBoundingClientRect();_ndc.set(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);_ray.setFromCamera(_ndc,cam);const hoods=(window._cocotteHoods||[]).filter(h=>h.visible&&h.parent);const hits=_ray.intersectObjects(hoods,false);return hits.length?hits[0].object.userData.cocotte:null;} /* v126 : tap directement sur une cocotte 3D en vue cintre */
 let _lastTapT=0,_tapMoved=0;
 $('c').addEventListener('pointerdown',e=>{
+  if(cameraState.view==='cockpit'||cameraState.distance<=1.81){const _side=cocotteAtPoint(e.clientX,e.clientY);if(_side){shiftFromCocotte(_side);buzz(15);toast(_side==='left'?'Pignon plus grand.':'Pignon plus petit.');return;}} /* v126 : la cocotte 3D change la vitesse */
   cameraPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});try{$('c').setPointerCapture(e.pointerId)}catch(_){}
   if(cameraPointers.size===2){const points=[...cameraPointers.values()];previousPinch=Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y)}
   else if(cameraPointers.size===1){const t=Date.now();if(t-_lastTapT<320&&_tapMoved<12&&route&&$('home').classList.contains('hide')&&cameraState.view!=='cockpit'){const views=['follow','wide','side'];setView(views[(views.indexOf(cameraState.view)+1)%views.length]);buzz(15);}_lastTapT=t;_tapMoved=0}
@@ -3252,7 +3262,9 @@ function place(snap,dt=.016){
   const angle=Math.atan2(tx,tz),bend=at(s+10),bx=bend[0]-p[0],bz=bend[2]-p[2],cross=tx*bz-tz*bx;
   const targetLean=Math.max(-.45,Math.min(.45,cross*.030*Math.min(13,v)));
   window._leanSmooth=window._leanSmooth==null?targetLean:window._leanSmooth+(targetLean-window._leanSmooth)*Math.min(1,dt*5);
-  rider.rotation.set(-Math.atan(p[3]),angle,window._leanSmooth,'YXZ');
+  let effAngle=angle; /* v126 : demi-tour animé — interpolation de l'angle du cycliste */
+  if(window._uTurn){const u=window._uTurn,k=Math.min(1,(performance.now()-u.t0)/u.dur);let d=angle-u.from;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;effAngle=u.from+d*e;if(k>=1)window._uTurn=null;}
+  rider.rotation.set(-Math.atan(p[3]),effAngle,window._leanSmooth,'YXZ');
   let rideY=p[1]+.045;
   const imported=!!(window._importedWheels&&window._importedWheels.length);
   const contactWheels=imported?window._importedWheels:(rider.userData.wheels||[]);
@@ -3279,18 +3291,22 @@ function place(snap,dt=.016){
          (l'ancien filtre testait l'origine des meshes : les courbes du cintre ont leur géométrie bakée, origine à (0,0,0), donc elles étaient masquées) */
       rider.userData._cockpitHidden=_ch;
     }
+    const _now=performance.now();if(!window._cockpitSince)window._cockpitSince=_now; /* v126 : points clignotants sur les cocottes pendant 4 s */
+    const _blink=_now-window._cockpitSince;
+    for(const mk of rider.userData.cocotteMarkers||[])mk.visible=_blink<4000&&(Math.floor(_now/280)%2===0);
     const head=rider.userData.headGroup,eye=new THREE.Vector3(0,1.560,0.358); /* v122 : position des yeux dans le repère de la tête (face +Z) */
     rider.updateMatrixWorld(true);head.localToWorld(eye); /* v122 : caméra exactement au niveau des yeux, quelle que soit la posture */
     const fwd=new THREE.Vector3(0,0,1).applyQuaternion(rider.quaternion);
     eye.addScaledVector(fwd,0.05); /* un peu devant le visage, hors du casque */
     cam.position.copy(eye);
-    cam.quaternion.setFromEuler(new THREE.Euler(-(cameraState.pitch+0.20),angle+Math.PI-cameraState.yaw,0,'YXZ')); /* v123 : légère plongée pour voir le cintre en bas du cadre */
+    cam.quaternion.setFromEuler(new THREE.Euler(-(cameraState.pitch+0.20),effAngle+Math.PI-cameraState.yaw,0,'YXZ')); /* v123 : légère plongée pour voir le cintre en bas du cadre */
     cam.fov=75;cam.updateProjectionMatrix(); /* v123 : champ élargi — cintre, cocottes et compteur restent dans le champ */
     cameraState.look.copy(eye).addScaledVector(fwd,2);cameraState.ready=true;
     if(sun.shadow){sun.position.set(p[0]+35,p[1]+60,p[2]-25);sun.target.position.set(p[0],p[1],p[2]);sun.target.updateMatrixWorld()}
     return;
   }
   if(rider.userData._cockpitHidden){rider.userData._cockpitHidden.forEach(o=>o.visible=true);rider.userData._cockpitHidden=null;r4ApplyCyclistStyle(rider.userData,riderStyle);}
+  window._cockpitSince=0;for(const mk of rider.userData.cocotteMarkers||[])mk.visible=false; /* v126 : éteint les points des cocottes hors vue cintre */
   if(cam.fov!==55){cam.fov=55;cam.updateProjectionMatrix();} /* v121 : restaure le champ de vision en sortant du cintre */
   const horizontal=distance*Math.cos(pitch),offsetX=-tx*Math.cos(yaw)+tz*Math.sin(yaw),offsetZ=-tz*Math.cos(yaw)-tx*Math.sin(yaw);
   const targetPosition=new THREE.Vector3(p[0]+offsetX*horizontal,p[1]+1+distance*Math.sin(pitch),p[2]+offsetZ*horizontal);
