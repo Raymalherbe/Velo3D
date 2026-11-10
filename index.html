@@ -423,8 +423,8 @@ body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0
 <div id="destChip" class="hide"><span>🎯</span><b id="destChipName"></b><span id="destChipDist"></span><button id="destChipCancel" title="Annuler la destination">✖</button></div>
   <div id="routeArrows" class="hide" role="group" aria-label="Choisir une direction au prochain carrefour"><span class="junctionDistancePlaceholder">Carrefour dans — m</span></div>
 <aside id="cameraPanel" aria-label="Réglages de la caméra">
-  <p class="panelTitle">Point de vue · glisser pour pivoter</p>
-  <div class="row"><button id="viewFollow" class="on" aria-pressed="true">Suivi</button><button id="viewWide" aria-pressed="false">Paysage</button><button id="viewSide" aria-pressed="false">Profil</button><button id="viewCockpit" aria-pressed="false">Cintre</button></div>
+  <p class="panelTitle">Point de vue · glisser pour pivoter (Cintre = yeux du cycliste)</p>
+  <div class="row"><button id="viewFollow" class="on" aria-pressed="true">Suivi</button><button id="viewWide" aria-pressed="false">Paysage</button><button id="viewSide" aria-pressed="false">Profil</button><button id="viewCockpit" aria-pressed="false" title="Vue à la première personne (yeux du cycliste)">Cintre</button></div>
   <div class="row zoomRow"><button id="zoomOut" aria-label="Dézoomer">−</button><input id="zoom" type="range" min="1" max="12" step="0.5" value="7" aria-label="Zoom de la caméra"><button id="zoomIn" aria-label="Zoomer">+</button></div>
   <span id="zoomValue">Caméra à 6 m · molette, pincement ou glisser</span>
 </aside>
@@ -3200,12 +3200,12 @@ try{const saved=JSON.parse(localStorage.getItem('velo3d-camera')||'null');if(sav
 function saveCamera(){try{localStorage.setItem('velo3d-camera',JSON.stringify({distance:cameraState.distance,view:cameraState.view,yaw:cameraState.yaw,pitch:cameraState.pitch}))}catch(e){}}
 function syncCockpitShifters(){const el=$('cockpitShifters');if(!el)return;const active=cameraState.view==='cockpit'&&$('home').classList.contains('hide')&&$('stopDialog').classList.contains('hide')&&$('freeStartDialog').classList.contains('hide');el.classList.toggle('hide',!active)}
 function refreshCameraControls(){
-  $('zoom').value=Math.round(((36-cameraState.distance)/3)+1); if(cameraState.view==='cockpit')cameraState.distance=1.8; /* v121 : vue cintre seulement très près du cycliste */
-  $('zoomValue').textContent=cameraState.view==='cockpit'?'🚴 Vue cintre — comme si tu étais sur le vélo':'Caméra à '+cameraState.distance.toFixed(1).replace('.0','')+' m · glisser pour pivoter';
+  $('zoom').value=Math.round(((36-cameraState.distance)/3)+1); if(cameraState.view==='cockpit')cameraState.distance=1.8; /* v121 : vue cintre - première personne comme les yeux du cycliste */
+  $('zoomValue').textContent=cameraState.view==='cockpit'?'🚴 Vue cintre — comme les yeux du cycliste':'Caméra à '+cameraState.distance.toFixed(1).replace('.0','')+' m · glisser pour pivoter';
   for(const [id,mode] of [['viewFollow','follow'],['viewWide','wide'],['viewSide','side'],['viewCockpit','cockpit']]){const active=cameraState.view===mode;$(id).classList.toggle('on',active);$(id).setAttribute('aria-pressed',String(active))}
   syncCockpitShifters();
 }
-function setZoom(distance){cameraState.distance=Math.max(1.8,Math.min(36,distance));if(cameraState.distance<=1.81)cameraState.view='cockpit';refreshCameraControls();saveCamera()} /* v121 : bascule en cintre seulement à moins de 1,8 m */
+function setZoom(distance){cameraState.distance=Math.max(1.8,Math.min(36,distance));if(cameraState.distance<=1.81)cameraState.view='cockpit';refreshCameraControls();saveCamera()} /* bascule en cintre seulement à moins de 1,8 m */
 function setView(view){cameraState.view=view;cameraState.yaw=0;if(view==='wide')cameraState.distance=23;else if(view==='side')cameraState.distance=10;else if(view==='cockpit')cameraState.distance=1.8;else cameraState.distance=6;refreshCameraControls();saveCamera()}
 $('zoom').oninput=e=>setZoom(36-(Number(e.target.value)-1)*3);$('zoomIn').onclick=()=>setZoom(cameraState.distance*.82);$('zoomOut').onclick=()=>setZoom(cameraState.distance/.82);
 $('viewFollow').onclick=()=>setView('follow');$('viewWide').onclick=()=>setView('wide');$('viewSide').onclick=()=>setView('side');$('viewCockpit').onclick=()=>setView('cockpit');
@@ -3258,26 +3258,54 @@ function place(snap,dt=.016){
   }
   rider.position.set(p[0],rideY,p[2]);
   const distance=cameraState.distance,baseYaw=cameraState.view==='side'?Math.PI/2:0,yaw=baseYaw+cameraState.yaw,pitch=cameraState.pitch;
-  const cockpit = cameraState.view==='cockpit' || distance<=1.81; /* v121 : seuil cintre à 1,8 m */
+  const cockpit = cameraState.view==='cockpit' || distance<=1.81; /* seuil cintre à 1,8 m */
   if(cockpit){
-    /* v121 : vraie vue à la place du cycliste — caméra aux yeux, on ne voit que le guidon/cocottes,
-       ses bras et ses jambes qui pédalent ; glisser le doigt pour regarder à droite, à gauche, en haut, en bas */
-    if(!rider.userData._cockpitHidden){
-      const _ch=[],_keep=new Set(),tmpV=new THREE.Vector3();
-      const keep=grp=>grp.traverse(m=>{if(m.isMesh)_keep.add(m)});
-      for(const arm of rider.userData.arms||[])if(arm.sh)keep(arm.sh);
-      for(const leg of rider.userData.legs||[])if(leg.hip)keep(leg.hip);
-      rider.updateMatrixWorld(true);
-      rider.userData.body.traverse(o=>{if(o.isMesh&&o.visible&&!_keep.has(o)){o.visible=false;_ch.push(o)}});
-      rider.userData.bike.traverse(o=>{if(o.isMesh&&o.visible){rider.worldToLocal(tmpV.copy(o.getWorldPosition(new THREE.Vector3())));if(!(tmpV.z>0.40&&tmpV.y>0.86)){o.visible=false;_ch.push(o)}}});
-      rider.userData._cockpitHidden=_ch;
+    /* Vue à la première personne comme les yeux du cycliste - on voit ses bras sur le cintre, ses jambes, et on peut regarder autour */
+    // Rétablir la visibilité de tout au début
+    if(rider.userData._cockpitHidden){
+      rider.userData._cockpitHidden.forEach(o=>o.visible=true);
+      rider.userData._cockpitHidden=null;
+      r4ApplyCyclistStyle(rider.userData,riderStyle);
     }
+    
+    // Positionner la caméra exactement aux yeux du cycliste
     const head=rider.userData.headGroup,eye=new THREE.Vector3();
     rider.updateMatrixWorld(true);head.getWorldPosition(eye);
     const fwd=new THREE.Vector3(0,0,1).applyQuaternion(rider.quaternion);
-    eye.addScaledVector(fwd,0.05);eye.y+=0.03; /* les yeux juste devant le casque */
+    eye.y+=0.12; /* Position des yeux au-dessus de la tête */
     cam.position.copy(eye);
     cam.quaternion.setFromEuler(new THREE.Euler(-cameraState.pitch,angle+Math.PI-cameraState.yaw,0,'YXZ'));
+    
+    // Masquer uniquement ce qui ne doit pas être visible en vue première personne
+    if(!rider.userData._cockpitHidden){
+      const _ch=[],tmpV=new THREE.Vector3();
+      rider.updateMatrixWorld(true);
+      
+      // Masquer la tête et le torse (pour ne pas voir son propre corps de face)
+      rider.userData.body.traverse(o=>{
+        if(o.isMesh&&o.visible){
+          rider.worldToLocal(tmpV.copy(o.getWorldPosition(new THREE.Vector3())));
+          // Masquer si c'est devant et au-dessus (tête, torse)
+          if(tmpV.z > -0.15 && tmpV.y > 0.25){
+            o.visible=false;_ch.push(o);
+          }
+        }
+      });
+      
+      // Masquer les parties du vélo qui sont derrière le cycliste
+      rider.userData.bike.traverse(o=>{
+        if(o.isMesh&&o.visible){
+          rider.worldToLocal(tmpV.copy(o.getWorldPosition(new THREE.Vector3())));
+          // Masquer si c'est derrière le cycliste (z < -0.3)
+          if(tmpV.z < -0.3){
+            o.visible=false;_ch.push(o);
+          }
+        }
+      });
+      
+      rider.userData._cockpitHidden=_ch;
+    }
+    
     cam.fov=70;cam.updateProjectionMatrix();
     cameraState.look.copy(eye).addScaledVector(fwd,2);cameraState.ready=true;
     if(sun.shadow){sun.position.set(p[0]+35,p[1]+60,p[2]-25);sun.target.position.set(p[0],p[1],p[2]);sun.target.updateMatrixWorld()}
