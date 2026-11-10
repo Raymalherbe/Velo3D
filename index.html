@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v131 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
+<title>Vélo 3D v132 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -343,7 +343,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #previewHint{display:block;font-size:10px;color:var(--muted);line-height:1.25}
 #bar{position:fixed}
 #bar #barHide{position:absolute;left:50%;top:-24px;transform:translateX(-50%);z-index:14;display:grid;place-items:center;width:58px;min-width:58px;height:22px;min-height:22px;padding:0;border:1px solid var(--bd);border-bottom:0;border-radius:12px 12px 0 0;background:var(--card);color:var(--ac);font-size:17px;line-height:1;backdrop-filter:blur(12px)}
-#barShow{left:50%;bottom:calc(5px + env(safe-area-inset-bottom,0px));z-index:18;width:58px;min-width:58px;height:27px;min-height:27px;padding:0;border-radius:14px;background:var(--card);color:var(--ac);font-size:17px;line-height:1;opacity:.55} /* v126 : flèche de réouverture du bandeau visible mais transparente */
+#barShow{left:50%;bottom:calc(5px + env(safe-area-inset-bottom,0px));z-index:18;width:58px;min-width:58px;height:27px;min-height:27px;padding:0;border:0;background:transparent;backdrop-filter:none;box-shadow:none;color:var(--ac);font-size:24px;line-height:1;opacity:.55;text-shadow:0 1px 6px rgba(0,0,0,.45)} /* v126+v132 : simple flèche, sans contour ni fond */
 #cockpitShifters{display:none!important} /* v126 : les boutons +/- flottants sont remplacés par le tap directement sur les cocottes 3D en vue cintre */
 #gearDock{position:fixed;left:10px;bottom:calc(35px + env(safe-area-inset-bottom,0px));z-index:18;transform:none;max-width:calc(100vw - 12px);padding:5px 8px;border:1px solid var(--bd);border-radius:14px;background:rgba(14,31,34,.94);box-shadow:0 8px 24px #0007;backdrop-filter:blur(12px)} /* v124 : ancré à gauche */
 #gearControls{gap:8px;justify-content:center;align-items:center;margin:0;min-width:0}
@@ -449,7 +449,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v131</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v132</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -1141,15 +1141,22 @@ function makeCyclist() {
   const lips=new THREE.Mesh(new THREE.SphereGeometry(1,16,10),new THREE.MeshStandardMaterial({color:0x9b6257,roughness:0.68}));
   lips.scale.set(0.022,0.004,0.0025);lips.position.set(0,1.456,0.378);faceDetail.add(lips);
   const chin=new THREE.Mesh(new THREE.SphereGeometry(1,16,10),skinShadeMat);chin.scale.set(0.030,0.017,0.016);chin.position.set(0,1.437,0.354);faceDetail.add(chin);
-  /* Barbe optionnelle : menton et joues reliées jusqu’aux oreilles, sans moustache épaisse. */
+  /* v132 : barbe moulée en UNE seule pièce (menton + joues + moustache) — un seul mesh fusionné */
   const beardMat=new THREE.MeshStandardMaterial({color:0x2b1a10,roughness:0.95});
+  const bake=(geo,pos,scale)=>{const g=geo.toNonIndexed();const m=new THREE.Matrix4().makeScale(scale.x,scale.y,scale.z);m.setPosition(pos.x,pos.y,pos.z);g.applyMatrix4(m);return g;};
   const beardGeo=new THREE.SphereGeometry(1,24,16,0,Math.PI*2,0,Math.PI*.54);beardGeo.rotateX(Math.PI);
-  const beard=addMesh(hg,beardGeo,beardMat,new V3(0,1.438,0.350),new V3(0.074,0.056,0.019)); /* v121 : barbe plus plate et uniforme */
-  const cheekBeards=[];
-  for(const side of[-1,1])cheekBeards.push(addMesh(hg,new THREE.SphereGeometry(1,18,14),beardMat,new V3(side*0.078,1.482,0.337),new V3(0.016,0.042,0.028)));
-  const moustache=addMesh(hg,new THREE.SphereGeometry(1,16,10),beardMat,new V3(0,1.482,0.387),new V3(0.024,0.005,0.0045));
-  beard.visible=false;cheekBeards.forEach(mesh=>mesh.visible=false);moustache.visible=false;
-  g.userData._beardMeshes=[beard,...cheekBeards];g.userData._beardMat=beardMat;
+  const parts=[
+    bake(beardGeo,new V3(0,1.438,0.350),new V3(0.074,0.056,0.019)),
+    bake(new THREE.SphereGeometry(1,18,14),new V3(-0.078,1.482,0.337),new V3(0.016,0.042,0.028)),
+    bake(new THREE.SphereGeometry(1,18,14),new V3(0.078,1.482,0.337),new V3(0.016,0.042,0.028)),
+    bake(new THREE.SphereGeometry(1,16,10),new V3(0,1.482,0.387),new V3(0.024,0.005,0.0045)) /* moustache fusionnée à la barbe */
+  ];
+  let total=0;for(const pg of parts)total+=pg.attributes.position.array.length;
+  const merged=new Float32Array(total);let moff=0;for(const pg of parts){merged.set(pg.attributes.position.array,moff);moff+=pg.attributes.position.array.length;pg.dispose();}
+  const beardGeoMerged=new THREE.BufferGeometry();beardGeoMerged.setAttribute('position',new THREE.BufferAttribute(merged,3));beardGeoMerged.computeVertexNormals();
+  const beard=addMesh(hg,beardGeoMerged,beardMat,new V3(0,0,0),new V3(1,1,1));
+  beard.visible=false;
+  g.userData._beardMeshes=[beard];g.userData._beardMat=beardMat;
   // Sourcils, cheveux, yeux (visibles quand les lunettes sont enlevées)
   for(const side of [-1,1]){const brow=new THREE.Mesh(new THREE.BoxGeometry(0.045,0.008,0.008), new THREE.MeshStandardMaterial({color:0x2b1a10,roughness:0.8})); brow.position.set(side*0.052,1.575,0.355); brow.rotation.y=side*0.15; faceDetail.add(brow);}
   const hairMat=new THREE.MeshStandardMaterial({color:0x2e1f14,roughness:0.95}); /* v113 : couleur de cheveux réglable */
@@ -3330,7 +3337,7 @@ function place(snap,dt=.016){
   if(rider.userData._cockpitHidden){rider.userData._cockpitHidden.forEach(o=>o.visible=true);rider.userData._cockpitHidden=null;r4ApplyCyclistStyle(rider.userData,riderStyle);}
   window._cockpitSince=0;for(const mk of rider.userData.cocotteMarkers||[])mk.visible=false; /* v126 : éteint les points des cocottes hors vue cintre */
   if(cam.fov!==55){cam.fov=55;cam.updateProjectionMatrix();} /* v121 : restaure le champ de vision en sortant du cintre */
-  const ds=window._rideDir||1,ctx=tx*ds,ctz=tz*ds; /* v127 : caméra derrière le cycliste même après un demi-tour */
+  const ctx=Math.sin(effAngle),ctz=Math.cos(effAngle); /* v132 : la caméra reste derrière le cap RÉEL du cycliste — pendant le demi-tour elle pivote avec lui au lieu d'avoir déjà la vue de l'autre sens */
   const horizontal=distance*Math.cos(pitch),offsetX=-ctx*Math.cos(yaw)+ctz*Math.sin(yaw),offsetZ=-ctz*Math.cos(yaw)-ctx*Math.sin(yaw);
   const targetPosition=new THREE.Vector3(p[0]+offsetX*horizontal,p[1]+1+distance*Math.sin(pitch),p[2]+offsetZ*horizontal);
   const lookAhead=cameraState.view==='side'?0:Math.min(3,distance*.10),look=new THREE.Vector3(p[0]+ctx*lookAhead,rider.position.y+1,p[2]+ctz*lookAhead),alpha=1-Math.exp(-dt*6);
