@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v122 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
+<title>Vélo 3D v123 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -254,6 +254,7 @@ button.wide{width:100%;display:block;margin-bottom:8px;min-height:48px}
 @media(orientation:landscape) and (max-height:620px){#routeArrows{width:min(90vw,470px);max-width:min(90vw,470px);gap:3px;padding:0!important}.routeArrow{min-width:70px!important;max-width:150px!important;min-height:58px!important;padding:2px 4px!important;--tl:11px}.routeArrow .arrowGlyph{font-size:21px!important}.routeArrow .routeMeters{font-size:10px}.routeArrow .townLine{font-size:8.5px}}
 body.homeOpen #routeArrows{display:none!important}
 body.homeOpen #hudToggle{display:none!important} /* v121 : icône 📊 données masquée sur la page d'accueil, visible pendant la sortie */
+body.homeOpen #cameraToggle{display:none!important} /* v123 : icône 📷 caméra elle aussi masquée sur la page d'accueil */
 body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expanded){translate:0 var(--arrowsH,0px)}
 
 /* v74 : résumé de séance, carte du tracé effectué, exports Garmin */
@@ -377,17 +378,17 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #gearControls{align-items:center}
 #bar #barHide{top:-31px;width:68px;min-width:68px;height:31px;min-height:31px;z-index:46;touch-action:manipulation;border-radius:15px 15px 0 0;font-size:22px}
 #barShow{width:70px;min-width:70px;height:36px;min-height:36px;z-index:28;touch-action:manipulation;font-size:20px}
-#cockpitShifters{position:fixed;z-index:17;left:0;right:0;bottom:calc(var(--bar-height,150px) + 12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:flex-end;padding:0 clamp(14px,5vw,52px);pointer-events:none}
+#cockpitShifters{position:fixed;z-index:17;left:0;right:0;bottom:calc(var(--bar-height,150px) + 12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:flex-end;padding:0 clamp(20px,17vw,260px);pointer-events:none} /* v123 : boutons écartés pour se poser sur les cocottes visibles en vue cintre */
 #cockpitShifters.hide{display:none!important}
 #cockpitShifters button{pointer-events:auto;width:58px;min-width:58px;height:58px;min-height:58px;padding:5px;border:1px solid rgba(218,238,239,.55);border-radius:23px 23px 15px 15px;background:linear-gradient(145deg,rgba(20,48,52,.84),rgba(7,19,23,.9));color:#e8f4f3;box-shadow:0 5px 15px #0007;touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
 #cockpitShifters button:active{background:var(--ac);color:var(--acfg);transform:scale(.96)}
 #cockpitShifters button span{font-size:24px;font-weight:900;line-height:1}
 #cockpitShifters button small{font-size:8px;line-height:1;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
-body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))} /* v123 : bandeau replié — les cocottes descendent vers le bas du cadre 3D */
 @media(max-width:700px){.cassetteDiagram{width:116px;height:116px}.cassetteScale{gap:3px}.cassetteScale>button{flex-basis:31px!important;width:31px;min-width:31px!important;height:36px;min-height:36px}}
-@media(max-width:700px) and (orientation:portrait){#cockpitShifters{justify-content:flex-start;gap:4px;padding-left:12px;padding-right:12px}#cockpitShifters button{width:46px;min-width:46px;height:48px;min-height:48px}body.barFolded #cockpitShifters{bottom:calc(205px + env(safe-area-inset-bottom,0px))}body.barFolded #cameraPanel{bottom:calc(170px + env(safe-area-inset-bottom,0px))}#gearDock{bottom:calc(44px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:700px) and (orientation:portrait){#cockpitShifters{justify-content:space-between;gap:4px;padding-left:clamp(20px,17vw,260px);padding-right:clamp(20px,17vw,260px)}#cockpitShifters button{width:46px;min-width:46px;height:48px;min-height:48px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}body.barFolded #cameraPanel{bottom:calc(170px + env(safe-area-inset-bottom,0px))}#gearDock{bottom:calc(44px + env(safe-area-inset-bottom,0px))}}
 @media(max-width:390px){.cassetteDiagram{width:102px;height:102px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:29px!important;width:29px;min-width:29px!important;height:34px;min-height:34px}#gearControls{gap:4px}}
-@media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:center;gap:clamp(270px,41vw,350px);padding:0}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
+@media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:space-between;gap:4px;padding:0 clamp(20px,17vw,260px)}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}}
 
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
@@ -442,7 +443,7 @@ body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v122</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v123</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -3277,8 +3278,8 @@ function place(snap,dt=.016){
     const fwd=new THREE.Vector3(0,0,1).applyQuaternion(rider.quaternion);
     eye.addScaledVector(fwd,0.05); /* un peu devant le visage, hors du casque */
     cam.position.copy(eye);
-    cam.quaternion.setFromEuler(new THREE.Euler(-cameraState.pitch,angle+Math.PI-cameraState.yaw,0,'YXZ'));
-    cam.fov=70;cam.updateProjectionMatrix();
+    cam.quaternion.setFromEuler(new THREE.Euler(-(cameraState.pitch+0.20),angle+Math.PI-cameraState.yaw,0,'YXZ')); /* v123 : légère plongée pour voir le cintre en bas du cadre */
+    cam.fov=75;cam.updateProjectionMatrix(); /* v123 : champ élargi — cintre, cocottes et compteur restent dans le champ */
     cameraState.look.copy(eye).addScaledVector(fwd,2);cameraState.ready=true;
     if(sun.shadow){sun.position.set(p[0]+35,p[1]+60,p[2]-25);sun.target.position.set(p[0],p[1],p[2]);sun.target.updateMatrixWorld()}
     return;
