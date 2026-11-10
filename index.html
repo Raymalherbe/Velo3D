@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v124 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
+<title>Vélo 3D v125 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -255,6 +255,11 @@ button.wide{width:100%;display:block;margin-bottom:8px;min-height:48px}
 body.homeOpen #routeArrows{display:none!important}
 body.homeOpen #hudToggle{display:none!important} /* v121 : icône 📊 données masquée sur la page d'accueil, visible pendant la sortie */
 body.homeOpen #cameraToggle{display:none!important} /* v123 : icône 📷 caméra elle aussi masquée sur la page d'accueil */
+/* v125 : bouton demi-tour flottant à droite, visible même quand le bandeau est replié */
+#turnAroundFloat{position:fixed;right:12px;bottom:calc(110px + env(safe-area-inset-bottom,0px));z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:14px;font-weight:700;backdrop-filter:blur(12px)}
+#turnAroundFloat:disabled{opacity:.4;cursor:wait}
+body.homeOpen #turnAroundFloat{display:none!important}
+@media(orientation:landscape) and (max-height:620px){#turnAroundFloat{right:8px;bottom:calc(96px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:12px}}
 body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expanded){translate:0 var(--arrowsH,0px)}
 
 /* v74 : résumé de séance, carte du tracé effectué, exports Garmin */
@@ -378,7 +383,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #gearControls{align-items:center}
 #bar #barHide{top:-31px;width:68px;min-width:68px;height:31px;min-height:31px;z-index:46;touch-action:manipulation;border-radius:15px 15px 0 0;font-size:22px}
 #barShow{width:70px;min-width:70px;height:36px;min-height:36px;z-index:28;touch-action:manipulation;font-size:20px}
-#cockpitShifters{position:fixed;z-index:17;left:0;right:0;bottom:calc(var(--bar-height,150px) + 12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:flex-end;padding:0 clamp(20px,17vw,260px);pointer-events:none} /* v123 : boutons écartés pour se poser sur les cocottes visibles en vue cintre */
+#cockpitShifters{position:fixed;z-index:17;left:0;right:0;bottom:calc(var(--bar-height,150px) + 12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:flex-end;padding:0 clamp(30px,21vw,320px);pointer-events:none} /* v125 : boutons écartés pour se poser sur les cocottes visibles en vue cintre */
 #cockpitShifters.hide{display:none!important}
 #cockpitShifters button{pointer-events:auto;width:58px;min-width:58px;height:58px;min-height:58px;padding:5px;border:1px solid rgba(218,238,239,.55);border-radius:23px 23px 15px 15px;background:linear-gradient(145deg,rgba(20,48,52,.84),rgba(7,19,23,.9));color:#e8f4f3;box-shadow:0 5px 15px #0007;touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
 #cockpitShifters button:active{background:var(--ac);color:var(--acfg);transform:scale(.96)}
@@ -386,9 +391,9 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #cockpitShifters button small{font-size:8px;line-height:1;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
 body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))} /* v123 : bandeau replié — les cocottes descendent vers le bas du cadre 3D */
 @media(max-width:700px){.cassetteDiagram{width:116px;height:116px}.cassetteScale{gap:3px}.cassetteScale>button{flex-basis:31px!important;width:31px;min-width:31px!important;height:36px;min-height:36px}}
-@media(max-width:700px) and (orientation:portrait){#cockpitShifters{justify-content:space-between;gap:4px;padding-left:clamp(20px,17vw,260px);padding-right:clamp(20px,17vw,260px)}#cockpitShifters button{width:46px;min-width:46px;height:48px;min-height:48px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}body.barFolded #cameraPanel{bottom:calc(170px + env(safe-area-inset-bottom,0px))}#gearDock{bottom:calc(44px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:700px) and (orientation:portrait){#cockpitShifters{justify-content:space-between;gap:4px;padding-left:clamp(30px,21vw,320px);padding-right:clamp(30px,21vw,320px)}#cockpitShifters button{width:46px;min-width:46px;height:48px;min-height:48px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}body.barFolded #cameraPanel{bottom:calc(170px + env(safe-area-inset-bottom,0px))}#gearDock{bottom:calc(44px + env(safe-area-inset-bottom,0px))}}
 @media(max-width:390px){.cassetteDiagram{width:102px;height:102px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:29px!important;width:29px;min-width:29px!important;height:34px;min-height:34px}#gearControls{gap:4px}}
-@media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:space-between;gap:4px;padding:0 clamp(20px,17vw,260px)}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}}
+@media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:space-between;gap:4px;padding:0 clamp(30px,21vw,320px)}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}}
 
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
@@ -439,11 +444,11 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
   </div>
   <div class="row" id="actionControls"><button id="pause" aria-label="Mettre en pause">Pause</button><button id="stopBtn" aria-label="Arrêter l'entraînement" title="Arrêter l'entraînement">⏹️</button><button id="turnAround" disabled aria-label="Faire demi-tour">↶ Demi-tour</button><button id="fsBtn" aria-label="Plein écran">⛶ Plein écran</button><button id="bt">Trainer</button><button id="hb">Cardio</button><button id="mn">Menu</button></div><button id="barHide" type="button" title="Replier le bandeau du bas" aria-label="Replier le bandeau inférieur">▾</button><div id="exportPanel" class="hide"><b>Entraînement arrêté</b><br><span id="exportInfo"></span></div>
 </div>
-<button id="barShow" type="button" title="Faire réapparaître le bandeau du bas">▴</button><div id="gearDock" class="hide" aria-label="Changement de vitesse virtuelle"></div>
+<button id="barShow" type="button" title="Faire réapparaître le bandeau du bas">▴</button><button id="turnAroundFloat" type="button" class="hide" title="Faire demi-tour" aria-label="Faire demi-tour">↶</button><div id="gearDock" class="hide" aria-label="Changement de vitesse virtuelle"></div>
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v124</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v125</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -3270,7 +3275,8 @@ function place(snap,dt=.016){
       for(const leg of rider.userData.legs||[])if(leg.hip)keep(leg.hip);
       rider.updateMatrixWorld(true);
       rider.userData.body.traverse(o=>{if(o.isMesh&&o.visible&&!_keep.has(o)){o.visible=false;_ch.push(o)}});
-      rider.userData.bike.traverse(o=>{if(o.isMesh&&o.visible){rider.worldToLocal(tmpV.copy(o.getWorldPosition(new THREE.Vector3())));if(!(tmpV.z>0.40&&tmpV.y>0.86)){o.visible=false;_ch.push(o)}}});
+      /* v125 : le vélo reste ENTIER visible en vue cintre (cintre, cocottes, cadre, roues) — on ne masque que le corps sauf bras/jambes.
+         (l'ancien filtre testait l'origine des meshes : les courbes du cintre ont leur géométrie bakée, origine à (0,0,0), donc elles étaient masquées) */
       rider.userData._cockpitHidden=_ch;
     }
     const head=rider.userData.headGroup,eye=new THREE.Vector3(0,1.560,0.358); /* v122 : position des yeux dans le repère de la tête (face +Z) */
@@ -4482,11 +4488,16 @@ function syncBarPresentation(){
   if(hidden){if(gear&&gear.parentElement!==dock)dock.appendChild(gear);dock.classList.remove('hide')}
   else{if(gear&&gear.parentElement!==bar)bar.insertBefore(gear,$('actionControls'));dock.classList.add('hide')}
   bar.classList.toggle('barHidden',hidden);$('barShow').classList.toggle('show',hidden);$('barHide').classList.toggle('hide',homeVisible);$('barHide').setAttribute('aria-expanded',String(!hidden));document.body.classList.toggle('barFolded',hidden);
+  const taf=$('turnAroundFloat');if(taf)taf.classList.toggle('hide',!hidden); /* v125 : demi-tour toujours accessible à droite, bandeau replié ou non */
   updateBarHeight();syncCockpitShifters();
 }
 function setBarHidden(h){barPreferredHidden=!!h;try{localStorage.setItem('velo3d-bar-hidden',barPreferredHidden?'1':'0')}catch(e){}syncBarPresentation()}
 $('barHide').onclick=()=>setBarHidden(true);
 $('barShow').onclick=()=>setBarHidden(false);
+/* v125 : le bouton demi-tour flottant suit l'état du bouton du bandeau et lui délègue le clic */
+(function(){const ta=$('turnAround'),taf=$('turnAroundFloat');if(!ta||!taf)return;
+  if(typeof MutationObserver!=='undefined')new MutationObserver(()=>{taf.disabled=ta.disabled}).observe(ta,{attributes:true,attributeFilter:['disabled']});
+  taf.disabled=ta.disabled;taf.onclick=()=>{if(!ta.disabled)ta.click()};})();
 syncBarPresentation();
 if(typeof ResizeObserver!=='undefined')new ResizeObserver(updateBarHeight).observe($('bar'));
 addEventListener('resize',()=>{updateBarHeight();mapState.last=0;syncBarPresentation()});updateBarHeight();
