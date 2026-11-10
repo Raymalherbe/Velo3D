@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v137 – vrai relief 3D Copernicus DEM, jour/nuit, trafic, rivières animées</title>
+<title>Vélo 3D v138 – bouton jour/nuit manuel, météo réelle du lieu avec pluie/neige/brouillard</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -449,7 +449,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v137</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v138</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -557,6 +557,8 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
     <button id="dm" class="wide">Essayer la démonstration</button>
     <div id="pb" role="progressbar" aria-label="Chargement des routes et du décor" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="pf"></i></div>
     <div id="hs" role="status"></div><div style="font-size:11px;color:var(--muted)">Posture : <b id="posture">Assis</b> · Automatique selon l’effort ou choix manuel depuis la barre.</div>
+    <div class="row" style="margin-top:8px"><button id="dayNightBtn" type="button" title="Cycle jour/nuit : automatique, jour fixe ou nuit fixe">🌗 Jour/nuit : auto</button><span id="weatherChip" style="flex:1;min-width:0;font-size:12px;color:var(--muted);align-self:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🌡️ Météo : chargement…</span></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:12px;margin-top:6px;color:var(--muted)"><input id="liveWeather" type="checkbox" style="min-height:22px;min-width:22px;accent-color:var(--ac)"> Météo réelle en roulant (relevée toutes les 10 min à ta position GPS)</label>
     <button id="go" class="wide primary" disabled>Lancer le parcours</button>
     <button id="skipScenery" class="wide hide">Lancer sans attendre le décor</button>
     <details><summary>Caméra, données et connexion</summary><p>Glissez un doigt sur la scène pour regarder autour de vous. Pincez à deux doigts pour zoomer (le pincement repasse en vue suivi). L’icône 📷 en haut change de vue à chaque appui : suivi, paysage, profil, puis cintre — en vue cintre vous êtes à la place du cycliste, comme sur le vélo.</p><p>Rouler libre télécharge dans le rayon choisi les routes et objets OSM utilisés par le décor. Le secteur est préparé dans les deux sens disponibles ; la flèche sur la carte indique le sens de départ (touche-la pour l’inverser), puis appuie sur Lancer. Les villes affichées sous les flèches sont des indications tirées des noms OSM proches, pas une garantie d’itinéraire jusqu’à la ville.</p><p>Le relief libre est estimé à partir du modèle Copernicus DEM GLO-90 via <a href="https://open-meteo.com/en/docs/elevation-api" target="_blank" rel="noopener">l’API d’altitude Open-Meteo</a> ; la résolution du modèle est d’environ 90 m. Si le service est inaccessible, le parcours reste utilisable mais la pente peut être incomplète.</p><p>Les haies cartographiées sont complétées par des haies estimées sur les portions rurales sans bâtiments voisins. Routes annexes et ronds-points suivent les données OpenStreetMap ; leurs alentours peuvent être incomplets.</p><p>Hébergez ce fichier en HTTPS (GitHub Pages convient). Pour le trainer et le cardio : Chrome Android ou navigateur compatible Web Bluetooth. La démonstration fonctionne sans capteur.</p></details>
@@ -590,8 +592,8 @@ const hemi=new THREE.HemisphereLight(0xf3f9ff,0x777b4f,.85);S.add(hemi);
 const skyDome=(()=>{const geo=new THREE.SphereGeometry(1500,24,12),pos=geo.attributes.position,colors=[];const top=new THREE.Color(0x3f7fc4),horizon=new THREE.Color(0xd7e9f2);for(let i=0;i<pos.count;i++){const t=Math.max(0,Math.min(1,(pos.getY(i)/1500+.15)/1.15));const c=horizon.clone().lerp(top,Math.pow(t,.55));colors.push(c.r,c.g,c.b)}geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));const mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,fog:false,depthWrite:false}));mesh.renderOrder=-2;return mesh})();
 S.add(skyDome);
 (function(){const sunDir=new THREE.Vector3(35,60,-25).normalize();const disc=new THREE.Mesh(new THREE.CircleGeometry(64,24),new THREE.MeshBasicMaterial({color:0xfff6d8,fog:false}));disc.position.copy(sunDir).multiplyScalar(1400);disc.lookAt(0,0,0);disc.renderOrder=-1;skyDome.add(disc);const glow=new THREE.Mesh(new THREE.CircleGeometry(150,24),new THREE.MeshBasicMaterial({color:0xfff0c0,transparent:true,opacity:.35,fog:false}));glow.position.copy(sunDir).multiplyScalar(1385);glow.lookAt(0,0,0);glow.renderOrder=-1;skyDome.add(glow)})();
-const skyClouds=[];
-(function(){const cloudMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:0.92});for(let i=0;i<12;i++){const cg=new THREE.Group();for(let k=0;k<4;k++){const s=new THREE.Mesh(new THREE.SphereGeometry(8+Math.random()*6,10,8),cloudMat);s.position.set(k*7-10,Math.random()*2,Math.random()*3);s.scale.y=0.45;cg.add(s)}cg.userData={ox:(Math.random()-0.5)*500,oy:60+Math.random()*25,oz:(Math.random()-0.5)*500,sp:1.5+Math.random()*1.8};S.add(cg);skyClouds.push(cg)}})();
+const skyClouds=[];let cloudMat=null; /* v138 : cloudMat exposé pour la météo (couverture nuageuse) */
+(function(){cloudMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:0.92});for(let i=0;i<12;i++){const cg=new THREE.Group();for(let k=0;k<4;k++){const s=new THREE.Mesh(new THREE.SphereGeometry(8+Math.random()*6,10,8),cloudMat);s.position.set(k*7-10,Math.random()*2,Math.random()*3);s.scale.y=0.45;cg.add(s)}cg.userData={ox:(Math.random()-0.5)*500,oy:60+Math.random()*25,oz:(Math.random()-0.5)*500,sp:1.5+Math.random()*1.8};S.add(cg);skyClouds.push(cg)}})();
 function updateSky(dt){if(!cam)return;skyDome.position.set(cam.position.x,0,cam.position.z);for(const c of skyClouds){const u=c.userData;u.ox+=u.sp*dt;u.ox=((u.ox+250)%500+500)%500-250;c.position.set(cam.position.x+u.ox,u.oy,cam.position.z+u.oz)}}
 const sun=new THREE.DirectionalLight(0xfff4df,1.2);sun.position.set(35,60,-25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:160});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;S.add(sun,sun.target);
 
@@ -660,15 +662,19 @@ function buildAmbiance(target){
   }
 }
 function updateAmbiance(dt,t){
-  /* cycle jour/nuit (~2 min 30) */
-  dayTime=(dayTime+dt/150)%1;
+  /* v138 : cycle jour/nuit auto (~2 min 30) OU mode manuel (jour/nuit fixe) choisi sur l'accueil */
+  const dm=window._dayMode||'auto';
+  if(dm==='day')dayTime=.5;else if(dm==='night')dayTime=.97;else dayTime=(dayTime+dt/150)%1;
   const ang=dayTime*Math.PI*2,elev=Math.sin(ang),az=Math.cos(ang);
-  const dayF=Math.max(0,Math.min(1,elev*1.7+.06)),nightF=1-dayF;
+  const dim=(window._weatherFx&&window._weatherFx.dim)||1; /* v138 : la météo assombrit la scène */
+  const dayF=Math.max(0,Math.min(1,elev*1.7+.06))*dim,nightF=1-dayF;
   sun.position.set(az*90,Math.max(elev,.015)*95+4,-30);
   if(dayF>.35){sun.intensity=.2+dayF*1.05;sun.color.set(0xfff4df);}
   else if(dayF>.02){sun.intensity=.25+dayF;sun.color.set(0xffc890);}
   else{sun.intensity=.16;sun.color.set(0x9fb8e8);}
   hemi.intensity=.22+dayF*.63;
+  if(window._weatherFx&&window._weatherFx.storm&&Math.random()<dt*.12)window._flash=1; /* v138 : éclair d'orage */
+  if(window._flash>0){window._flash=Math.max(0,window._flash-dt*2.5);hemi.intensity+=window._flash*1.4;}
   const dawn=Math.max(0,1-Math.abs(elev)*4)*dayF;
   const topC=new THREE.Color().setHSL(.62-.28*nightF,.62,.10+.42*dayF);
   const horC=new THREE.Color().setHSL(.58-.06*nightF,.45,.16+.55*dayF).lerp(new THREE.Color(0xff9a5a),dawn*.55);
@@ -691,7 +697,63 @@ function updateAmbiance(dt,t){
     const p=at(c.off),q=at(Math.max(0,Math.min(route.len,c.off+2*c.dir)));
     c.mesh.position.set(p[0],p[1]+.05,p[2]);c.mesh.lookAt(q[0],q[1]+.05,q[2]);
   }
+  updatePrecip(dt,t); /* v138 : pluie / neige autour de la caméra */
 }
+/* v138 : météo réelle — pluie/neige en particules autour de la caméra + effet selon le code WMO Open-Meteo */
+const precip=(()=>{ /* coordonnées locales autour de la caméra, recyclées */
+  const mk=(n,size,color,op)=>{const pos=new Float32Array(n*3),seed=new Float32Array(n);for(let i=0;i<n;i++){pos[i*3]=(Math.random()-.5)*70;pos[i*3+1]=Math.random()*45;pos[i*3+2]=(Math.random()-.5)*70;seed[i]=Math.random();}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));const m=new THREE.PointsMaterial({color,size,transparent:true,opacity:op,depthWrite:false});const p=new THREE.Points(g,m);p.frustumCulled=false;p.visible=false;S.add(p);return{mesh:p,pos,n,seed};};
+  return{rain:mk(700,0.14,0xbcd6e8,.75),snow:mk(500,0.32,0xffffff,.9)};
+})();
+function weatherInfo(code){
+  const c=Number(code);
+  if(c===0)return{emoji:'☀️',label:'ciel clair',cloud:.06,dim:1,fog:false,rain:false,snow:false,storm:false};
+  if(c===1)return{emoji:'🌤️',label:'plutôt clair',cloud:.3,dim:.97,fog:false,rain:false,snow:false,storm:false};
+  if(c===2)return{emoji:'⛅',label:'mi-couvert',cloud:.6,dim:.9,fog:false,rain:false,snow:false,storm:false};
+  if(c===3)return{emoji:'☁️',label:'couvert',cloud:.95,dim:.8,fog:false,rain:false,snow:false,storm:false};
+  if(c===45||c===48)return{emoji:'🌫️',label:'brouillard',cloud:.95,dim:.75,fog:true,rain:false,snow:false,storm:false};
+  if((c>=51&&c<=57)||(c>=80&&c<=82)||(c>=61&&c<=67))return{emoji:'🌧️',label:'pluie',cloud:1,dim:.62,fog:false,rain:true,snow:false,storm:false};
+  if((c>=71&&c<=77)||c===85||c===86)return{emoji:'🌨️',label:'neige',cloud:1,dim:.7,fog:false,rain:false,snow:true,storm:false};
+  if(c>=95)return{emoji:'⛈️',label:'orage',cloud:1,dim:.45,fog:false,rain:true,snow:false,storm:true};
+  return{emoji:'🌡️',label:'variable',cloud:.5,dim:.9,fog:false,rain:false,snow:false,storm:false};
+}
+function applyWeatherScene(code){
+  const w=weatherInfo(code);window._weatherFx=w;
+  if(cloudMat)cloudMat.opacity=.92*w.cloud;
+  precip.rain.mesh.visible=w.rain;precip.snow.mesh.visible=w.snow;
+  if(S.fog){if(w.fog){S.fog.near=25;S.fog.far=230;}else{S.fog.near=160;S.fog.far=750;}}
+  return w;
+}
+async function fetchWeatherAt(lat,lon,label){
+  if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+  const chip=$('weatherChip');
+  try{
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&timezone=auto';
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);
+    let resp;try{resp=await fetch(url,{mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json(),cur=data&&data.current;
+    if(!cur)throw new Error('réponse invalide');
+    const w=applyWeatherScene(cur.weather_code);
+    window._weather={code:cur.weather_code,temp:cur.temperature_2m,wind:cur.wind_speed_10m,hum:cur.relative_humidity_2m,place:label||''};
+    if(chip)chip.textContent=w.emoji+' '+Math.round(cur.temperature_2m)+' °C · '+w.label+' · vent '+Math.round(cur.wind_speed_10m)+' km/h'+(label?' · '+label:'');
+    if(label&&window._weatherToast!==w.label){toast('Météo à '+label+' : '+w.emoji+' '+w.label+', '+Math.round(cur.temperature_2m)+' °C.');window._weatherToast=w.label;}
+  }catch(e){if(chip)chip.textContent='🌡️ Météo indisponible';}
+}
+function updatePrecip(dt,t){
+  const c=cam?cam.position:null;
+  for(const key of ['rain','snow']){
+    const p=precip[key];if(!p||!p.mesh.visible)continue;
+    p.mesh.position.set(c?c.x:0,0,c?c.z:0);
+    const fall=key==='rain'?22:2.4;
+    for(let i=0;i<p.n;i++){
+      p.pos[i*3+1]-=fall*dt*(0.7+p.seed[i]*0.6);
+      if(key==='snow')p.pos[i*3]+=Math.sin(t*1.4+p.seed[i]*9)*.35*dt;
+      if(p.pos[i*3+1]<0){p.pos[i*3]=(Math.random()-.5)*70;p.pos[i*3+1]=40+Math.random()*5;p.pos[i*3+2]=(Math.random()-.5)*70;}
+    }
+    p.mesh.geometry.attributes.position.needsUpdate=true;
+  }
+}
+
 /* v137 : vrai relief 3D — maillage de terrain échantillonné sur le DEM Copernicus (via Open-Meteo), repli sur terrain plat. */
 async function buildTerrain(target){
   if(!route||!proj||!target)return;
@@ -2182,16 +2244,16 @@ function initFreeMap(){
   freeMarker=L.marker([freeCenter.lat,freeCenter.lon],{icon:freeArrowIcon(0)}).addTo(freeMap); /* v121 : flèche à la place du point */
   freeMarker.on('click',e=>{try{L.DomEvent.stopPropagation(e.originalEvent)}catch(_){};window._freeStartDir*=-1;freeUpdateStartArrow();toast(window._freeStartDir>0?'Départ dans le sens de la flèche.':'Départ dans le sens inverse de la flèche.');}); /* v121 : un appui sur la flèche inverse le sens de départ */
   window._freeCircle=L.circle([freeCenter.lat,freeCenter.lon],{radius:freeMapRadius(),color:'#34d399',fillOpacity:.12,weight:2}).addTo(freeMap);
-  freeMap.on('click',e=>{const ll=e&&e.latlng;if(!ll||!Number.isFinite(ll.lat)||!Number.isFinite(ll.lng)){toast('Point de carte invalide.');return;}freeCenter={lat:ll.lat,lon:ll.lng};freeMarker.setLatLng(ll);freeUpdateStartArrow();window._freeCircle.setLatLng(ll);freeClearStartChoices();$('freeInfo').textContent='Point de départ choisi · rayon '+(freeMapRadius()/1000).toFixed(1)+' km · touche « Rouler ici » pour charger les routes';});
+  freeMap.on('click',e=>{const ll=e&&e.latlng;if(!ll||!Number.isFinite(ll.lat)||!Number.isFinite(ll.lng)){toast('Point de carte invalide.');return;}freeCenter={lat:ll.lat,lon:ll.lng};fetchWeatherAt(ll.lat,ll.lng); /* v138 : météo du point choisi */freeMarker.setLatLng(ll);freeUpdateStartArrow();window._freeCircle.setLatLng(ll);freeClearStartChoices();$('freeInfo').textContent='Point de départ choisi · rayon '+(freeMapRadius()/1000).toFixed(1)+' km · touche « Rouler ici » pour charger les routes';});
 }
 function freeMapRefresh(){if(freeMap)setTimeout(()=>freeMap.invalidateSize({pan:false}),120);}
 setTimeout(initFreeMap,400);
 const freeRideDetails=$('freeRide');if(freeRideDetails)freeRideDetails.addEventListener('toggle',()=>{if(freeRideDetails.open){initFreeMap();freeMapRefresh();}});
 $('freeRadius')?.addEventListener('change',()=>{freeMapRadius();freeClearStartChoices();$('freeInfo').textContent='Rayon sélectionné : '+(freeMapRadius()/1000).toFixed(1)+' km';});
 $('enlargeMap')?.addEventListener('click',()=>{const mapEl=$('freeMap'),large=mapEl.style.height==='420px';mapEl.style.height=large?'220px':'420px';$('enlargeMap').textContent=large?'Agrandir la carte':'Réduire la carte';freeMapRefresh();});
-$('locateMe')?.addEventListener('click',()=>{if(!navigator.geolocation){toast('La géolocalisation n’est pas disponible.');return;}navigator.geolocation.getCurrentPosition(pos=>{freeCenter={lat:pos.coords.latitude,lon:pos.coords.longitude};if(freeMap)freeMap.setView([freeCenter.lat,freeCenter.lon],14);if(freeMarker)freeMarker.setLatLng([freeCenter.lat,freeCenter.lon]);freeUpdateStartArrow();if(window._freeCircle)window._freeCircle.setLatLng([freeCenter.lat,freeCenter.lon]).setRadius(freeMapRadius());freeClearStartChoices();$('freeInfo').textContent='Point de départ : ta position · choisis « Rouler ici » pour charger le secteur';},()=>toast('Position indisponible. Vérifie l’autorisation de localisation du navigateur.'),{enableHighAccuracy:true,timeout:12000});});
+$('locateMe')?.addEventListener('click',()=>{if(!navigator.geolocation){toast('La géolocalisation n’est pas disponible.');return;}navigator.geolocation.getCurrentPosition(pos=>{freeCenter={lat:pos.coords.latitude,lon:pos.coords.longitude};fetchWeatherAt(pos.coords.latitude,pos.coords.longitude,'ta position'); /* v138 */if(freeMap)freeMap.setView([freeCenter.lat,freeCenter.lon],14);if(freeMarker)freeMarker.setLatLng([freeCenter.lat,freeCenter.lon]);freeUpdateStartArrow();if(window._freeCircle)window._freeCircle.setLatLng([freeCenter.lat,freeCenter.lon]).setRadius(freeMapRadius());freeClearStartChoices();$('freeInfo').textContent='Point de départ : ta position · choisis « Rouler ici » pour charger le secteur';},()=>toast('Position indisponible. Vérifie l’autorisation de localisation du navigateur.'),{enableHighAccuracy:true,timeout:12000});});
 /* v121 : adresse de départ recherchée sur la carte (Nominatim) */
-if($('freeAddrGo'))$('freeAddrGo').onclick=async()=>{const q=(($('freeAddr')&&$('freeAddr').value)||'').trim();if(!q)return;try{$('freeAddrGo').disabled=true;const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q));const j=await r.json();if(!j||!j.length){toast('Adresse introuvable.');return;}const lat=parseFloat(j[0].lat),lon=parseFloat(j[0].lon);if(!Number.isFinite(lat)||!Number.isFinite(lon))return;freeCenter={lat,lon};if(freeMap)freeMap.setView([lat,lon],15);if(freeMarker)freeMarker.setLatLng([lat,lon]);freeUpdateStartArrow();if(window._freeCircle)window._freeCircle.setLatLng([lat,lon]);freeClearStartChoices();$('freeInfo').textContent='Point de départ : '+String(j[0].display_name||q).slice(0,80)+' · touche « Rouler ici » pour charger les routes';}catch(e){toast('Recherche d’adresse indisponible (connexion ?).')}finally{if($('freeAddrGo'))$('freeAddrGo').disabled=false;}};
+if($('freeAddrGo'))$('freeAddrGo').onclick=async()=>{const q=(($('freeAddr')&&$('freeAddr').value)||'').trim();if(!q)return;try{$('freeAddrGo').disabled=true;const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q));const j=await r.json();if(!j||!j.length){toast('Adresse introuvable.');return;}const lat=parseFloat(j[0].lat),lon=parseFloat(j[0].lon);if(!Number.isFinite(lat)||!Number.isFinite(lon))return;freeCenter={lat,lon};fetchWeatherAt(lat,lon,String(j[0].display_name||q).slice(0,40)); /* v138 */if(freeMap)freeMap.setView([lat,lon],15);if(freeMarker)freeMarker.setLatLng([lat,lon]);freeUpdateStartArrow();if(window._freeCircle)window._freeCircle.setLatLng([lat,lon]);freeClearStartChoices();$('freeInfo').textContent='Point de départ : '+String(j[0].display_name||q).slice(0,80)+' · touche « Rouler ici » pour charger les routes';}catch(e){toast('Recherche d’adresse indisponible (connexion ?).')}finally{if($('freeAddrGo'))$('freeAddrGo').disabled=false;}};
 if($('freeAddr'))$('freeAddr').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if($('freeAddrGo'))$('freeAddrGo').click();}});
 function freeClearStartChoices(){window._freeStartDir=1;freeNavigation=null;freeGraph=null;freeJunctions=null;window._freeNavigation=null;window._freeSectorCache=null;window._freeGraph=null;window._freeCurrentWay=null;if($('turnAround'))$('turnAround').disabled=true;if($('freeStartDialog'))$('freeStartDialog').classList.add('hide');const box=$('startDirections');if(box){box.classList.remove('show');box.replaceChildren();}const arrows=$('routeArrows');if(arrows)arrows.classList.add('hide');if(typeof freeMarker!=='undefined'&&freeMarker)freeUpdateStartArrow();}
 function freeProject(point,center){const kx=111320*Math.cos(center.lat*Math.PI/180),kz=110540;return{x:(point.lon-center.lon)*kx,z:-(point.lat-center.lat)*kz};}
@@ -3367,6 +3429,7 @@ function decorateDemo(){
   for(const [distance,name] of [[620,'Les Hauts Prés'],[1850,'Val des Saules'],[3600,'Belle-Rive']]){if(distance>=route.len)continue;const p=at(distance);const entry={distance,name,source:'demo',x:p[0],z:p[2]};cityEntries.push(entry);createTownSign(entry)}
   buildAmbiance(world); /* v136 : lampadaires, oiseaux, drapeaux, trafic */
   buildTerrain(world); /* v137 : relief 3D Copernicus DEM (asynchrone, repli plat) */
+  if(proj){const c=at(route.len/2);fetchWeatherAt(proj.la-c[2]/proj.kz,proj.lo+c[0]/proj.kx);} /* v138 : météo du parcours chargé */
 }
 
 
@@ -5386,6 +5449,20 @@ bindCocotte('cocotteLeft','left');bindCocotte('cocotteRight','right');
 $('cassetteTeeth').addEventListener('click',e=>{const cog=e.target.closest('[data-cog-index]');if(!cog)return;virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI()});
 $('cassetteTeeth').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const cog=e.target.closest('[data-cog-index]');if(cog){e.preventDefault();virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();}}});
 updateGearUI();
+/* v138 : bouton manuel jour/nuit + météo réelle */
+(function(){
+  const btn=$('dayNightBtn'),cb=$('liveWeather');
+  const modes=[['auto','🌗 Jour/nuit : auto'],['day','☀️ Jour fixe'],['night','🌙 Nuit fixe']];
+  let mode='auto';
+  try{mode=localStorage.getItem('velo3d-daymode')||'auto';if(!['auto','day','night'].includes(mode))mode='auto';}catch(e){}
+  window._dayMode=mode;
+  const sync=()=>{const m=modes.find(x=>x[0]===mode)||modes[0];if(btn){btn.textContent=m[1];btn.title='Mode actuel : '+m[0]+' — appuie pour changer';}};
+  if(btn)btn.onclick=()=>{mode=mode==='auto'?'day':mode==='day'?'night':'auto';window._dayMode=mode;try{localStorage.setItem('velo3d-daymode',mode)}catch(e){}sync();toast(mode==='auto'?'Cycle jour/nuit automatique.':mode==='day'?'Jour fixe ☀️':'Nuit fixe 🌙');};
+  let live=false;try{live=localStorage.getItem('velo3d-liveweather')==='1';}catch(e){}
+  if(cb){cb.checked=live;cb.onchange=()=>{live=cb.checked;try{localStorage.setItem('velo3d-liveweather',live?'1':'0')}catch(e){}window._liveWeather=live;if(live)toast('Météo réelle activée : relevée toutes les 10 min à ta position.');else toast('Météo réelle désactivée.');};}
+  window._liveWeather=live;window._lastWeatherFetch=0;sync();
+})();
+
 /* ---------- Boucle ---------- */
 
 let _wakeLock=null,_wakeLockWanted=false;
@@ -5410,7 +5487,8 @@ function loop(t){
     if(_effRunning&&window._powerStarted)window._rideElapsed+=dt;place(false,dt);if(window._levelCrossings)updateLevelCrossings(s,dt); /* v133 : animation des passages à niveau */
     if(window._smoke)updateSmoke(dt); /* v134 : fumée des cheminées */
     if(window._flows)updateFlow(dt); /* v135 : rivières animées */
-    updateAmbiance(dt,t/1000); /* v136 : cycle jour/nuit + animations ambiantes */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
+    updateAmbiance(dt,t/1000); /* v136 : cycle jour/nuit + animations ambiantes */
+    if(window._liveWeather&&proj&&route&&t-(window._lastWeatherFetch||0)>600000){window._lastWeatherFetch=t;const p=at(s);fetchWeatherAt(proj.la-p[2]/proj.kz,proj.lo+p[0]/proj.kx);} /* v138 : météo réelle en roulant, toutes les 10 min */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
   }
   R.render(S,cam);
@@ -5426,7 +5504,7 @@ document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wak
   homeSync();
   setInterval(()=>{if(document.hidden)return;for(const box of document.querySelectorAll('#routeArrows .routeTowns')){const roll=box.firstElementChild,n=roll?roll.children.length:0;if(n<2)continue;box._i=((box._i||0)+1)%n;const h=box.getBoundingClientRect().height||13;roll.style.transition=box._i===0?'none':'transform .45s ease';roll.style.transform='translateY(-'+box._i*h+'px)'}},2600);
 })();
-demo();requestAnimationFrame(loop);
+demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.lat,freeCenter.lon); /* v138 : météo du secteur par défaut */requestAnimationFrame(loop);
 
 /* TEST_HOOK */
 } catch(error) {
