@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v138 – bouton jour/nuit manuel, météo réelle du lieu avec pluie/neige/brouillard</title>
+<title>Vélo 3D v139 – bouton caméra 📹 à côté du demi-tour, sons de roue libre et de cassette</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -254,12 +254,14 @@ button.wide{width:100%;display:block;margin-bottom:8px;min-height:48px}
 @media(orientation:landscape) and (max-height:620px){#routeArrows{width:min(90vw,470px);max-width:min(90vw,470px);gap:3px;padding:0!important}.routeArrow{min-width:70px!important;max-width:150px!important;min-height:58px!important;padding:2px 4px!important;--tl:11px}.routeArrow .arrowGlyph{font-size:21px!important}.routeArrow .routeMeters{font-size:10px}.routeArrow .townLine{font-size:8.5px}}
 body.homeOpen #routeArrows{display:none!important}
 body.homeOpen #hudToggle{display:none!important} /* v121 : icône 📊 données masquée sur la page d'accueil, visible pendant la sortie */
-body.homeOpen #cameraToggle{display:none!important} /* v123 : icône 📷 caméra elle aussi masquée sur la page d'accueil */
+/* v139 : bouton caméra 📹 déplacé à côté du bouton demi-tour, en bas à droite */
+#cameraToggle{position:fixed;right:12px;bottom:calc(168px + env(safe-area-inset-bottom,0px));z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:16px;backdrop-filter:blur(12px)}
+body.homeOpen #cameraToggle{display:none!important} /* v123 : icône caméra aussi masquée sur la page d'accueil */
 /* v125 : bouton demi-tour flottant à droite, visible même quand le bandeau est replié */
 #turnAroundFloat{position:fixed;right:12px;bottom:calc(110px + env(safe-area-inset-bottom,0px));z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:14px;font-weight:700;backdrop-filter:blur(12px)}
 #turnAroundFloat:disabled{opacity:.4;cursor:wait}
 body.homeOpen #turnAroundFloat{display:none!important}
-@media(orientation:landscape) and (max-height:620px){#turnAroundFloat{right:8px;bottom:calc(96px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:12px}}
+@media(orientation:landscape) and (max-height:620px){#cameraToggle{right:8px;bottom:calc(148px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:14px}#turnAroundFloat{right:8px;bottom:calc(96px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:12px}}
 body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expanded){translate:0 var(--arrowsH,0px)}
 
 /* v74 : résumé de séance, carte du tracé effectué, exports Garmin */
@@ -400,7 +402,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
 <body>
 <canvas id="c" aria-label="Simulation 3D du parcours à vélo" tabindex="0"></canvas>
-<div id="topTools" aria-label="Affichage de la séance"><button id="hudToggle" aria-label="Masquer les données de la sortie" aria-expanded="true" title="Afficher ou masquer les données">📊</button><button id="cameraToggle" type="button" aria-label="Changer de vue caméra" title="Changer de vue caméra (suivi · paysage · profil · cintre)">📷</button></div>
+<div id="topTools" aria-label="Affichage de la séance"><button id="hudToggle" aria-label="Masquer les données de la sortie" aria-expanded="true" title="Afficher ou masquer les données">📊</button></div>
 <div id="hud" aria-label="Données de la sortie">
   <div class="m"><b id="sp">0</b><i>km/h</i></div>
   <div class="m"><b id="po">0</b><i id="poLabel">watts</i></div>
@@ -445,11 +447,11 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
   </div>
   <div class="row" id="actionControls"><button id="pause" aria-label="Mettre en pause">Pause</button><button id="stopBtn" aria-label="Arrêter l'entraînement" title="Arrêter l'entraînement">⏹️</button><button id="turnAround" disabled aria-label="Faire demi-tour">↶ Demi-tour</button><button id="fsBtn" aria-label="Plein écran">⛶ Plein écran</button><button id="bt">Trainer</button><button id="hb">Cardio</button><button id="mn">Menu</button></div><button id="barHide" type="button" title="Replier le bandeau du bas" aria-label="Replier le bandeau inférieur">▾</button><div id="exportPanel" class="hide"><b>Entraînement arrêté</b><br><span id="exportInfo"></span></div>
 </div>
-<button id="barShow" type="button" title="Faire réapparaître le bandeau du bas">▴</button><button id="turnAroundFloat" type="button" class="hide" title="Faire demi-tour" aria-label="Faire demi-tour">↶</button><div id="gearDock" class="hide" aria-label="Changement de vitesse virtuelle"></div>
+<button id="barShow" type="button" title="Faire réapparaître le bandeau du bas">▴</button><button id="cameraToggle" type="button" aria-label="Changer de vue caméra" title="Changer de vue caméra (suivi · paysage · profil · cintre)">📹</button><button id="turnAroundFloat" type="button" class="hide" title="Faire demi-tour" aria-label="Faire demi-tour">↶</button><div id="gearDock" class="hide" aria-label="Changement de vitesse virtuelle"></div>
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v138</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v139</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -579,6 +581,11 @@ const toast=text=>{$('msg').textContent=text;$('hs').textContent=text};
 const setFilePickStatus=(id,file,state,detail='')=>{const el=$(id);if(!el)return;el.textContent=file?`${file.name}${detail?' — '+detail:''}`:'Aucun fichier sélectionné';el.dataset.state=state||'idle'};
 /* v73 : retour haptique léger sur mobile (silencieux si non supporté) */
 const buzz=pattern=>{try{if(navigator.vibrate)navigator.vibrate(pattern)}catch(_){}};
+/* v139 : sons — roue libre + clics cassette/plateau (WebAudio, aucun fichier externe) */
+let AC=null,noiseBuf=null;
+function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();const b=AC.createBuffer(1,Math.floor(AC.sampleRate*.5),AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;noiseBuf=b;}catch(e){return null}}if(AC.state==='suspended')AC.resume();return AC}
+function tick(freq,dur,vol,type){const ac=audio();if(!ac||!noiseBuf)return;try{const t=ac.currentTime,src=ac.createBufferSource();src.buffer=noiseBuf;src.loop=true;const f=ac.createBiquadFilter();f.type=type||'bandpass';f.frequency.value=freq;f.Q.value=9;const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);src.connect(f);f.connect(g);g.connect(ac.destination);src.start(t);src.stop(t+dur+.03)}catch(e){}}
+function shiftClack(){tick(2600,.05,.16);setTimeout(()=>tick(1700,.06,.13),50)} /* v139 : deux clics de dérailleur (cassette puis plateau) */
 const prog=(fraction,text)=>{const percent=Math.max(0,Math.min(100,Math.round(fraction*100)));$('pf').style.width=percent+'%';$('pb').setAttribute('aria-valuenow',String(percent));toast(text)};
 if(typeof THREE==='undefined')throw new Error('La bibliothèque Three.js n’a pas pu être chargée. Vérifiez votre connexion Internet puis rechargez la page.');
 const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true,powerPreference:'high-performance'});
@@ -3457,7 +3464,7 @@ let _lastTapT=0,_tapMoved=0;
 $('c').addEventListener('pointerdown',e=>{
   if(cameraState.view==='cockpit'||cameraState.distance<=1.81){const _side=cocotteAtPoint(e.clientX,e.clientY);if(_side){ /* v127 : cocotte 3D = vitesse ; les deux en même temps = plateau */
     const _now=performance.now(),_other=_side==='left'?'right':'left';
-    if(window._lastCocotte&&window._lastCocotte.side===_other&&_now-window._lastCocotte.t<500){window._lastCocotte=null;virtualFront=virtualFront===48?35:48;updateGearUI();buzz(35);toast('Plateau '+virtualFront+' dents.');return;}
+    if(window._lastCocotte&&window._lastCocotte.side===_other&&_now-window._lastCocotte.t<500){window._lastCocotte=null;virtualFront=virtualFront===48?35:48;updateGearUI();shiftClack(); /* v139 */buzz(35);toast('Plateau '+virtualFront+' dents.');return;}
     window._lastCocotte={side:_side,t:_now};shiftFromCocotte(_side);buzz(15);toast(_side==='left'?'Pignon plus petit (plus dur).':'Pignon plus grand (plus facile).');return;}}
   cameraPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});try{$('c').setPointerCapture(e.pointerId)}catch(_){}
   if(cameraPointers.size===2){const points=[...cameraPointers.values()];previousPinch=Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y)}
@@ -3480,7 +3487,7 @@ let hudUserExpanded=true;const landscapeQuery=matchMedia('(orientation: landscap
 function syncCompactHud(){const landscape=landscapeQuery.matches;document.body.classList.toggle('landscape-layout',landscape);$('hud').classList.remove('compact');$('hud').classList.toggle('hudHidden',!hudUserExpanded);const hb=$('hudToggle');if(hb){hb.textContent='📊';hb.setAttribute('aria-expanded',String(hudUserExpanded));hb.setAttribute('aria-label',hudUserExpanded?'Masquer les données de la sortie':'Afficher les données de la sortie');hb.title=hudUserExpanded?'Masquer les données':'Afficher les données';}} /* v121 : icône données retirée de l'accueil */
 if($('hudToggle'))$('hudToggle').onclick=()=>{hudUserExpanded=!hudUserExpanded;syncCompactHud()};
 /* v121 : plus de panneau caméra — l'icône 📷 cycle les vues à chaque appui ; le zoom reste au pincement */
-function syncCameraPanel(){const panel=$('cameraPanel'),btn=$('cameraToggle');if(!panel||!btn)return;panel.classList.add('hide');btn.setAttribute('aria-label','Changer de vue caméra');btn.title='Changer de vue caméra (suivi · paysage · profil · cintre)';btn.textContent='📷';}
+function syncCameraPanel(){const panel=$('cameraPanel'),btn=$('cameraToggle');if(!panel||!btn)return;panel.classList.add('hide');btn.setAttribute('aria-label','Changer de vue caméra');btn.title='Changer de vue caméra (suivi · paysage · profil · cintre)';btn.textContent='📹';}
 $('cameraToggle').onclick=()=>{const views=['follow','wide','side','cockpit'];const i=views.indexOf(cameraState.view);setView(views[(i+1)%views.length]);buzz(15);};
 if(landscapeQuery.addEventListener)landscapeQuery.addEventListener('change',syncCompactHud);else if(landscapeQuery.addListener)landscapeQuery.addListener(syncCompactHud);
 $('mapMode').setAttribute('aria-label','Basculer entre vue globale et suivi du cycliste');syncCompactHud();syncCameraPanel();refreshCameraControls();
@@ -5430,24 +5437,24 @@ $('skipScenery').onclick=()=>{++osmTok;$('skipScenery').classList.add('hide');$(
 $('pw').oninput=e=>{$('pv').textContent=e.target.value};
 $('gearEasier').onclick=()=>{if(virtualRearIndex<VIRTUAL_COGS.length-1){virtualRearIndex++;updateGearUI()}};
 $('gearHarder').onclick=()=>{if(virtualRearIndex>0){virtualRearIndex--;updateGearUI()}};
-$('frontGear').onclick=()=>{virtualFront=virtualFront===48?35:48;updateGearUI()};
+$('frontGear').onclick=()=>{virtualFront=virtualFront===48?35:48;updateGearUI();shiftClack();}; /* v139 : clic de plateau */
 const heldCocottes=new Map();let cocottesPairHandled=false;
 function shiftFromCocotte(side){
   /* v127 : sens inversé — cocotte gauche = pignon plus PETIT (plus dur), droite = plus GRAND (plus facile) */
   if(side==='left'&&virtualRearIndex>0)virtualRearIndex--;
   else if(side==='right'&&virtualRearIndex<VIRTUAL_COGS.length-1)virtualRearIndex++;
-  updateGearUI();
+  updateGearUI();shiftClack(); /* v139 : clic de cassette */
 }
 function bindCocotte(id,side){
   const button=$(id);if(!button)return;
-  button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}if(!heldCocottes.size)cocottesPairHandled=false;heldCocottes.set(e.pointerId,side);if(!cocottesPairHandled&&new Set(heldCocottes.values()).size>=2){virtualFront=virtualFront===48?35:48;cocottesPairHandled=true;updateGearUI();buzz(35);toast('Plateau '+virtualFront+' dents.');}});
+  button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}if(!heldCocottes.size)cocottesPairHandled=false;heldCocottes.set(e.pointerId,side);if(!cocottesPairHandled&&new Set(heldCocottes.values()).size>=2){virtualFront=virtualFront===48?35:48;cocottesPairHandled=true;updateGearUI();shiftClack(); /* v139 */buzz(35);toast('Plateau '+virtualFront+' dents.');}});
   button.addEventListener('pointerup',e=>{const pressed=heldCocottes.get(e.pointerId);if(pressed&&!cocottesPairHandled&&heldCocottes.size===1)shiftFromCocotte(pressed);heldCocottes.delete(e.pointerId);if(!heldCocottes.size)cocottesPairHandled=false;});
   for(const type of ['pointercancel','lostpointercapture'])button.addEventListener(type,e=>{heldCocottes.delete(e.pointerId);if(!heldCocottes.size)cocottesPairHandled=false;});
   button.addEventListener('click',e=>{if(e.detail===0)shiftFromCocotte(side)});
 }
 bindCocotte('cocotteLeft','left');bindCocotte('cocotteRight','right');
-$('cassetteTeeth').addEventListener('click',e=>{const cog=e.target.closest('[data-cog-index]');if(!cog)return;virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI()});
-$('cassetteTeeth').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const cog=e.target.closest('[data-cog-index]');if(cog){e.preventDefault();virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();}}});
+$('cassetteTeeth').addEventListener('click',e=>{const cog=e.target.closest('[data-cog-index]');if(!cog)return;virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();shiftClack(); /* v139 */});
+$('cassetteTeeth').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const cog=e.target.closest('[data-cog-index]');if(cog){e.preventDefault();virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();shiftClack(); /* v139 */;}}});
 updateGearUI();
 /* v138 : bouton manuel jour/nuit + météo réelle */
 (function(){
@@ -5484,7 +5491,8 @@ function loop(t){
     if(running&&window._powerStarted){v=integrateRideSpeed(v,power,grade,dt);const _dir=window._rideDir||1;let advance=window._uTurn?0:v*dt*_dir; /* v128 : s gelé pendant le demi-tour animé, le vélo tourne sur son arc */if(_dir<0)advance=Math.max(advance,-s);else advance=Math.min(advance,route.len-s);s+=advance;if(advance>0)totalDistance+=advance;if(advance>0)window._rideGain=(window._rideGain||0)+Math.max(0,grade)*advance;if(s>=route.len||s<=0){s=Math.max(0,Math.min(route.len,s));const freeNav=window._freeNavigation;if(!(freeNav&&freeNav.active)){running=false;v=0;$('pause').textContent='Repartir';toast((s<=0?'Début du parcours atteint · ':'Parcours terminé · ')+(totalDistance/1000).toFixed(2)+' km. Cliquez sur Repartir pour recommencer.');if(ctl)sendGrade(0)}}}
     if(window._freeNavigation&&window._freeNavigation.active)freeAdvanceNavigation();
     if(_effRunning&&t-lastSampleT>1000){lastSampleT=t;if(!sessionStart)sessionStart=Date.now();const here=at(s),gps=proj?here:null,lat=gps?proj.la-gps[2]/proj.kz:null,lon=gps?proj.lo+gps[0]/proj.kx:null;sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power:ctl?lastP:+$('pw').value,hr,cad:rideCadence(v,power),lat,lon,alt:gps?gps[1]:null,spd:v,x:here[0],z:here[2]});}
-    if(_effRunning&&window._powerStarted)window._rideElapsed+=dt;place(false,dt);if(window._levelCrossings)updateLevelCrossings(s,dt); /* v133 : animation des passages à niveau */
+    if(_effRunning&&window._powerStarted)window._rideElapsed+=dt;place(false,dt);
+    if(_effRunning&&power<=0&&v>2.5){window._fw=(window._fw||0)+v*dt*2.4;if(window._fw>=1){window._fw%=1;tick(3000+Math.random()*900,.03,.045,'highpass');}} /* v139 : clics de roue libre quand on cesse de pédaler */if(window._levelCrossings)updateLevelCrossings(s,dt); /* v133 : animation des passages à niveau */
     if(window._smoke)updateSmoke(dt); /* v134 : fumée des cheminées */
     if(window._flows)updateFlow(dt); /* v135 : rivières animées */
     updateAmbiance(dt,t/1000); /* v136 : cycle jour/nuit + animations ambiantes */
