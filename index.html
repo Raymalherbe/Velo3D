@@ -1,4 +1,3 @@
-<!-- VUE CINTRE FIX V2 - Version corrigée avec vue première personne -->
 <!doctype html>
 <html lang="fr">
 <head>
@@ -6,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v121 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
+<title>Vélo 3D v122 – accueil épuré, flèche de départ sur la carte, icône caméra, zoom suivi jusqu’au cintre, maisons à toits</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -312,7 +311,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 @media(orientation:landscape) and (max-height:620px){#previewCanvas{height:clamp(230px,42vh,310px)}}
 
 /* v115 : commandes d’affichage regroupées en haut à gauche */
-#topTools{position:fixed!important;z-index:9999!important;left:8px!important;top:8px!important;display:flex!important;gap:5px}
+#topTools{position:fixed;z-index:16;left:calc(8px + env(safe-area-inset-left,0px));top:calc(8px + env(safe-area-inset-top,0px));display:flex;gap:5px}
 #topTools button{min-height:32px;min-width:36px;padding:3px 8px;border-radius:9px;background:var(--card);backdrop-filter:blur(12px);font-size:15px}
 #topTools button[aria-pressed="false"]{opacity:.72}
 #hud{top:calc(48px + env(safe-area-inset-top,0px))!important}
@@ -323,7 +322,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #gearDock #gearControls button{min-height:40px;padding:4px 9px}
 #gearDock #gearControls .gearCaption{display:none}
 #gearDock #gearReadout{min-width:64px}
-@media(orientation:landscape) and (max-height:620px){#gearDock{left:8px;transform:none;bottom:calc(43px + env(safe-area-inset-bottom,0px));padding:3px}#gearDock #gearControls button{min-height:32px;padding:2px 6px}#gearDock #gearReadout{min-width:56px;font-size:10px}}
+@media(orientation:landscape) and (max-height:620px){#gearDock{left:50%;transform:translateX(-50%);bottom:calc(48px + env(safe-area-inset-bottom,0px));padding:3px}#gearDock #gearControls button{min-height:32px;padding:2px 6px}#gearDock #gearReadout{min-width:56px;font-size:10px}} /* v122 : bandeau replié — cassette/plateaux restent centrés en bas, au-dessus du bouton ▴ */
 @media(max-width:390px){#gearDock{max-width:calc(100vw - 8px);padding:4px}#gearDock #gearControls button{min-width:30px;padding:3px 6px}#gearDock #gearControls #frontGear{min-width:64px}}
 .photoUploadRow{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;min-width:0}
 .photoUploadRow .choice{min-width:0}
@@ -359,7 +358,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #gearDock #gearControls{gap:7px}
 @media(max-width:700px){#gearControls{gap:6px}.chainringButton{width:45px;height:45px;min-width:45px;min-height:45px}.cassetteScale>button{flex-basis:27px!important;width:27px;min-width:27px!important}.cassetteCog{width:clamp(17px,4.4vw,25px);height:clamp(17px,4.4vw,25px);font-size:6px}#gearReadout{min-width:48px;font-size:10px}#gearDock{max-width:calc(100vw - 6px);padding:4px 5px}}
 @media(max-width:390px){.cassetteCog{width:14px;height:14px;font-size:5px}#gearControls{gap:4px}#gearDock{padding:3px}}
-@media(orientation:landscape) and (max-height:620px){#gearReadout{display:none}#previewDock{top:2px;padding:4px 3px 3px}#previewCanvas{height:clamp(128px,38vh,210px)}#previewHint{font-size:9px}#bar #barHide{top:-22px;width:54px;min-width:54px;height:20px;min-height:20px}#gearDock{bottom:calc(28px + env(safe-area-inset-bottom,0px));padding:3px 5px}#gearControls{gap:4px}.chainringButton{width:39px;height:39px;min-width:39px;min-height:39px;font-size:13px}.gearPartLabel{font-size:7px}.cassetteHeader{font-size:8px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:27px;min-height:27px;font-size:16px}.cassetteCog{width:clamp(16px,3vw,23px);height:clamp(16px,3vw,23px);font-size:6px}#gearReadout{min-width:44px;font-size:9px;padding:3px}#bar>#gearControls{grid-column:1;grid-row:2;justify-content:flex-start;gap:4px;min-width:0;margin:0}#bar>#gearControls .gearCaption{display:none}#bar>#gearControls .chainringButton{width:37px;height:37px;min-width:37px;min-height:37px}#bar>#gearControls #gearReadout{min-width:42px;padding:3px;font-size:9px}#bar>#gearControls .cassetteHeader{font-size:7px}#bar>#gearControls .cassetteScale{gap:1px}#bar>#gearControls .cassetteCog{flex:0 0 clamp(12px,1.9vw,16px);min-width:0!important;width:clamp(12px,1.9vw,16px);height:clamp(12px,1.9vw,16px);font-size:5px}#bar>#gearControls .cassetteScale>button{flex-basis:23px!important;width:23px;min-width:23px!important;height:24px;min-height:24px;font-size:14px}}
+@media(orientation:landscape) and (max-height:620px){#gearReadout{display:none}#previewDock{top:2px;padding:4px 3px 3px}#previewCanvas{height:clamp(128px,38vh,210px)}#previewHint{font-size:9px}#bar #barHide{top:-22px;width:54px;min-width:54px;height:20px;min-height:20px}#gearDock{left:50%;transform:translateX(-50%);bottom:calc(48px + env(safe-area-inset-bottom,0px));padding:3px 5px}#gearControls{gap:4px}.chainringButton{width:39px;height:39px;min-width:39px;min-height:39px;font-size:13px}.gearPartLabel{font-size:7px}.cassetteHeader{font-size:8px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:27px;min-height:27px;font-size:16px}.cassetteCog{width:clamp(16px,3vw,23px);height:clamp(16px,3vw,23px);font-size:6px}#gearReadout{min-width:44px;font-size:9px;padding:3px}#bar>#gearControls{grid-column:1;grid-row:2;justify-content:flex-start;gap:4px;min-width:0;margin:0}#bar>#gearControls .gearCaption{display:none}#bar>#gearControls .chainringButton{width:37px;height:37px;min-width:37px;min-height:37px}#bar>#gearControls #gearReadout{min-width:42px;padding:3px;font-size:9px}#bar>#gearControls .cassetteHeader{font-size:7px}#bar>#gearControls .cassetteScale{gap:1px}#bar>#gearControls .cassetteCog{flex:0 0 clamp(12px,1.9vw,16px);min-width:0!important;width:clamp(12px,1.9vw,16px);height:clamp(12px,1.9vw,16px);font-size:5px}#bar>#gearControls .cassetteScale>button{flex-basis:23px!important;width:23px;min-width:23px!important;height:24px;min-height:24px;font-size:14px}}
 
 
 /* v117 — vue cassette empilée et commande accessible en mode paysage. */
@@ -390,8 +389,6 @@ body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0
 @media(max-width:390px){.cassetteDiagram{width:102px;height:102px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:29px!important;width:29px;min-width:29px!important;height:34px;min-height:34px}#gearControls{gap:4px}}
 @media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:center;gap:clamp(270px,41vw,350px);padding:0}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0px))}}
 
-#bar.barHidden #gearControls {display: flex!important; position: fixed!important; left: 10px!important; bottom: 12px!important; z-index: 9999!important; background: var(--card)!important; padding: 8px!important; border-radius: 10px!important; border: 1px solid var(--bd)!important;}
-#topTools{display:flex!important;visibility:visible!important;opacity:1!important;}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
 <body>
@@ -426,8 +423,8 @@ body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0
 <div id="destChip" class="hide"><span>🎯</span><b id="destChipName"></b><span id="destChipDist"></span><button id="destChipCancel" title="Annuler la destination">✖</button></div>
   <div id="routeArrows" class="hide" role="group" aria-label="Choisir une direction au prochain carrefour"><span class="junctionDistancePlaceholder">Carrefour dans — m</span></div>
 <aside id="cameraPanel" aria-label="Réglages de la caméra">
-  <p class="panelTitle">Point de vue · glisser pour pivoter (Cintre = yeux du cycliste)</p>
-  <div class="row"><button id="viewFollow" class="on" aria-pressed="true">Suivi</button><button id="viewWide" aria-pressed="false">Paysage</button><button id="viewSide" aria-pressed="false">Profil</button><button id="viewCockpit" aria-pressed="false" title="Vue à la première personne (yeux du cycliste)">Cintre</button></div>
+  <p class="panelTitle">Point de vue · glisser pour pivoter</p>
+  <div class="row"><button id="viewFollow" class="on" aria-pressed="true">Suivi</button><button id="viewWide" aria-pressed="false">Paysage</button><button id="viewSide" aria-pressed="false">Profil</button><button id="viewCockpit" aria-pressed="false">Cintre</button></div>
   <div class="row zoomRow"><button id="zoomOut" aria-label="Dézoomer">−</button><input id="zoom" type="range" min="1" max="12" step="0.5" value="7" aria-label="Zoom de la caméra"><button id="zoomIn" aria-label="Zoomer">+</button></div>
   <span id="zoomValue">Caméra à 6 m · molette, pincement ou glisser</span>
 </aside>
@@ -445,7 +442,7 @@ body.barFolded #cockpitShifters{bottom:calc(150px + env(safe-area-inset-bottom,0
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v121</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v122</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -3203,12 +3200,12 @@ try{const saved=JSON.parse(localStorage.getItem('velo3d-camera')||'null');if(sav
 function saveCamera(){try{localStorage.setItem('velo3d-camera',JSON.stringify({distance:cameraState.distance,view:cameraState.view,yaw:cameraState.yaw,pitch:cameraState.pitch}))}catch(e){}}
 function syncCockpitShifters(){const el=$('cockpitShifters');if(!el)return;const active=cameraState.view==='cockpit'&&$('home').classList.contains('hide')&&$('stopDialog').classList.contains('hide')&&$('freeStartDialog').classList.contains('hide');el.classList.toggle('hide',!active)}
 function refreshCameraControls(){
-  $('zoom').value=Math.round(((36-cameraState.distance)/3)+1); if(cameraState.view==='cockpit')cameraState.distance=1.8; /* v121 : vue cintre - première personne comme les yeux du cycliste */
-  $('zoomValue').textContent=cameraState.view==='cockpit'?'🚴 Vue cintre — comme les yeux du cycliste':'Caméra à '+cameraState.distance.toFixed(1).replace('.0','')+' m · glisser pour pivoter';
+  $('zoom').value=Math.round(((36-cameraState.distance)/3)+1); if(cameraState.view==='cockpit')cameraState.distance=1.8; /* v121 : vue cintre seulement très près du cycliste */
+  $('zoomValue').textContent=cameraState.view==='cockpit'?'🚴 Vue cintre — comme si tu étais sur le vélo':'Caméra à '+cameraState.distance.toFixed(1).replace('.0','')+' m · glisser pour pivoter';
   for(const [id,mode] of [['viewFollow','follow'],['viewWide','wide'],['viewSide','side'],['viewCockpit','cockpit']]){const active=cameraState.view===mode;$(id).classList.toggle('on',active);$(id).setAttribute('aria-pressed',String(active))}
   syncCockpitShifters();
 }
-function setZoom(distance){cameraState.distance=Math.max(1.8,Math.min(36,distance));if(cameraState.distance<=1.81)cameraState.view='cockpit';refreshCameraControls();saveCamera()} /* bascule en cintre seulement à moins de 1,8 m */
+function setZoom(distance){cameraState.distance=Math.max(1.8,Math.min(36,distance));if(cameraState.distance<=1.81)cameraState.view='cockpit';refreshCameraControls();saveCamera()} /* v121 : bascule en cintre seulement à moins de 1,8 m */
 function setView(view){cameraState.view=view;cameraState.yaw=0;if(view==='wide')cameraState.distance=23;else if(view==='side')cameraState.distance=10;else if(view==='cockpit')cameraState.distance=1.8;else cameraState.distance=6;refreshCameraControls();saveCamera()}
 $('zoom').oninput=e=>setZoom(36-(Number(e.target.value)-1)*3);$('zoomIn').onclick=()=>setZoom(cameraState.distance*.82);$('zoomOut').onclick=()=>setZoom(cameraState.distance/.82);
 $('viewFollow').onclick=()=>setView('follow');$('viewWide').onclick=()=>setView('wide');$('viewSide').onclick=()=>setView('side');$('viewCockpit').onclick=()=>setView('cockpit');
@@ -3261,54 +3258,26 @@ function place(snap,dt=.016){
   }
   rider.position.set(p[0],rideY,p[2]);
   const distance=cameraState.distance,baseYaw=cameraState.view==='side'?Math.PI/2:0,yaw=baseYaw+cameraState.yaw,pitch=cameraState.pitch;
-  const cockpit = cameraState.view==='cockpit' || distance<=1.81; /* seuil cintre à 1,8 m */
+  const cockpit = cameraState.view==='cockpit' || distance<=1.81; /* v121 : seuil cintre à 1,8 m */
   if(cockpit){
-    /* Vue à la première personne comme les yeux du cycliste - on voit ses bras sur le cintre, ses jambes, et on peut regarder autour */
-    // Rétablir la visibilité de tout au début
-    if(rider.userData._cockpitHidden){
-      rider.userData._cockpitHidden.forEach(o=>o.visible=true);
-      rider.userData._cockpitHidden=null;
-      r4ApplyCyclistStyle(rider.userData,riderStyle);
-    }
-    
-    // Positionner la caméra exactement aux yeux du cycliste
-    const head=rider.userData.headGroup,eye=new THREE.Vector3();
-    rider.updateMatrixWorld(true);head.getWorldPosition(eye);
-    const fwd=new THREE.Vector3(0,0,1).applyQuaternion(rider.quaternion);
-    eye.y+=0.35; /* Position des yeux au-dessus de la tête - augmentée pour vue cintre plus haute */
-    cam.position.copy(eye);
-    cam.quaternion.setFromEuler(new THREE.Euler(-cameraState.pitch,angle+Math.PI-cameraState.yaw,0,'YXZ'));
-    
-    // Masquer uniquement ce qui ne doit pas être visible en vue première personne
+    /* v121 : vraie vue à la place du cycliste — caméra aux yeux, on ne voit que le guidon/cocottes,
+       ses bras et ses jambes qui pédalent ; glisser le doigt pour regarder à droite, à gauche, en haut, en bas */
     if(!rider.userData._cockpitHidden){
-      const _ch=[],tmpV=new THREE.Vector3();
+      const _ch=[],_keep=new Set(),tmpV=new THREE.Vector3();
+      const keep=grp=>grp.traverse(m=>{if(m.isMesh)_keep.add(m)});
+      for(const arm of rider.userData.arms||[])if(arm.sh)keep(arm.sh);
+      for(const leg of rider.userData.legs||[])if(leg.hip)keep(leg.hip);
       rider.updateMatrixWorld(true);
-      
-      // Masquer la tête et le torse (pour ne pas voir son propre corps de face)
-      rider.userData.body.traverse(o=>{
-        if(o.isMesh&&o.visible){
-          rider.worldToLocal(tmpV.copy(o.getWorldPosition(new THREE.Vector3())));
-          // Masquer si c'est devant et au-dessus (tête, torse)
-          if(tmpV.z > -0.15 && tmpV.y > 0.25){
-            o.visible=false;_ch.push(o);
-          }
-        }
-      });
-      
-      // Masquer les parties du vélo qui sont derrière le cycliste
-      rider.userData.bike.traverse(o=>{
-        if(o.isMesh&&o.visible){
-          rider.worldToLocal(tmpV.copy(o.getWorldPosition(new THREE.Vector3())));
-          // Masquer si c'est derrière le cycliste (z < -0.3)
-          if(tmpV.z < -0.3){
-            o.visible=false;_ch.push(o);
-          }
-        }
-      });
-      
+      rider.userData.body.traverse(o=>{if(o.isMesh&&o.visible&&!_keep.has(o)){o.visible=false;_ch.push(o)}});
+      rider.userData.bike.traverse(o=>{if(o.isMesh&&o.visible){rider.worldToLocal(tmpV.copy(o.getWorldPosition(new THREE.Vector3())));if(!(tmpV.z>0.40&&tmpV.y>0.86)){o.visible=false;_ch.push(o)}}});
       rider.userData._cockpitHidden=_ch;
     }
-    
+    const head=rider.userData.headGroup,eye=new THREE.Vector3(0,1.560,0.358); /* v122 : position des yeux dans le repère de la tête (face +Z) */
+    rider.updateMatrixWorld(true);head.localToWorld(eye); /* v122 : caméra exactement au niveau des yeux, quelle que soit la posture */
+    const fwd=new THREE.Vector3(0,0,1).applyQuaternion(rider.quaternion);
+    eye.addScaledVector(fwd,0.05); /* un peu devant le visage, hors du casque */
+    cam.position.copy(eye);
+    cam.quaternion.setFromEuler(new THREE.Euler(-cameraState.pitch,angle+Math.PI-cameraState.yaw,0,'YXZ'));
     cam.fov=70;cam.updateProjectionMatrix();
     cameraState.look.copy(eye).addScaledVector(fwd,2);cameraState.ready=true;
     if(sun.shadow){sun.position.set(p[0]+35,p[1]+60,p[2]-25);sun.target.position.set(p[0],p[1],p[2]);sun.target.updateMatrixWorld()}
