@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v134 – maisons à lucarnes et fumée de cheminée, champs et prairies</title>
+<title>Vélo 3D v135 – rivières animées, marquages de route, minicarte enrichie eau/voies ferrées</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -4162,6 +4162,45 @@ function updateSmoke(dt){
   sm.points.geometry.attributes.position.needsUpdate=true;
 }
 
+/* v135 : rivières animées — traits d'écume qui défilent le long des cours d'eau. */
+function buildFlow(waterways,targetWorld){
+  window._flows=[];
+  if(!waterways||!targetWorld)return;
+  for(const [pts,tags] of waterways.slice(0,60)){
+    if(!pts||pts.length<2)continue;
+    const w=osmWaterwayWidth(tags)/2;if(w<1)continue;
+    const line=osmSampleLine(pts,4),cum=[0];
+    for(let i=1;i<line.length;i++)cum.push(cum[i-1]+Math.hypot(line[i][0]-line[i-1][0],line[i][1]-line[i-1][1]));
+    const total=cum[cum.length-1];if(total<12)continue;
+    const nDash=Math.min(40,Math.max(6,Math.floor(total/9))),positions=new Float32Array(nDash*6);
+    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+    const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:0xeaf6ff,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false}));
+    mesh.frustumCulled=false;targetWorld.add(mesh);
+    window._flows.push({line,cum,total,n:nDash,positions,mesh,w,off:Math.random()*total});
+  }
+}
+function flowPointAt(f,d){
+  const {line,cum}=f;d=((d%f.total)+f.total)%f.total;
+  let lo=0,hi=cum.length-1;
+  while(lo<hi){const mid=(lo+hi)>>1;if(cum[mid]<d)lo=mid+1;else hi=mid;}
+  const i=Math.max(1,lo),d0=cum[i-1],d1=cum[i],t=d1>d0?(d-d0)/(d1-d0):0;
+  return[line[i-1][0]+(line[i][0]-line[i-1][0])*t,line[i-1][1]+(line[i][1]-line[i-1][1])*t];
+}
+function updateFlow(dt){
+  const flows=window._flows;if(!flows||!flows.length)return;
+  for(const f of flows){
+    f.off+=dt*(1.6+f.w*.35);
+    for(let k=0;k<f.n;k++){
+      const d=f.off+k*(f.total/f.n),a=flowPointAt(f,d),b=flowPointAt(f,d+1.6);
+      const near=nearestOnRoute(a[0],a[1]);if(!near||near.dist2>220*220){f.positions.fill(0,k*6,k*6+6);continue;}
+      const y=near.y-.4,nx=-(b[1]-a[1]),nz=(b[0]-a[0]),l=Math.hypot(nx,nz)||1,w=f.w*.32;
+      const ax=a[0]+nx/l*w,az=a[1]+nz/l*w,bx=b[0]+nx/l*w,bz=b[1]+nz/l*w;
+      f.positions[k*6]=ax;f.positions[k*6+1]=y;f.positions[k*6+2]=az;f.positions[k*6+3]=bx;f.positions[k*6+4]=y;f.positions[k*6+5]=bz;
+    }
+    f.mesh.geometry.attributes.position.needsUpdate=true;
+  }
+}
+
 function osmSampleLine(points,spacing){
   const sampled=[];
   if(!points.length)return sampled;
@@ -4485,8 +4524,10 @@ function applyOSM(elements,targetWorld){
       waters.push(points);osmMapFeatures.push({type:'water',points:osmCopyPoints(points)});
     }else if(tags.waterway){
       waterways.push([points,tags]); /* v129 : cours d'eau linéaires (rivières, ruisseaux, canaux) */
+      osmMapFeatures.push({type:'waterway',points:osmCopyPoints(points),tags});
     }else if(tags.railway){
       railways.push([points,tags]); /* v131 : voies ferrées */
+      osmMapFeatures.push({type:'railway',points:osmCopyPoints(points),tags});
       const br=String(tags.bridge||'').toLowerCase();if(br&&br!=='no')bridgeWays.push([points,tags]); /* pont ferroviaire au-dessus */
     }else if(tags.natural==='wood'||tags.landuse==='forest'){
       forests.push(points);osmMapFeatures.push({type:'forest',points:osmCopyPoints(points)});
@@ -4575,6 +4616,7 @@ function applyOSM(elements,targetWorld){
   mkFlat(waterwayParts,0x3b87c7);mkFlat(railBallast,0x5d5a52);mkFlat(railLine,0xb9bdc2);
   buildFarmland(farmlandList,target); /* v134 : champs et prairies */
   buildSmoke(target); /* v134 : fumée des cheminées */
+  buildFlow(waterways,target); /* v135 : écume animée des rivières */
   const bridgeCount=buildBridges(mergedSpans,bridgeOverpasses,target);
 
   /* v133 : passages à niveau animés (barrières + feux + train occasionnel) et tunnels (voûte sombre) */
@@ -4823,25 +4865,35 @@ function buildRoadFurniture(elements,target){
   return items.length;
 }
 function buildRoadNetwork(roadParts,targetWorld){
-  const surface=[],islands=[],laneMarks=[];let drawn=0,roundabouts=0;
+  const surface=[],islands=[],laneMarks=[],edgeMarks=[];let drawn=0,roundabouts=0;
   for(const [raw,tags]of roadParts){if(raw.length<2)continue;const half=osmRoadWidth(tags),points=osmSampleLine(raw,5),centres=[];
     for(const point of points){const near=nearestOnRoute(point[0],point[1]);centres.push(!near||near.dist2>190*190?null:{x:point[0],z:point[1],y:near.y+.035})}let used=false;
     for(let i=1;i<centres.length;i++){const a=centres[i-1],b=centres[i];if(!a||!b)continue;const prev=centres[Math.max(0,i-2)]||a,next=centres[Math.min(centres.length-1,i+1)]||b,dx=next.x-prev.x,dz=next.z-prev.z,length=Math.hypot(dx,dz)||1,nx=-dz/length,nz=dx/length,al=[a.x+nx*half,a.y,a.z+nz*half],ar=[a.x-nx*half,a.y,a.z-nz*half],bl=[b.x+nx*half,b.y,b.z+nz*half],br=[b.x-nx*half,b.y,b.z-nz*half];surface.push(...al,...ar,...br,...al,...br,...bl);used=true}
     if(used)drawn++;
     const roadType=String(tags.highway||'').toLowerCase(),major=/^(trunk|primary|secondary)$/.test(roadType)||Number(tags.lanes)>=2;
-    if(major){const continuous=/^(trunk|primary)$/.test(roadType);for(let ri=1;ri<raw.length;ri++){const a=raw[ri-1],b=raw[ri],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);if(len<.2)continue;const dash=continuous?len:2.8,gap=continuous?0:2.7;for(let d=0;d<len;d+=dash+gap){const e=Math.min(len,d+dash),ax=a[0]+dx*d/len,az=a[1]+dz*d/len,bx=a[0]+dx*e/len,bz=a[1]+dz*e/len,na=nearestOnRoute(ax,az),nb=nearestOnRoute(bx,bz);if(!na||!nb||na.dist2>190*190||nb.dist2>190*190)continue;const nx=-dz/len*.055,nz=dx/len*.055,y1=na.y+.075,y2=nb.y+.075;laneMarks.push(ax+nx,y1,az+nz,ax-nx,y1,az-nz,bx-nx,y2,bz-nz,ax+nx,y1,az+nz,bx-nx,y2,bz-nz,bx+nx,y2,bz+nz);}}}
+    if(major){const continuous=/^(trunk|primary)$/.test(roadType);for(let ri=1;ri<raw.length;ri++){const a=raw[ri-1],b=raw[ri],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);if(len<.2)continue;const dash=continuous?len:2.8,gap=continuous?0:2.7;for(let d=0;d<len;d+=dash+gap){const e=Math.min(len,d+dash),ax=a[0]+dx*d/len,az=a[1]+dz*d/len,bx=a[0]+dx*e/len,bz=a[1]+dz*e/len,na=nearestOnRoute(ax,az),nb=nearestOnRoute(bx,bz);if(!na||!nb||na.dist2>190*190||nb.dist2>190*190)continue;const nx=-dz/len*.055,nz=dx/len*.055,y1=na.y+.075,y2=nb.y+.075;laneMarks.push(ax+nx,y1,az+nz,ax-nx,y1,az-nz,bx-nx,y2,bz-nz,ax+nx,y1,az+nz,bx-nx,y2,bz-nz,bx+nx,y2,bz+nz);
+      /* v135 : lignes de rive continues sur les grands axes */
+      const eo=half-.28;if(eo>.5){const fx=-dz/len*eo,fz=dx/len*eo,fy1=na.y+.075,fy2=nb.y+.075;edgeMarks.push(ax+fx,fy1,az+fz,ax-fx,fy1,az-fz,bx-fx,fy2,bz-fz,ax+fx,fy1,az+fz,bx-fx,fy2,bz-fz,bx+fx,fy2,bz+fz);edgeMarks.push(ax-fx,fy1,az-fz,ax+fx,fy1,az+fz,bx+fx,fy2,bz+fz,ax-fx,fy1,az-fz,bx+fx,fy2,bz+fz,bx-fx,fy2,bz-fz);}}}}
     if((String(tags.junction||'').toLowerCase()==='roundabout' ||osmRingSignatures.has(osmRingSignature(raw)))&&osmClosed(raw)){const ring=raw.slice(0,-1);if(ring.length>=8){const cx=ring.reduce((sum,p)=>sum+p[0],0)/ring.length,cz=ring.reduce((sum,p)=>sum+p[1],0)/ring.length,near=nearestOnRoute(cx,cz),radius=ring.reduce((sum,p)=>sum+Math.hypot(p[0]-cx,p[1]-cz),0)/ring.length,inner=radius-half*.95;if(near&&near.dist2<190*190&&inner>1){const center=[cx,near.y-.055,cz];for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];islands.push(...center,a[0],near.y-.055,a[1],b[0],near.y-.055,b[1])}roundabouts++}}}
   }
   if(surface.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(surface,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x5e6460,side:THREE.DoubleSide})))}
   if(laneMarks.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(laneMarks,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:0xe8e4cb,side:THREE.DoubleSide})))}
   if(islands.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(islands,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x789054,side:THREE.DoubleSide})))}
+  if(edgeMarks.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(edgeMarks,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:0xf2efe4,side:THREE.DoubleSide})))}
   return{drawn,roundabouts};
 }
 
 
 /* ---------- Mini-carte vectorielle : mêmes données OSM que la scène ---------- */
 const mapState={overview:false,visible:true,last:0,lastTownS:0,noticed:new Set(),activeTown:null,threeD:false,signTimer:null,signToken:0,fitRoute:false,cameraSync:false,lastFollow:null};
-let rideMap2D=null,rideRoute2D=null,rideDone2D=null,rideRider2D=null,rideMap3D=null,rideMap3DReady=false,mapLibrePromise=null;
+let rideMap2D=null,rideRoute2D=null,rideDone2D=null,rideRider2D=null,rideMap3D=null,rideMap3DReady=false,mapLibrePromise=null,rideFeatures=null;
+function featureToLatLngs(points){if(!proj||!points)return[];const out=[];for(const p of points){const lat=proj.la-p[1]/proj.kz,lon=proj.lo+p[0]/proj.kx;if(Number.isFinite(lat)&&Number.isFinite(lon))out.push([lat,lon]);}return out;}
+function updateMapFeatures(){
+  if(!rideFeatures||!rideMap2D||!proj||!window.osmMapFeatures)return;
+  const byType={water:[],farmland:[],forest:[],waterway:[],railway:[]};
+  for(const f of window.osmMapFeatures){if(f&&byType[f.type]&&f.points&&f.points.length>1)byType[f.type].push(featureToLatLngs(f.points));}
+  for(const k of Object.keys(byType)){const lines=byType[k].filter(l=>l&&l.length>1);if(k==='water'||k==='farmland'||k==='forest'){rideFeatures[k].setLatLngs(lines.map(l=>l.map(p=>[p[0],p[1]])));}else rideFeatures[k].setLatLngs(lines);}
+}
 function syncMapModeButton(){const button=$('mapMode');if(!button)return;button.textContent=mapState.overview?'Suivi':'Tout';button.title=mapState.overview?'Recentrer sur le cycliste':'Afficher tout le parcours';button.setAttribute('aria-label',button.title);}
 function initRideMap2D(){
   if(rideMap2D||!window.L||!$('rideMap2D'))return;
@@ -4851,6 +4903,14 @@ function initRideMap2D(){
   rideRoute2D=L.polyline([],{color:'#d94135',weight:4,opacity:.92,lineCap:'round',lineJoin:'round'}).addTo(rideMap2D);
   rideDone2D=L.polyline([],{color:'#8d241f',weight:5,opacity:.95,lineCap:'round',lineJoin:'round'}).addTo(rideMap2D);
   rideRider2D=L.circleMarker([freeCenter.lat,freeCenter.lon],{radius:7,color:'#fff',weight:2,fillColor:'#d74436',fillOpacity:1}).addTo(rideMap2D);
+  /* v135 : couches vectorielles OSM au-dessus des tuiles — eau, cours d'eau, voies ferrées, champs, forêts */
+  rideFeatures={
+    water:L.polyline([],{color:'#3b87c7',weight:0,fillColor:'#3b87c7',fillOpacity:.55}).addTo(rideMap2D),
+    farmland:L.polyline([],{color:'#c2a852',weight:1,fillColor:'#c2a852',fillOpacity:.30,dashArray:'4 3'}).addTo(rideMap2D),
+    forest:L.polyline([],{color:'#2f7a2e',weight:1,fillColor:'#2f7a2e',fillOpacity:.28}).addTo(rideMap2D),
+    waterway:L.polyline([],{color:'#3b87c7',weight:2,opacity:.8}).addTo(rideMap2D),
+    railway:L.polyline([],{color:'#333',weight:2,opacity:.75,dashArray:'6 4'}).addTo(rideMap2D)
+  };
   rideMap2D.on('dragstart zoomstart',()=>{if(!mapState.cameraSync){mapState.overview=true;syncMapModeButton();}});
   updateMapLabel();
 }
@@ -4891,6 +4951,7 @@ function drawMiniMap(t,force=false){
   const noGps=!proj||!route,notice=$('mapNoGps');if(notice)notice.classList.toggle('hide',!noGps);if(noGps){updateMapLabel();return;}
   const planned=rideGeoLine(route.len,1400),ridden=rideGeoLine(Math.min(s,route.len),700),here=rideGeoAt(s);
   if(rideRoute2D)rideRoute2D.setLatLngs(planned.map(point=>[point[1],point[0]]));if(rideDone2D)rideDone2D.setLatLngs(ridden.map(point=>[point[1],point[0]]));if(here&&rideRider2D)rideRider2D.setLatLng([here[1],here[0]]);
+  updateMapFeatures(); /* v135 : couches eau / voies ferrées / champs sur la minicarte */
   if(mapState.fitRoute){if(mapFitRoute())mapState.fitRoute=false;}
   if(!mapState.overview&&here){const prior=mapState.lastFollow,dx=prior?(here[0]-prior[0])*111320*Math.cos(here[1]*Math.PI/180):Infinity,dz=prior?(here[1]-prior[1])*110540:Infinity;if(!prior||Math.hypot(dx,dz)>7){mapState.cameraSync=true;if(mapState.threeD&&rideMap3D)rideMap3D.setCenter(here);else rideMap2D.panTo([here[1],here[0]],{animate:false});setTimeout(()=>mapState.cameraSync=false,80);mapState.lastFollow=here;}}
   if(rideMap3DReady&&rideMap3D){rideMap3D.getSource('velo-route')?.setData(geoFeature('LineString',planned));rideMap3D.getSource('velo-ridden')?.setData(geoFeature('LineString',ridden));rideMap3D.getSource('velo-rider')?.setData(here?geoFeature('Point',here):{type:'FeatureCollection',features:[]});}
@@ -5201,7 +5262,8 @@ function loop(t){
     if(window._freeNavigation&&window._freeNavigation.active)freeAdvanceNavigation();
     if(_effRunning&&t-lastSampleT>1000){lastSampleT=t;if(!sessionStart)sessionStart=Date.now();const here=at(s),gps=proj?here:null,lat=gps?proj.la-gps[2]/proj.kz:null,lon=gps?proj.lo+gps[0]/proj.kx:null;sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power:ctl?lastP:+$('pw').value,hr,cad:rideCadence(v,power),lat,lon,alt:gps?gps[1]:null,spd:v,x:here[0],z:here[2]});}
     if(_effRunning&&window._powerStarted)window._rideElapsed+=dt;place(false,dt);if(window._levelCrossings)updateLevelCrossings(s,dt); /* v133 : animation des passages à niveau */
-    if(window._smoke)updateSmoke(dt); /* v134 : fumée des cheminées */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
+    if(window._smoke)updateSmoke(dt); /* v134 : fumée des cheminées */
+    if(window._flows)updateFlow(dt); /* v135 : rivières animées */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
   }
   R.render(S,cam);
