@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v135 – rivières animées, marquages de route, minicarte enrichie eau/voies ferrées</title>
+<title>Vélo 3D v136 – cycle jour/nuit, lampadaires, oiseaux, drapeaux, trafic</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -584,7 +584,7 @@ R.setPixelRatio(Math.min(devicePixelRatio||1,1.75));R.outputEncoding=THREE.sRGBE
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
 const S=new THREE.Scene();S.background=new THREE.Color(0xd7e9f2);S.fog=new THREE.Fog(0xd7e9f2,160,750);
 const cam=new THREE.PerspectiveCamera(55,1,.1,1800);
-S.add(new THREE.HemisphereLight(0xf3f9ff,0x777b4f,.85));
+const hemi=new THREE.HemisphereLight(0xf3f9ff,0x777b4f,.85);S.add(hemi);
 /* v77 : ciel dégradé — dôme hémisphérique (horizon clair -> zénith bleu), soleil visible
    avec halo, nuages qui dérivent lentement et suivent le cycliste. */
 const skyDome=(()=>{const geo=new THREE.SphereGeometry(1500,24,12),pos=geo.attributes.position,colors=[];const top=new THREE.Color(0x3f7fc4),horizon=new THREE.Color(0xd7e9f2);for(let i=0;i<pos.count;i++){const t=Math.max(0,Math.min(1,(pos.getY(i)/1500+.15)/1.15));const c=horizon.clone().lerp(top,Math.pow(t,.55));colors.push(c.r,c.g,c.b)}geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));const mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,fog:false,depthWrite:false}));mesh.renderOrder=-2;return mesh})();
@@ -594,6 +594,104 @@ const skyClouds=[];
 (function(){const cloudMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:0.92});for(let i=0;i<12;i++){const cg=new THREE.Group();for(let k=0;k<4;k++){const s=new THREE.Mesh(new THREE.SphereGeometry(8+Math.random()*6,10,8),cloudMat);s.position.set(k*7-10,Math.random()*2,Math.random()*3);s.scale.y=0.45;cg.add(s)}cg.userData={ox:(Math.random()-0.5)*500,oy:60+Math.random()*25,oz:(Math.random()-0.5)*500,sp:1.5+Math.random()*1.8};S.add(cg);skyClouds.push(cg)}})();
 function updateSky(dt){if(!cam)return;skyDome.position.set(cam.position.x,0,cam.position.z);for(const c of skyClouds){const u=c.userData;u.ox+=u.sp*dt;u.ox=((u.ox+250)%500+500)%500-250;c.position.set(cam.position.x+u.ox,u.oy,cam.position.z+u.oz)}}
 const sun=new THREE.DirectionalLight(0xfff4df,1.2);sun.position.set(35,60,-25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:160});sun.shadow.bias=-.0005;sun.shadow.normalBias=.035;S.add(sun,sun.target);
+
+/* v136 : cycle jour/nuit, étoiles, lune */
+let dayTime=.32;
+const stars=(()=>{const n=420,pos=new Float32Array(n*3);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,e=Math.random()*Math.PI*.48+.02,r=1400;pos[i*3]=Math.cos(a)*Math.cos(e)*r;pos[i*3+1]=Math.sin(e)*r;pos[i*3+2]=Math.sin(a)*Math.cos(e)*r;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));const m=new THREE.PointsMaterial({color:0xffffff,size:2.2,transparent:true,opacity:0,depthWrite:false,fog:false});const p=new THREE.Points(g,m);p.frustumCulled=false;p.renderOrder=-1;S.add(p);return p})();
+const moon=new THREE.Mesh(new THREE.SphereGeometry(26,16,12),new THREE.MeshBasicMaterial({color:0xe8ecf4,fog:false}));moon.visible=false;S.add(moon);
+function paintSky(topC,horC){
+  const pos=skyDome.geometry.attributes.position,col=skyDome.geometry.attributes.color,top=new THREE.Color(topC),hor=new THREE.Color(horC);
+  for(let i=0;i<pos.count;i++){const t=Math.max(0,Math.min(1,(pos.getY(i)/1500+.15)/1.15));const c=hor.clone().lerp(top,Math.pow(t,.55));col.setXYZ(i,c.r,c.g,c.b);}
+  col.needsUpdate=true;
+}
+
+/* v136 : lampadaires le long du parcours, oiseaux, drapeaux, trafic */
+function flagTexture(){const cv=document.createElement('canvas');cv.width=90;cv.height=60;const x=cv.getContext('2d');x.fillStyle='#2a4dab';x.fillRect(0,0,30,60);x.fillStyle='#f4f4f0';x.fillRect(30,0,30,60);x.fillStyle='#d64545';x.fillRect(60,0,30,60);const t=new THREE.CanvasTexture(cv);return t;}
+function buildAmbiance(target){
+  window._lamps=null;window._birds=[];window._cars=[];window._flags=[];
+  if(!route||!target)return;
+  const g=new THREE.Group();target.add(g);window._ambiance=g;
+  /* lampadaires */
+  const step=90,maxD=Math.min(route.len,40000),lampD=[];
+  for(let d=6;d<maxD;d+=step)lampD.push(d);
+  if(lampD.length){
+    const poleGeo=new THREE.CylinderGeometry(.07,.1,5.4,6);poleGeo.translate(0,2.7,0);
+    const poles=new THREE.InstancedMesh(poleGeo,new THREE.MeshStandardMaterial({color:0x3a3f44,roughness:.6}),lampD.length);
+    const headGeo=new THREE.SphereGeometry(.24,8,6);headGeo.translate(0,5.5,0);
+    const heads=new THREE.InstancedMesh(headGeo,new THREE.MeshBasicMaterial({color:0xffd9a0}),lampD.length);
+    const m=new THREE.Matrix4(),glowPos=new Float32Array(lampD.length*3);
+    lampD.forEach((d,i)=>{
+      const p=at(d),q=at(Math.min(route.len,d+2)),pm=at(Math.max(0,d-2));
+      let tx=q[0]-pm[0],tz=q[2]-pm[2];const l=Math.hypot(tx,tz)||1;tx/=l;tz/=l;
+      const side=i%2?1:-1,nx=-tz*side*4.6,nz=tx*side*4.6;
+      const bx=p[0]+nx,by=p[1]-.35,bz=p[2]+nz;
+      m.makeTranslation(bx,by,bz);poles.setMatrixAt(i,m);
+      m.makeTranslation(bx,by,bz);heads.setMatrixAt(i,m);
+      glowPos[i*3]=bx;glowPos[i*3+1]=by+5.5;glowPos[i*3+2]=bz;
+      if(d<420){ /* drapeau tricolore près du départ */
+        const fm=new THREE.Mesh(new THREE.PlaneGeometry(.95,.6),new THREE.MeshBasicMaterial({map:flagTexture(),side:THREE.DoubleSide,transparent:true}));
+        fm.position.set(bx+.5,by+4.9,bz);g.add(fm);window._flags.push(fm);
+      }
+    });
+    poles.instanceMatrix.needsUpdate=true;heads.instanceMatrix.needsUpdate=true;
+    g.add(poles);g.add(heads);
+    const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(glowPos,3));
+    const glow=new THREE.Points(gg,new THREE.PointsMaterial({color:0xffc873,size:2.4,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));
+    glow.frustumCulled=false;g.add(glow);
+    window._lamps={glow};
+  }
+  /* oiseaux */
+  const wingGeo=new THREE.PlaneGeometry(.55,.2);
+  for(let i=0;i<10;i++){
+    const bird=new THREE.Group();
+    const wl=new THREE.Mesh(wingGeo,new THREE.MeshBasicMaterial({color:0x22282e,side:THREE.DoubleSide}));wl.position.x=-.26;
+    const wr=wl.clone();wr.position.x=.26;
+    bird.add(wl,wr);bird.userData={wl,wr,r:18+Math.random()*22,h:14+Math.random()*16,sp:.12+Math.random()*.2,ph:Math.random()*6.28};
+    g.add(bird);window._birds.push(bird);
+  }
+  /* trafic : voitures qui doublent le cycliste sur le parcours */
+  const carCols=[0xc0392b,0x2e6fb0,0xe0a13a,0xdddddd,0x4a4a4a,0x3f8f5f];
+  for(let i=0;i<6;i++){
+    const car=new THREE.Group();
+    const body=new THREE.Mesh(new THREE.BoxGeometry(1.8,1,4.2),new THREE.MeshStandardMaterial({color:carCols[i],roughness:.5}));body.position.y=.75;
+    const cab=new THREE.Mesh(new THREE.BoxGeometry(1.5,.8,2),new THREE.MeshStandardMaterial({color:0x223,roughness:.2}));cab.position.set(0,1.5,-.2);
+    car.add(body,cab);g.add(car);
+    window._cars.push({mesh:car,off:s+(Math.random()*700-350),v:8+Math.random()*7,dir:Math.random()<.5?1:-1});
+  }
+}
+function updateAmbiance(dt,t){
+  /* cycle jour/nuit (~2 min 30) */
+  dayTime=(dayTime+dt/150)%1;
+  const ang=dayTime*Math.PI*2,elev=Math.sin(ang),az=Math.cos(ang);
+  const dayF=Math.max(0,Math.min(1,elev*1.7+.06)),nightF=1-dayF;
+  sun.position.set(az*90,Math.max(elev,.015)*95+4,-30);
+  if(dayF>.35){sun.intensity=.2+dayF*1.05;sun.color.set(0xfff4df);}
+  else if(dayF>.02){sun.intensity=.25+dayF;sun.color.set(0xffc890);}
+  else{sun.intensity=.16;sun.color.set(0x9fb8e8);}
+  hemi.intensity=.22+dayF*.63;
+  const dawn=Math.max(0,1-Math.abs(elev)*4)*dayF;
+  const topC=new THREE.Color().setHSL(.62-.28*nightF,.62,.10+.42*dayF);
+  const horC=new THREE.Color().setHSL(.58-.06*nightF,.45,.16+.55*dayF).lerp(new THREE.Color(0xff9a5a),dawn*.55);
+  paintSky(topC,horC);S.background.copy(horC);if(S.fog)S.fog.color.copy(horC);
+  stars.material.opacity=nightF*.95;stars.position.set(cam?cam.position.x:0,0,cam?cam.position.z:0);
+  moon.visible=nightF>.2;if(moon.visible)moon.position.set(-az*1300,Math.max(-elev,.05)*1300-100,-600);
+  if(window._lamps)window._lamps.glow.material.opacity=nightF*.8;
+  /* oiseaux */
+  if(cam)for(const b of window._birds||[]){const u=b.userData,a=u.ph+t*u.sp;
+    const x=cam.position.x+Math.cos(a)*u.r,y=u.h+Math.sin(t*.7+u.ph)*2,z=cam.position.z+Math.sin(a)*u.r;
+    const x2=cam.position.x+Math.cos(a+.05)*u.r,z2=cam.position.z+Math.sin(a+.05)*u.r;
+    b.position.set(x,y,z);b.lookAt(x2,y,z2);
+    const f=Math.sin(t*11+u.ph)*.65;u.wl.rotation.z=f;u.wr.rotation.z=-f;}
+  /* drapeaux qui flottent */
+  for(let i=0;i<(window._flags||[]).length;i++){const f=window._flags[i];f.rotation.y=Math.sin(t*2.6+i)*.35;f.scale.x=1+Math.sin(t*6+i)*.07;}
+  /* trafic */
+  if(route)for(const c of window._cars||[]){
+    c.off+=c.v*dt*c.dir;
+    if(c.off<s-600||c.off>s+600||c.off<0||c.off>route.len){c.off=Math.max(0,Math.min(route.len,s+(Math.random()*900-450)));c.dir=Math.random()<.5?1:-1;c.v=8+Math.random()*7;}
+    const p=at(c.off),q=at(Math.max(0,Math.min(route.len,c.off+2*c.dir)));
+    c.mesh.position.set(p[0],p[1]+.05,p[2]);c.mesh.lookAt(q[0],q[1]+.05,q[2]);
+  }
+}
 const V3=THREE.Vector3,UPV=new V3(0,1,0),CYL=new THREE.CylinderGeometry(1,1,1,12);
 function setBar(mesh,p,q,radius){const direction=new V3(q[0]-p[0],q[1]-p[1],q[2]-p[2]),length=direction.length()||.001;mesh.position.set((p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2);mesh.quaternion.setFromUnitVectors(UPV,direction.divideScalar(length));mesh.scale.set(radius,length,radius)}
 let resizeHasInitialized=false;
@@ -3177,7 +3275,9 @@ function disposeWorld(group){
   geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());S.remove(group);
 }
 function makeWorld(){
-  disposeWorld(world);world=new THREE.Group();const {X,Y,Z,n}=route;
+  disposeWorld(world);world=new THREE.Group();
+  if(window._ambiance){S.remove(window._ambiance);window._ambiance=null;window._lamps=null;window._birds=[];window._cars=[];window._flags=[];} /* v136 */
+  const {X,Y,Z,n}=route;
   const tangent=i=>{const a=Math.max(0,i-1),b=Math.min(n,i+1),dx=X[b]-X[a],dz=Z[b]-Z[a],l=Math.hypot(dx,dz)||1;return[-dz/l,dx/l]};
   const ribbon=(width,dy,color,texture)=>{
     const pos=[],uv=[],idx=[];
@@ -3223,6 +3323,7 @@ function decorateDemo(){
   hedges(hedgeWays,world);
   for(const [points] of hedgeWays)osmMapFeatures.push({type:'hedge',points});
   for(const [distance,name] of [[620,'Les Hauts Prés'],[1850,'Val des Saules'],[3600,'Belle-Rive']]){if(distance>=route.len)continue;const p=at(distance);const entry={distance,name,source:'demo',x:p[0],z:p[2]};cityEntries.push(entry);createTownSign(entry)}
+  buildAmbiance(world); /* v136 : lampadaires, oiseaux, drapeaux, trafic */
 }
 
 
@@ -5263,7 +5364,8 @@ function loop(t){
     if(_effRunning&&t-lastSampleT>1000){lastSampleT=t;if(!sessionStart)sessionStart=Date.now();const here=at(s),gps=proj?here:null,lat=gps?proj.la-gps[2]/proj.kz:null,lon=gps?proj.lo+gps[0]/proj.kx:null;sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power:ctl?lastP:+$('pw').value,hr,cad:rideCadence(v,power),lat,lon,alt:gps?gps[1]:null,spd:v,x:here[0],z:here[2]});}
     if(_effRunning&&window._powerStarted)window._rideElapsed+=dt;place(false,dt);if(window._levelCrossings)updateLevelCrossings(s,dt); /* v133 : animation des passages à niveau */
     if(window._smoke)updateSmoke(dt); /* v134 : fumée des cheminées */
-    if(window._flows)updateFlow(dt); /* v135 : rivières animées */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
+    if(window._flows)updateFlow(dt); /* v135 : rivières animées */
+    updateAmbiance(dt,t/1000); /* v136 : cycle jour/nuit + animations ambiantes */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
   }
   R.render(S,cam);
