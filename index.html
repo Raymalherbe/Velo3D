@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v141 – correctif rouler libre, roue libre à cadence 0, chants d’oiseaux, mode heure réelle</title>
+<title>Vélo 3D v142 – secteur rouler libre réparé, zoom auto sur l’avatar</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -451,7 +451,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v141</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v142</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -1848,7 +1848,7 @@ function _saveGarmentTransforms(){clearTimeout(_garmentSaveTimer);_garmentSaveTi
 function _queueGarmentApply(key){clearTimeout(_garmentApplyTimer);_garmentApplyTimer=setTimeout(()=>{if(key==='jerseyFront'||key==='jerseyBack')rebuildJerseyTexture();else if(key==='sunglasses')applySunglassesPhoto();else if(key==='face')applyFacePhoto();else if(key==='helmet')applyHelmetPhoto();else{const storage=_garmentPhotoKeys[key];let data=null;try{data=localStorage.getItem(storage)}catch(e){}if(data){const target=key==='shorts'?_texTargets.shortTex:_texTargets.sockTex;loadPlainTexture(target,data);}}},90);}
 function _syncGarmentEditor(){const sel=$('garmentAdjustTarget'),scale=$('garmentScale'),val=$('garmentScaleValue'),btn=$('garmentEditMode'),status=$('garmentEditStatus'),sx=$('garmentStretchX'),sy=$('garmentStretchY'),sxv=$('garmentStretchXValue'),syv=$('garmentStretchYValue');if(sel&&sel.value!==_activeGarmentKey)sel.value=_activeGarmentKey;const t=_garmentTransformFor(_activeGarmentKey);if(scale)scale.value=String(t.scale);if(val)val.textContent=Math.round(t.scale*100)+'%';if(sx)sx.value=String(t.sx||1);if(sxv)sxv.textContent=Math.round((t.sx||1)*100)+'%';if(sy)sy.value=String(t.sy||1);if(syv)syv.textContent=Math.round((t.sy||1)*100)+'%';const ready=_garmentHasPhoto(_activeGarmentKey);if(btn){btn.disabled=!ready&&!_outfitEditMode;btn.classList.toggle('active',_outfitEditMode);btn.setAttribute('aria-pressed',_outfitEditMode?'true':'false');btn.textContent=_outfitEditMode?'✓ Déplacement actif':'✋ Déplacer sur l’avatar';}if(status)status.textContent=ready?(_outfitEditMode?'Glisse la photo sur l’avatar; pince pour zoomer.':'Photo prête. Active le déplacement ou tourne le cycliste.'):'Charge d’abord la photo correspondant à la pièce sélectionnée.';}
 function _resetGarmentTransform(key){_garmentTransforms[key]={..._garmentDefaults};_saveGarmentTransforms();_syncGarmentEditor();_queueGarmentApply(key);}
-$('garmentAdjustTarget')?.addEventListener('change',e=>{_outfitEditMode=false;_activeGarmentKey=e.target.value;_syncGarmentEditor();});
+$('garmentAdjustTarget')?.addEventListener('change',e=>{_outfitEditMode=false;_activeGarmentKey=e.target.value;_syncGarmentEditor();if(window._previewFocusPart)window._previewFocusPart(_activeGarmentKey);}); /* v142 : zoom auto sur la pièce choisie */
 $('garmentEditMode')?.addEventListener('click',()=>{if(!_garmentHasPhoto(_activeGarmentKey)){_syncGarmentEditor();toast('Charge d’abord la photo de la pièce sélectionnée.');return;}_outfitEditMode=!_outfitEditMode;_syncGarmentEditor();});
 $('garmentScale')?.addEventListener('input',e=>{_garmentTransformFor(_activeGarmentKey).scale=Math.max(.25,Math.min(3,Number(e.target.value)||1));_saveGarmentTransforms();_syncGarmentEditor();_queueGarmentApply(_activeGarmentKey);});
 $('garmentStretchX')?.addEventListener('input',e=>{_garmentTransformFor(_activeGarmentKey).sx=Math.max(.25,Math.min(3,Number(e.target.value)||1));_saveGarmentTransforms();_syncGarmentEditor();_queueGarmentApply(_activeGarmentKey);}); /* v140 */
@@ -2054,7 +2054,8 @@ function handleGarmentUpload(inputId,thumbId,storageKey,label,onDone){
       try{localStorage.setItem(storageKey,dataURL);}catch(err){toast('Photo appliquée pour cette session (trop grande pour être gardée).');}
       _texThumb(thumbId,dataURL);
       const garmentKey=({jerseyFrontTex:'jerseyFront',jerseyBackTex:'jerseyBack',shortTex:'shorts',sockTex:'socks',faceTex:'face',helmetTex:'helmet',sunglassesTex:'sunglasses'})[inputId];
-      if(garmentKey){_garmentTransforms[garmentKey]={..._garmentDefaults};_saveGarmentTransforms(); /* v140 : à chaque nouvelle photo, ajustement parfait automatique sur la pièce */_outfitEditMode=false;_activeGarmentKey=garmentKey;_syncGarmentEditor();}
+      if(garmentKey){_garmentTransforms[garmentKey]={..._garmentDefaults};_saveGarmentTransforms(); /* v140 : à chaque nouvelle photo, ajustement parfait automatique sur la pièce */_outfitEditMode=false;_activeGarmentKey=garmentKey;_syncGarmentEditor();if(window._previewFocusPart)window._previewFocusPart(garmentKey);} /* v142 : zoom auto sur la pièce */
+
       toast('Photo appliquée sur '+label+'.');
       if(onDone)onDone();
       e.target.value='';
@@ -2212,13 +2213,21 @@ if($('restoreBike')) $('restoreBike').onclick=()=>{ if(window._realBike){rider.r
   if(tabRider)tabRider.onclick=()=>showTab('rider');
   if(tabOutfit)tabOutfit.onclick=()=>showTab('outfit');
   /* Rotation, placement de la pièce sélectionnée et zoom tactile/molette. */
-  let previewZoom=1;
+  let previewZoom=1,previewFocus=null;
   const clampZoom=value=>Math.max(.7,Math.min(6,value));
   const applyZoom=()=>{
-    if(typeof previewCam!=='undefined'&&previewCam){const d=1/previewZoom;previewCam.position.set(1.2*d,.92+.18*d,2.4*d);previewCam.lookAt(0,.92,0);}
+    if(typeof previewCam==='undefined'||!previewCam)return;
+    const f=previewFocus||{y:.92,dir:[1.2,.18,2.4],z:1};
+    const d=f.z/previewZoom;
+    previewCam.position.set(f.dir[0]*d,f.y+f.dir[1]*d,f.dir[2]*d);
+    previewCam.lookAt(0,f.y,0);
+  };
+  window._previewFocusPart=part=>{ /* v142 : zoom automatique sur la pièce à modifier */
+    const P={jerseyFront:{y:.98,dir:[.35,.1,2.4],z:1.7},jerseyBack:{y:.98,dir:[.35,.1,-2.4],z:1.7},helmet:{y:1.57,dir:[0,.04,1.45],z:2.7},face:{y:1.5,dir:[0,.03,1.25],z:2.9},sunglasses:{y:1.5,dir:[0,.03,1.25],z:2.9},shorts:{y:.55,dir:[.3,.1,2.1],z:2.0},socks:{y:.16,dir:[.2,.08,1.9],z:2.3}};
+    previewFocus=P[part]||null;applyZoom();
   };
   window._previewZoomBy=factor=>{previewZoom=clampZoom(previewZoom*factor);applyZoom();};
-  window._previewZoomReset=()=>{previewZoom=1;applyZoom();};
+  window._previewZoomReset=()=>{previewZoom=1;previewFocus=null;applyZoom();};
   $('avatarZoomIn')?.addEventListener('click',()=>window._previewZoomBy(1.18));
   $('avatarZoomOut')?.addEventListener('click',()=>window._previewZoomBy(.85));
   const pointers=new Map();let pinchDist=0,lastPoint=null;
@@ -3244,7 +3253,7 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
   for(let attempt=0;attempt<servers.length+1;attempt++){
     const server=servers[attempt%servers.length],r=areas[Math.min(attempt,areas.length-1)],localityRadius=Math.max(r,25000),host=new URL(server).hostname;
     onProgress(Math.min(.12+attempt*.10,.42),'Téléchargement des routes et du décor · serveur '+(attempt+1)+'/'+(servers.length+1)+'…');
-    const q=`[out:json][timeout:25];way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon}way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon};way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way["highway"](around:${r},${center.lat},${center.lon};way["building"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});way["natural"~"^(water|wood|hedge|tree_row)$"](around:${r},${center.lat},${center.lon});way["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});node["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});way["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});node["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});way["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});node["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});way["landuse"~"^(forest|hedge|residential|farmland|meadow|orchard|grass)$"](around:${r},${center.lat},${center.lon});way["barrier"="hedge"](around:${r},${center.lat},${center.lon});way["place"~"^(city|town|village)$"](around:${r},${center.lat},${center.lon});way["traffic_sign"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});node["traffic_sign"](around:${r},${center.lat},${center.lon}););way["leisure"="stadium"](around:${r},${center.lat},${center.lon});node["leisure"="stadium"](around:${r},${center.lat},${center.lon});way["man_made"="tower"](around:${r},${center.lat},${center.lon});node["man_made"="tower"](around:${r},${center.lat},${center.lon});way["historic"](around:${r},${center.lat},${center.lon});node["historic"](around:${r},${center.lat},${center.lon}););out body geom 12000;node["place"~"^(city|town|village)$"]["name"](around:${localityRadius},${center.lat},${center.lon});out body;`;
+    const q=`[out:json][timeout:25];way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon}way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon};way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way["highway"](around:${r},${center.lat},${center.lon};way["building"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});way["natural"~"^(water|wood|hedge|tree_row)$"](around:${r},${center.lat},${center.lon});way["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});node["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});way["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});node["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});way["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});node["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});way["landuse"~"^(forest|hedge|residential|farmland|meadow|orchard|grass)$"](around:${r},${center.lat},${center.lon});way["barrier"="hedge"](around:${r},${center.lat},${center.lon});way["place"~"^(city|town|village)$"](around:${r},${center.lat},${center.lon});way["traffic_sign"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});node["traffic_sign"](around:${r},${center.lat},${center.lon};way["leisure"="stadium"](around:${r},${center.lat},${center.lon});node["leisure"="stadium"](around:${r},${center.lat},${center.lon});way["man_made"="tower"](around:${r},${center.lat},${center.lon});node["man_made"="tower"](around:${r},${center.lat},${center.lon});way["historic"](around:${r},${center.lat},${center.lon});node["historic"](around:${r},${center.lat},${center.lon});out body geom 12000;node["place"~"^(city|town|village)$"]["name"](around:${localityRadius},${center.lat},${center.lon});out body;`;
     try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),28000);let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const elements=data.elements.filter(e=>e&&(['way','node'].includes(e.type)));onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
     catch(error){last=error&&error.name==='AbortError'?host+' délai dépassé':(error.message||String(error));onProgress(Math.min(.12+attempt*.10,.42),'Serveur OSM indisponible · nouvel essai…');}
   }
