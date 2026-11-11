@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v152 – .zwo IntervalCoach, MRC %FTP, cibles + graphique du workout</title>
+<title>Vélo 3D v153 – nuit réelle, météo au sol, ⏭ skip, voitures démo</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -281,6 +281,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #icuChip.hide{display:none!important}
 #icuTargets{position:fixed;right:10px;bottom:118px;z-index:25;background:rgba(8,26,30,.88);border:1px solid var(--bd);border-radius:12px;padding:6px 10px;font-size:12px;color:var(--fg);font-variant-numeric:tabular-nums;max-width:46vw}
 #icuTargets.hide{display:none!important}
+#icuSkip{min-height:26px;min-width:30px;padding:2px 6px;font-size:13px;margin-left:6px;border-radius:8px}
 #icuGraph{width:100%;height:64px;display:block;margin-top:6px;border-radius:8px;background:rgba(0,0,0,.18)}
 #icuGraph.hide{display:none!important}
 #icuWarn{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);z-index:39;font-size:clamp(18px,4vw,30px);font-weight:800;padding:10px 18px;border-radius:14px;background:rgba(8,26,30,.82);pointer-events:none;text-align:center;white-space:nowrap}
@@ -474,7 +475,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v152</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v153</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -512,7 +513,6 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
         <label class="choice wrapRow">Lunettes — monture/visière (photo)<input id="sunglassesTex" type="file" accept="image/*"><img id="sunglassesThumb" class="texThumb hide" alt="Lunettes (photo)"></label>
         <label class="choice wrapRow">Maillot — devant (photo)<input id="jerseyFrontTex" type="file" accept="image/*"><img id="jerseyFrontThumb" class="texThumb hide" alt="Maillot devant"></label>
         <label class="choice wrapRow">Maillot — arrière (photo)<input id="jerseyBackTex" type="file" accept="image/*"><img id="jerseyBackThumb" class="texThumb hide" alt="Maillot arrière"></label>
-        <label class="choice wrapRow">Cuissard (photo)<input id="shortTex" type="file" accept="image/*"><img id="shortThumb" class="texThumb hide" alt="Cuissard"></label>
         <label class="choice wrapRow">Chaussettes (photo)<input id="sockTex" type="file" accept="image/*"><img id="sockThumb" class="texThumb hide" alt="Chaussettes"></label>
         <label class="choice wrapRow">Visage (photo)<input id="faceTex" type="file" accept="image/*"><img id="faceThumb" class="texThumb hide" alt="Visage"></label>
         <label class="choice wrapRow">Casque (photo)<input id="helmetTex" type="file" accept="image/*"><img id="helmetThumb" class="texThumb hide" alt="Casque"></label>
@@ -611,7 +611,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="icuOverlay" class="hide" role="status"><div><div id="icuOverlayTitle"></div><div id="icuOverlaySub"></div><div id="icuOverlayCount"></div></div></div>
 <div id="icuWarn" class="hide" role="alert"></div>
 <div id="icuChip" class="hide"></div>
-<div id="icuTargets" class="hide"></div>
+<div id="icuTargets" class="hide"><span id="icuTargetsTxt"></span><button id="icuSkip" type="button" title="Passer à l’exercice suivant" aria-label="Passer à l’exercice suivant">⏭</button></div>
 <div id="stopDialog" class="hide" role="dialog" aria-modal="true" aria-labelledby="stopTitle"><section class="stopCard"><h2 id="stopTitle">Séance terminée</h2><p id="stopInfo"></p><div id="stopStats"></div><div id="stopBlocks" class="hide"></div><div id="stopMap" aria-label="Tracé effectué sur la carte" role="img"></div><div class="stopActions"><button id="exportFit" class="primary">⬇ FIT (Garmin, Strava)</button><button id="exportTcx">⬇ TCX (Garmin Connect)</button><button id="exportGpx">⬇ GPX (tracé)</button><button id="openStrava">Voir sur Strava ↗</button><button id="resumeStop" class="wideAction">▶ Reprendre l’entraînement</button><button id="quitStop" class="wideAction">⏹ Fermer et revenir à l’accueil</button></div><small id="stopHelp">Garmin Connect (ordinateur, ou Chrome en mode ordinateur) : Importer des données, puis choisis le .FIT ou le .TCX. Sur un compteur ou une montre : copie le .FIT dans le dossier Garmin/NewFiles par USB. Strava : Upload, Fichier.</small></section></div>
 <div id="fatal" class="hide" role="alert"><h2>La scène 3D ne peut pas démarrer</h2><p id="fatalText"></p></div>
 
@@ -652,7 +652,8 @@ const sun=new THREE.DirectionalLight(0xfff4df,1.2);sun.position.set(35,60,-25);s
 /* v136 : cycle jour/nuit, étoiles, lune */
 let dayTime=.32;
 const stars=(()=>{const n=420,pos=new Float32Array(n*3);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,e=Math.random()*Math.PI*.48+.02,r=1400;pos[i*3]=Math.cos(a)*Math.cos(e)*r;pos[i*3+1]=Math.sin(e)*r;pos[i*3+2]=Math.sin(a)*Math.cos(e)*r;}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));const m=new THREE.PointsMaterial({color:0xffffff,size:2.2,transparent:true,opacity:0,depthWrite:false,fog:false});const p=new THREE.Points(g,m);p.frustumCulled=false;p.renderOrder=-1;S.add(p);return p})();
-const moon=new THREE.Mesh(new THREE.SphereGeometry(26,16,12),new THREE.MeshBasicMaterial({color:0xe8ecf4,fog:false}));moon.visible=false;S.add(moon);
+const moonG=new THREE.Group();const moon=new THREE.Mesh(new THREE.SphereGeometry(26,16,12),new THREE.MeshBasicMaterial({color:0xe8ecf4,fog:false}));const moonDark=new THREE.Mesh(new THREE.SphereGeometry(25.4,16,12),new THREE.MeshBasicMaterial({color:0x04060c,fog:false}));moonG.add(moon,moonDark);moonG.visible=false;S.add(moonG);
+function moonPhaseAt(now){const SYN=29.530588853,KNOWN=new Date(Date.UTC(2000,0,6,18,14)).getTime();const age=(((now-KNOWN)/86400000)%SYN+SYN)%SYN;const ph=age/SYN;return{age:age,ph:ph,illum:(1-Math.cos(2*Math.PI*ph))/2,waxing:ph<.5}} /* v153 : vraie phase de la Lune */
 function paintSky(topC,horC){
   const pos=skyDome.geometry.attributes.position,col=skyDome.geometry.attributes.color,top=new THREE.Color(topC),hor=new THREE.Color(horC);
   for(let i=0;i<pos.count;i++){const t=Math.max(0,Math.min(1,(pos.getY(i)/1500+.15)/1.15));const c=hor.clone().lerp(top,Math.pow(t,.55));col.setXYZ(i,c.r,c.g,c.b);}
@@ -703,9 +704,9 @@ function buildAmbiance(target){
     bird.add(wl,wr);bird.userData={wl,wr,r:18+Math.random()*22,h:14+Math.random()*16,sp:.12+Math.random()*.2,ph:Math.random()*6.28};
     g.add(bird);window._birds.push(bird);
   }
-  /* trafic : voitures qui doublent le cycliste sur le parcours */
+  /* trafic : voitures — v153 : réservées au mode démo (proj == null) pour les tester */
   const carCols=[0xc0392b,0x2e6fb0,0xe0a13a,0xdddddd,0x4a4a4a,0x3f8f5f];
-  for(let i=0;i<6;i++){
+  for(let i=0;!proj&&i<6;i++){
     const car=new THREE.Group();
     const body=new THREE.Mesh(new THREE.BoxGeometry(1.8,1,4.2),new THREE.MeshStandardMaterial({color:carCols[i],roughness:.5}));body.position.y=.75;
     const cab=new THREE.Mesh(new THREE.BoxGeometry(1.5,.8,2),new THREE.MeshStandardMaterial({color:0x223,roughness:.2}));cab.position.set(0,1.5,-.2);
@@ -717,7 +718,7 @@ function updateAmbiance(dt,t){
   /* v138/v141 : cycle auto (~2 min 30), mode manuel fixe, OU heure réelle (le ciel suit l'heure actuelle et avance en temps réel) */
   const dm=window._dayMode||'auto';
   if(dm==='day')dayTime=.5;else if(dm==='night')dayTime=.97;
-  else if(dm==='realtime'){const n=new Date();dayTime=(((n.getHours()*3600+n.getMinutes()*60+n.getSeconds())/86400)%1+1)%1;}
+  else if(dm==='realtime'){const n=new Date();let _dt=(((n.getHours()*3600+n.getMinutes()*60+n.getSeconds())/86400)%1+1)%1;const st=window._sunTimes;if(st&&st.sunrise&&st.sunset){const now=n.getTime(),_r=st.sunrise.getTime(),_s=st.sunset.getTime();if(now<_r||now>_s)_dt=.97;else _dt=.25+.5*Math.min(1,Math.max(0,(now-_r)/(_s-_r)));}dayTime=_dt;} /* v153 : nuit/jour sur les vrais lever/coucher du soleil (Open-Meteo) */
   else dayTime=(dayTime+dt/150)%1;
   const ang=dayTime*Math.PI*2,elev=Math.sin(ang),az=Math.cos(ang);
   const dim=(window._weatherFx&&window._weatherFx.dim)||1; /* v138 : la météo assombrit la scène */
@@ -725,16 +726,18 @@ function updateAmbiance(dt,t){
   sun.position.set(az*90,Math.max(elev,.015)*95+4,-30);
   if(dayF>.35){sun.intensity=.2+dayF*1.05;sun.color.set(0xfff4df);}
   else if(dayF>.02){sun.intensity=.25+dayF;sun.color.set(0xffc890);}
-  else{sun.intensity=.16;sun.color.set(0x9fb8e8);}
-  hemi.intensity=.22+dayF*.63;
+  else{sun.intensity=.07;sun.color.set(0x9fb8e8);} /* v153 : nuit plus franche */
+  hemi.intensity=.10+dayF*.75;
   if(window._weatherFx&&window._weatherFx.storm&&Math.random()<dt*.12)window._flash=1; /* v138 : éclair d'orage */
   if(window._flash>0){window._flash=Math.max(0,window._flash-dt*2.5);hemi.intensity+=window._flash*1.4;}
   const dawn=Math.max(0,1-Math.abs(elev)*4)*dayF;
-  const topC=new THREE.Color().setHSL(.62-.28*nightF,.62,.10+.42*dayF);
-  const horC=new THREE.Color().setHSL(.58-.06*nightF,.45,.16+.55*dayF).lerp(new THREE.Color(0xff9a5a),dawn*.55);
+  const topC=new THREE.Color().setHSL(.62-.30*nightF,.62,.012+.47*dayF); /* v153 : vraie nuit noire */
+  const horC=new THREE.Color().setHSL(.58-.08*nightF,.5,.03+.68*dayF).lerp(new THREE.Color(0xff9a5a),dawn*.55);
   paintSky(topC,horC);S.background.copy(horC);if(S.fog)S.fog.color.copy(horC);
-  stars.material.opacity=nightF*.95;stars.position.set(cam?cam.position.x:0,0,cam?cam.position.z:0);
-  moon.visible=nightF>.2;if(moon.visible)moon.position.set(-az*1300,Math.max(-elev,.05)*1300-100,-600);
+  stars.material.opacity=nightF;stars.position.set(cam?cam.position.x:0,0,cam?cam.position.z:0);
+  const mp=moonPhaseAt(Date.now()); /* v153 : Lune avec sa vraie phase (croissant, pleine Lune…) */
+  moonG.visible=nightF>.15;
+  if(moonG.visible){moonG.position.set(-az*1300,Math.max(-elev,.05)*1300-100,-600);moonDark.position.set((mp.waxing?1:-1)*(1-mp.illum)*44,0,2);moonG.scale.setScalar(1+.09*Math.cos(2*Math.PI*mp.age/27.321661));}
   if(window._lamps)window._lamps.glow.material.opacity=nightF*.8;
   /* oiseaux */
   if(cam)for(const b of window._birds||[]){const u=b.userData,a=u.ph+t*u.sp;
@@ -771,23 +774,47 @@ function weatherInfo(code){
   if(c>=95)return{emoji:'⛈️',label:'orage',cloud:1,dim:.45,fog:false,rain:true,snow:false,storm:true};
   return{emoji:'🌡️',label:'variable',cloud:.5,dim:.9,fog:false,rain:false,snow:false,storm:false};
 }
+function snowGround(on){ /* v153 : le terrain passe au blanc sous la neige */
+  const mesh=window._terrain;if(!mesh||!mesh.geometry||!mesh.geometry.attributes||!mesh.geometry.attributes.color)return;
+  const col=mesh.geometry.attributes.color;
+  if(on){if(!mesh.userData.snowed){mesh.userData.prevColors=col.array.slice(0);mesh.userData.snowed=true;}
+    for(let i=0;i<col.count;i++){col.array[i*3]=col.array[i*3]*.12+.94;col.array[i*3+1]=col.array[i*3+1]*.12+.97;col.array[i*3+2]=col.array[i*3+2]*.12+1;}
+  }else if(mesh.userData.snowed){col.array.set(mesh.userData.prevColors);mesh.userData.snowed=false;}
+  col.needsUpdate=true;
+}
+function puddles(on){ /* v153 : flaques sombres sur la chaussée quand il pleut */
+  if(window._puddles){S.remove(window._puddles);window._puddles=null;}
+  if(!on||typeof route==='undefined'||!route)return;
+  const g=new THREE.Group(),mat=new THREE.MeshLambertMaterial({color:0x232c38,transparent:true,opacity:.82});
+  for(let i=0;i<26;i++){
+    const d=Math.random()*route.len,p=at(d),q=at(Math.min(route.len,d+2));
+    let tx=q[0]-p[0],tz=q[2]-p[2];const l=Math.hypot(tx,tz)||1;tx/=l;tz/=l;
+    const side=(Math.random()-.5)*2.4,r=.6+Math.random()*1.7;
+    const m=new THREE.Mesh(new THREE.CircleGeometry(r,14),mat);
+    m.rotation.x=-Math.PI/2;m.position.set(p[0]-tz*side,p[1]+.03,p[2]+tx*side);g.add(m);
+  }
+  S.add(g);window._puddles=g;
+}
 function applyWeatherScene(code){
   const w=weatherInfo(code);window._weatherFx=w;
   if(cloudMat)cloudMat.opacity=.92*w.cloud;
   precip.rain.mesh.visible=w.rain;precip.snow.mesh.visible=w.snow;
   if(S.fog){if(w.fog){S.fog.near=25;S.fog.far=230;}else{S.fog.near=160;S.fog.far=750;}}
+  snowGround(w.snow); /* v153 : neige au sol (terrain, champs, herbe) */
+  puddles(w.rain);   /* v153 : flaques sur la route quand il pleut */
   return w;
 }
 async function fetchWeatherAt(lat,lon,label){
   if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
   const chip=$('weatherChip');
   try{
-    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&timezone=auto';
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=sunrise,sunset&forecast_days=1&timezone=auto' /* v153 : lever/coucher réels */;
     const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);
     let resp;try{resp=await fetch(url,{mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}
     if(!resp.ok)throw new Error('HTTP '+resp.status);
     const data=await resp.json(),cur=data&&data.current;
     if(!cur)throw new Error('réponse invalide');
+    if(data.daily&&data.daily.sunrise&&data.daily.sunrise[0]&&data.daily.sunset&&data.daily.sunset[0])window._sunTimes={sunrise:new Date(data.daily.sunrise[0]),sunset:new Date(data.daily.sunset[0])}; /* v153 */
     const w=applyWeatherScene(cur.weather_code);
     window._weather={code:cur.weather_code,temp:cur.temperature_2m,wind:cur.wind_speed_10m,hum:cur.relative_humidity_2m,place:label||''};
     if(chip)chip.textContent=w.emoji+' '+Math.round(cur.temperature_2m)+' °C · '+w.label+' · vent '+Math.round(cur.wind_speed_10m)+' km/h'+(label?' · '+label:'');
@@ -1244,7 +1271,6 @@ function makeCyclist() {
     const mesh = new THREE.Mesh(geometry || tubeGeo, material);
     parent.add(mesh);
     return r4Seg(mesh, a, b, radius);
-  };
   const addMesh = (parent, geometry, material, position, scale) => {
     const mesh = new THREE.Mesh(geometry, material);
     if (position) mesh.position.copy(position);
@@ -1990,7 +2016,6 @@ function _trimTransparent(img,margin=.035){
   const sg=src.getContext('2d',{willReadFrequently:true});sg.drawImage(img,0,0,w,h);
   let data;try{data=sg.getImageData(0,0,w,h).data}catch(_){return img}
   let x0=w,y0=h,x1=-1,y1=-1;
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>18){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
   if(x1<x0||y1<y0)return img;
   const bw=x1-x0+1,bh=y1-y0+1,padx=Math.round(bw*margin),pady=Math.round(bh*margin);
   x0=Math.max(0,x0-padx);y0=Math.max(0,y0-pady);x1=Math.min(w-1,x1+padx);y1=Math.min(h-1,y1+pady);
@@ -2791,7 +2816,6 @@ function freeStartingDirections(way,segment,t,snap,nav){
         const destination=freeNodeKey(reversePoints.at(-1)),endIndex=way.pts.findIndex(point=>freeNodeKey(point)===destination);
         const reverse={way,points:reversePoints,destination,endIndex,direction:reverseDir,angle:Math.PI,arrow:'↓',city:''};
         if(freeOptionHasContinuation(reverse,key,nav))options.push(reverse);
-      }
       for(const option of options)freeSetTownHint(option,nav);
       return options;
     }
@@ -3538,7 +3562,6 @@ function makeWorld(){
     const quad=[[a2[0]+nx2,a2[1]+.016,a2[2]+nz2],[b2[0]+nx2,b2[1]+.016,b2[2]+nz2],[b2[0]-nx2,b2[1]+.016,b2[2]-nz2],[a2[0]-nx2,a2[1]+.016,a2[2]-nz2]];
     for(const k of[0,1,2,0,2,3])dashPositions.push(...quad[k]);}
   if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();world.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0xefece0,side:THREE.DoubleSide})));}
-  let minY=Infinity,x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;for(let i=0;i<=n;i++){minY=Math.min(minY,Y[i]);x0=Math.min(x0,X[i]);x1=Math.max(x1,X[i]);z0=Math.min(z0,Z[i]);z1=Math.max(z1,Z[i])}
   const base=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0+1200,z1-z0+1200),new THREE.MeshLambertMaterial({color:0x71964c}));base.rotation.x=-Math.PI/2;base.position.set((x0+x1)/2,minY-12,(z0+z1)/2);world.add(base);
   if(!proj){
     const count=440,trunkGeo=new THREE.CylinderGeometry(.20,.30,3,6),leafGeo=new THREE.IcosahedronGeometry(1,1),trunks=new THREE.InstancedMesh(trunkGeo,new THREE.MeshLambertMaterial({color:0x71563e}),count),crowns=new THREE.InstancedMesh(leafGeo,new THREE.MeshLambertMaterial({color:0x4b7b36}),count*2),matrix=new THREE.Matrix4();
@@ -4339,7 +4362,6 @@ function facade(){
 }
 
 /* Retained building/facade renderer, now using the shared route-projection helper. */
-function buildings(buildingParts,targetWorld){
   const list=[];
   for(const [raw,tags] of buildingParts){
     const closed=osmClosed(raw),points=closed?raw.slice(0,-1):raw;
@@ -5140,7 +5162,6 @@ function selectRoadsForScene(roadParts,maxWays=1200){
   if(selected.size<maxWays){const remaining=[];bins.forEach(bin=>bin.forEach((distance2,index)=>{if(!selected.has(index))remaining.push([index,distance2])}));remaining.sort((a,b)=>a[1]-b[1]);for(const [index]of remaining){if(selected.size>=maxWays)break;selected.add(index)}}
   return[...selected].map(index=>roadParts[index]);
 }
-
 let _stopSignTexture=null;const _speedSignTextures={};
 function stopSignTexture(){if(_stopSignTexture)return _stopSignTexture;const c=document.createElement('canvas');c.width=256;c.height=96;const g=c.getContext('2d');g.fillStyle='#fff';g.font='bold 62px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('STOP',128,50);_stopSignTexture=new THREE.CanvasTexture(c);return _stopSignTexture;}
 function speedSignTexture(value){if(_speedSignTextures[value])return _speedSignTextures[value];const c=document.createElement('canvas');c.width=128;c.height=128;const g=c.getContext('2d');g.fillStyle='#16181c';g.font='bold '+(String(value).length>2?68:84)+'px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(value,64,68);const t=new THREE.CanvasTexture(c);_speedSignTextures[value]=t;return t;}
@@ -5454,7 +5475,8 @@ setInterval(()=>{if(route&&ctl&&running)sendGrade(at(s)[3])},1500);
 
 
 /* ---------- Départ, pause, fin du parcours ---------- */
-$('go').onclick=()=>{if(!(freeNavigation&&freeNavigation.prompt))freeHideRouteArrows();if(freeNavigation&&freeNavigation.awaitingStart){$('stopDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();const nav=freeNavigation,dir=(nav.startOptions||[]).some(o=>o.direction===(window._freeStartDir>=0?1:-1))?(window._freeStartDir>=0?1:-1):((nav.startOptions&&nav.startOptions[0]&&nav.startOptions[0].direction)||1);freeSelectStart(dir);requestWakeLock();return;} /* v121 : départ direct dans le sens de la flèche, plus d'écran « choisir le sens » */$('stopDialog').classList.add('hide');$('freeStartDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();updateBarHeight()};
+$('go').onclick=()=>{if(!(freeNavigation&&freeNavigation.prompt))freeHideRouteArrows();if(freeNavigation&&freeNavigation.awaitingStart){$('stopDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();const nav=freeNavigation,dir=(nav.startOptions||[]).some(o=>o.direction===(window._freeStartDir>=0?1:-1))?(window._freeStartDir>=0?1:-1):((nav.startOptions&&nav.startOptions[0]&&nav.startOptions[0].direction)||1);freeSelectStart(dir);requestWakeLock();return;} /* v121 : départ direct dans le sens de la flèche, plus d'écran « choisir le sens » */$('stopDialog').classList.add('hide');$('freeStartDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();if(!proj&&Number($('pw').value)<=0){$('pw').value=150;$('pv').textContent='150';} /* v153 : en démo le cycliste avance tout seul (150 W) */
+running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();updateBarHeight()};
 $('mn').onclick=()=>{running=false;if($('routeArrows'))$('routeArrows').classList.add('hide');$('exportPanel').classList.add('hide');$('freeStartDialog').classList.add('hide');$('home').classList.remove('hide');syncBarPresentation();releaseWakeLock()};
 $('pause').onclick=()=>{if(!route)return;if(freeNavigation&&freeNavigation.awaitingChoice){toast('Choisis une flèche au carrefour pour repartir.');return;}if(s>=route.len){s=0;v=0;totalDistance=0;resetMapState();place(true)}running=!running;$('pause').textContent=running?'Pause':'Reprendre';toast(running?'Sortie en cours.':'Sortie en pause.');buzz(15);if(ctl&&!running)sendGrade(0)};
 
@@ -5584,7 +5606,7 @@ $('exportGpx').onclick=()=>{downloadBlob(gpxText(),sessionFileName('gpx'),'appli
 $('openStrava').onclick=()=>{window.open('https://www.strava.com/upload/select','_blank','noopener');toast('Sur Strava : Upload → Fichier, puis choisis le .FIT téléchargé.');};
 $('go').addEventListener('click',()=>{sessionSamples=[];sessionStart=Date.now();lastSampleT=0;$('exportPanel').classList.add('hide');$('stopDialog').classList.add('hide');requestWakeLock();window._rideElapsed=0;window._powerStarted=false;window._rideGain=0;window._rideDir=1;if($('turnAround'))$('turnAround').disabled=false; /* v127 : demi-tour aussi disponible en mode démo */})
 $('skipScenery').onclick=()=>{++osmTok;$('skipScenery').classList.add('hide');$('go').disabled=false;prog(1,'Chargement interrompu. Parcours prêt sans décor supplémentaire.')};
-$('pw').oninput=e=>{$('pv').textContent=e.target.value};
+$('pw').oninput=e=>{$('pv').textContent=e.target.value;window._pwManualAt=performance.now()}; /* v153 : saisie manuelle récente */
 $('gearEasier').onclick=()=>{if(virtualRearIndex<VIRTUAL_COGS.length-1){virtualRearIndex++;updateGearUI();shiftClack();}}; /* v149 : son aussi sur − */
 $('gearHarder').onclick=()=>{if(virtualRearIndex>0){virtualRearIndex--;updateGearUI();shiftClack();}}; /* v149 : son aussi sur + */
 $('frontGear').onclick=()=>{virtualFront=virtualFront===48?35:48;updateGearUI();shiftClack();}; /* v139 : clic de plateau */
@@ -5712,23 +5734,31 @@ function icuParseZwo(txt,ftp){
 }
 function icuStepsHtml(steps){return steps.slice(0,40).map((s,i)=>(i+1)+'. '+fmtDur(s.dur)+' · '+(s.ramp?s.wLow+'→'+s.wHigh+' W':s.wLow+' W')).join('<br>')+(steps.length>40?'<br>… ('+steps.length+' exercices au total)':'')}
 function icuStepAt(p,t){let acc=0;for(let i=0;i<p.steps.length;i++){const st=p.steps[i];if(t<acc+st.dur)return{i:i,inT:t-acc,rem:acc+st.dur-t};acc+=st.dur}const last=Math.max(0,p.steps.length-1);return{i:last,inT:p.steps[last]?p.steps[last].dur:0,rem:0}}
-function icuTargetAt(p){if(!p||(p.phase!=='run'&&p.phase!=='next')||!p.cur)return 0;const st=p.steps[p.cur.i];if(!st||st.wLow<=0)return 0;if(st.ramp)return st.wLow+(st.wHigh-st.wLow)*Math.min(1,p.cur.inT/Math.max(.001,st.dur));return st.wLow}
 function icuOverlay(title,sub,count){const ov=$('icuOverlay');if(!ov)return;ov.classList.remove('hide');if(title!=null)$('icuOverlayTitle').textContent=title;if(sub!=null)$('icuOverlaySub').textContent=sub;if(count!=null)$('icuOverlayCount').textContent=count;else $('icuOverlayCount').textContent=''}
 function icuSetWarn(mode,text){const w=$('icuWarn');if(!w)return;if(!mode){w.classList.add('hide');return}w.classList.remove('hide');w.className=mode;w.textContent=text}
 function updateIcuTargets(p){
   const el=$('icuTargets');if(!el)return;
-  const active=p.phase!=='done'&&p.phase!=='doneIdle';
+  const active=p.phase==='intro'||p.phase==='go'||p.phase==='run'||p.phase==='next'; /* v153 : masqué sur l'accueil (phase armed) */
   el.classList.toggle('hide',!active);
   if(!active)return;
   const i=(p.phase==='run'||p.phase==='next')?p.cur.i:0;
   const st=p.steps[i],nx=p.steps[i+1];
   const fmt=s=>!s?'—':(s.ramp?s.wLow+'→'+s.wHigh+' W':s.wLow+' W');
-  const txt='🎯 cible '+fmt(st)+(nx?' · prochain '+fmt(nx):'')+' · bloc '+(i+1)+'/'+p.steps.length;
-  if(p._tTxt!==txt){p._tTxt=txt;el.textContent=txt;}
+  const txt='🎯 cible '+fmt(st)+(nx?' · prochain '+fmt(nx):''); /* v153 : plus de « bloc i/N », déjà dans la puce Exercice x/y */
+  const sp=$('icuTargetsTxt');
+  if(sp&&p._tTxt!==txt){p._tTxt=txt;sp.textContent=txt;}
 }
+function icuSkip(){ /* v153 : sauter l'exercice en cours et passer au suivant */
+  const p=window._icuPlan;if(!p||(p.phase!=='run'&&p.phase!=='next')||!p.steps.length)return;
+  const nx=p.steps[p.cur.i+1],chip=$('icuChip');
+  if(!nx){p.phase='done';p.doneAt=performance.now();icuSetWarn(null);icuOverlay('Entraînement fini',p.blocks.length+' bloc'+(p.blocks.length>1?'s':'')+' réalisé'+(p.blocks.length>1?'s':''),null);if(chip){chip.classList.remove('hide');chip.textContent='🏁 Entraînement terminé · '+p.blocks.length+' blocs'}toast('⏭ Dernier exercice passé · séance terminée.');return;}
+  p.t=nx.t0;p.cur={i:p.cur.i+1,rem:nx.dur};p.accP=0;p.accT=0;p.phase='run';
+  toast('⏭ Exercice passé : '+(nx.label||('bloc '+(p.cur.i+1))));
+}
+const _icuSkipBtn=$('icuSkip');if(_icuSkipBtn)_icuSkipBtn.onclick=()=>icuSkip();
 function drawIcuGraph(p){
   const cv=$('icuGraph');if(!cv)return;
-  const active=p.phase!=='done'&&p.phase!=='doneIdle';
+  const active=p.phase==='intro'||p.phase==='go'||p.phase==='run'||p.phase==='next'; /* v153 : masqué sur l'accueil */
   cv.classList.toggle('hide',!active);
   if(!active)return;
   const dpr=Math.min(devicePixelRatio||1,2),w=cv.clientWidth||300,h=64;
@@ -5787,7 +5817,8 @@ function updateIcuPlan(dt,power){
   if(p.phase==='run'&&p.cur.rem<=5)p.phase='next';
   if(p.phase==='next'){
     const last=p.cur.i>=p.steps.length-1,nx=p.steps[p.cur.i+1];
-    icuOverlay(last?'Dernier exercice':'Prochain exercice',nx?(nx.ramp?nx.wLow+' → '+nx.wHigh+' W':nx.wLow+' W')+' · '+fmtDur(nx.dur):'',Math.max(0,Math.ceil(p.cur.rem)));
+    if(last||p.cur.rem<=3){const _ov=$('icuOverlay');if(_ov)_ov.classList.add('hide');} /* v153 : plus d'écriture centrée sur le dernier exercice / fin de bloc */
+    else icuOverlay(last?'Dernier exercice':'Prochain exercice',nx?(nx.ramp?nx.wLow+' → '+nx.wHigh+' W':nx.wLow+' W')+' · '+fmtDur(nx.dur):'',Math.max(0,Math.ceil(p.cur.rem)));
     if(p.cur.rem<=0){
       p.blocks.push({n:p.cur.i+1,dur:st.dur,target:st.wLow,avg:Math.round(p.accP/Math.max(.001,p.accT))});
       p.accP=0;p.accT=0;
@@ -5951,7 +5982,7 @@ function loop(t){
     updateAmbiance(dt,t/1000); /* v136 : cycle jour/nuit + animations ambiantes */
     if(window._liveWeather&&proj&&route&&t-(window._lastWeatherFetch||0)>600000){window._lastWeatherFetch=t;const p=at(s);fetchWeatherAt(proj.la-p[2]/proj.kz,proj.lo+p[0]/proj.kx);} /* v138 : météo réelle en roulant, toutes les 10 min */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
     if(window._icuPlan)updateIcuPlan(dt,power); /* v144 : déroulement de l'entraînement intervals.icu */
-    if(window._icuPlan&&(window._icuPlan.phase==='run'||window._icuPlan.phase==='next')&&!ctl){const _it=icuTargetAt(window._icuPlan);if(_it>0&&$('pw')){$('pw').value=Math.round(_it);if($('pv'))$('pv').textContent=Math.round(_it);}} /* v144 : mode manuel, la cible règle le curseur de puissance */
+    if(window._icuPlan&&(window._icuPlan.phase==='run'||window._icuPlan.phase==='next')&&!ctl&&performance.now()-(window._pwManualAt||0)>8000){const _it=icuTargetAt(window._icuPlan); /* v153 : 8 s de grâce après une saisie manuelle */if(_it>0&&$('pw')){$('pw').value=Math.round(_it);if($('pv'))$('pv').textContent=Math.round(_it);}} /* v144 : mode manuel, la cible règle le curseur de puissance */
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
     {const _it=(window._icuPlan&&running)?icuTargetAt(window._icuPlan):0,_po=$('po');if(_po){if(!_it)_po.className='';else if(power>_it*1.05)_po.className='over';else if(power<_it*0.95)_po.className='under';else _po.className='ok';}} /* v144 : puissance colorée selon la cible de l'exercice en cours */
   }
