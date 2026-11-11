@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v143 – secteur rouler libre réparé, zoom auto sur l’avatar</title>
+<title>Vélo 3D v144 – intervals.icu : entraînement du jour guidé</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -398,6 +398,22 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 @media(max-width:390px){.cassetteDiagram{width:102px;height:102px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:29px!important;width:29px;min-width:29px!important;height:34px;min-height:34px}#gearControls{gap:4px}}
 @media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:space-between;gap:4px;padding:0 clamp(30px,21vw,320px)}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}}
 
+/* v144 : intervals.icu — HUD exercice, alertes centrales, offre du jour */
+#icuCenter{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);z-index:60;text-align:center;pointer-events:none;display:flex;flex-direction:column;gap:6px;align-items:center;max-width:92vw}
+#icuCenter .icuBig{font-size:64px;font-weight:800;color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.65)}
+#icuCenter .icuGo{color:var(--ac)}
+#icuCenter .icuStep{font-size:22px;font-weight:700;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.6)}
+#icuCenter .icuTarget{font-size:18px;color:#ffd166;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+#icuCenter .icuWarnRed{font-size:26px;font-weight:800;color:#ff5a5a;text-shadow:0 1px 10px rgba(0,0,0,.7)}
+#icuCenter .icuWarnBlue{font-size:26px;font-weight:800;color:#5aa2ff;text-shadow:0 1px 10px rgba(0,0,0,.7)}
+#icuCenter .icuNext{font-size:15px;color:#fff;background:rgba(10,14,20,.6);padding:6px 12px;border-radius:10px}
+#icuHud{position:fixed;right:12px;bottom:150px;z-index:55;background:rgba(10,14,20,.74);border:1px solid var(--bd);border-radius:12px;padding:8px 12px;display:flex;flex-direction:column;gap:2px;font-size:13px;color:#fff;min-width:180px}
+#icuHud b{font-size:13px}
+#icuHud span{color:var(--muted);font-size:12px}
+#icuOffer{border:1px solid var(--bd);border-radius:12px;padding:10px;margin-top:8px}
+#stopBlocks{margin-top:8px;font-size:12px;display:flex;flex-direction:column;gap:3px;max-height:180px;overflow:auto}
+#stopBlocks .icuBlockRow{display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--bd);padding-top:3px}
+#stopBlocks .icuBlockRow b{white-space:nowrap}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
 <body>
@@ -451,7 +467,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v143</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v144</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -564,6 +580,12 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="freeMap" style="width:100%;height:220px;border-radius:12px;border:1px solid var(--bd);margin-bottom:8px"></div><div id="startDirections" class="hide" aria-hidden="true"></div><button id="enlargeMap" type="button" style="font-size:12px">Agrandir la carte</button>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px">Rayon : <select id="freeRadius" style="font-size:14px;padding:4px;border-radius:8px"><option value="2000" selected>2 km — recommandé</option><option value="5000">5 km</option><option value="10000">10 km</option><option value="20000">20 km</option></select></label><button id="startFreeRide" type="button">🚴 Rouler ici</button><button id="locateMe" type="button">📍 Ma position</button><span id="freeInfo" style="font-size:12px;color:var(--muted)">Secteur : Morville, Manche</span></div>
 </details>
+<details id="icuPanel" class="customize"><summary>📅 intervals.icu — entraînement du jour</summary>
+<div style="font-size:12px;color:var(--muted);margin:6px 0">Génère une clé API sur <b>intervals.icu → Réglages → Developer Settings</b>, colle-la ici, puis demande l’entraînement du jour.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0"><input id="icuToken" type="password" placeholder="Clé API intervals.icu" style="flex:1;min-width:170px"><button id="icuConnect" type="button">🔌 Connecter</button><button id="icuToday" type="button">📅 Entraînement du jour</button></div>
+<div id="icuStatus" style="font-size:12px;color:var(--muted)">Non connecté.</div>
+<div id="icuOffer" class="hide"><b id="icuOfferName"></b><div id="icuOfferInfo" style="font-size:12px;color:var(--muted);margin:4px 0"></div><div class="row"><button id="icuAccept" class="primary">✅ Accepter</button><button id="icuDecline">❌ Refuser</button></div></div>
+</details>
     <div class="row"><button id="gp">Choisir un GPX</button><button id="pg">Coller un GPX</button></div>
     <button id="dm" class="wide">Essayer la démonstration</button>
     <div id="pb" role="progressbar" aria-label="Chargement des routes et du décor" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="pf"></i></div>
@@ -575,9 +597,11 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
     <details><summary>Caméra, données et connexion</summary><p>Glissez un doigt sur la scène pour regarder autour de vous. Pincez à deux doigts pour zoomer (le pincement repasse en vue suivi). L’icône 📷 en haut change de vue à chaque appui : suivi, paysage, profil, puis cintre — en vue cintre vous êtes à la place du cycliste, comme sur le vélo.</p><p>Rouler libre télécharge dans le rayon choisi les routes et objets OSM utilisés par le décor. Le secteur est préparé dans les deux sens disponibles ; la flèche sur la carte indique le sens de départ (touche-la pour l’inverser), puis appuie sur Lancer. Les villes affichées sous les flèches sont des indications tirées des noms OSM proches, pas une garantie d’itinéraire jusqu’à la ville.</p><p>Le relief libre est estimé à partir du modèle Copernicus DEM GLO-90 via <a href="https://open-meteo.com/en/docs/elevation-api" target="_blank" rel="noopener">l’API d’altitude Open-Meteo</a> ; la résolution du modèle est d’environ 90 m. Si le service est inaccessible, le parcours reste utilisable mais la pente peut être incomplète.</p><p>Les haies cartographiées sont complétées par des haies estimées sur les portions rurales sans bâtiments voisins. Routes annexes et ronds-points suivent les données OpenStreetMap ; leurs alentours peuvent être incomplets.</p><p>Hébergez ce fichier en HTTPS (GitHub Pages convient). Pour le trainer et le cardio : Chrome Android ou navigateur compatible Web Bluetooth. La démonstration fonctionne sans capteur.</p></details>
   </div>
 </div>
+<div id="icuCenter" class="hide" aria-live="polite"></div>
+<div id="icuHud" class="hide"></div>
 <div id="pp" class="hide"><label for="pt">Importer une trace GPX</label><textarea id="pt" spellcheck="false" placeholder="Collez ici le contenu complet du fichier GPX"></textarea><div id="pe" role="alert"></div><div class="row"><button id="pl" class="primary">Charger</button><button id="px">Annuler</button></div></div>
 <div id="freeStartDialog" class="hide" role="dialog" aria-modal="true" aria-labelledby="freeStartTitle"><section class="startCard"><h2 id="freeStartTitle">Dans quel sens partir ?</h2><p id="freeStartInfo">Le parcours et ses deux directions sont prêts.</p><div class="startCardActions"><button id="startForward" class="primary">Continuer dans ce sens</button><button id="startReverse">Partir dans l’autre sens</button></div></section></div>
-<div id="stopDialog" class="hide" role="dialog" aria-modal="true" aria-labelledby="stopTitle"><section class="stopCard"><h2 id="stopTitle">Séance terminée</h2><p id="stopInfo"></p><div id="stopStats"></div><div id="stopMap" aria-label="Tracé effectué sur la carte" role="img"></div><div class="stopActions"><button id="exportFit" class="primary">⬇ FIT (Garmin, Strava)</button><button id="exportTcx">⬇ TCX (Garmin Connect)</button><button id="exportGpx">⬇ GPX (tracé)</button><button id="openStrava">Voir sur Strava ↗</button><button id="resumeStop" class="wideAction">▶ Reprendre l’entraînement</button><button id="quitStop" class="wideAction">⏹ Fermer et revenir à l’accueil</button></div><small id="stopHelp">Garmin Connect (ordinateur, ou Chrome en mode ordinateur) : Importer des données, puis choisis le .FIT ou le .TCX. Sur un compteur ou une montre : copie le .FIT dans le dossier Garmin/NewFiles par USB. Strava : Upload, Fichier.</small></section></div>
+<div id="stopDialog" class="hide" role="dialog" aria-modal="true" aria-labelledby="stopTitle"><section class="stopCard"><h2 id="stopTitle">Séance terminée</h2><p id="stopInfo"></p><div id="stopStats"></div><div id="stopBlocks" class="hide"></div><div id="stopMap" aria-label="Tracé effectué sur la carte" role="img"></div><div class="stopActions"><button id="exportFit" class="primary">⬇ FIT (Garmin, Strava)</button><button id="exportTcx">⬇ TCX (Garmin Connect)</button><button id="exportGpx">⬇ GPX (tracé)</button><button id="openStrava">Voir sur Strava ↗</button><button id="resumeStop" class="wideAction">▶ Reprendre l’entraînement</button><button id="quitStop" class="wideAction">⏹ Fermer et revenir à l’accueil</button></div><small id="stopHelp">Garmin Connect (ordinateur, ou Chrome en mode ordinateur) : Importer des données, puis choisis le .FIT ou le .TCX. Sur un compteur ou une montre : copie le .FIT dans le dossier Garmin/NewFiles par USB. Strava : Upload, Fichier.</small></section></div>
 <div id="fatal" class="hide" role="alert"><h2>La scène 3D ne peut pas démarrer</h2><p id="fatalText"></p></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
@@ -5475,6 +5499,9 @@ function renderSessionSummary(mode){
   for(const id of['exportFit','exportTcx','stopMap'])$(id).classList.toggle('hide',!ok);
   $('exportGpx').classList.toggle('hide',!ok||!st.hasGps);
   $('stopDialog').classList.remove('hide');
+  const blocks=window._icuBlocks||[]; /* v144 : détail des blocs intervals.icu */
+  if(blocks.length){$('stopBlocks').innerHTML='<b>Blocs réalisés ('+blocks.length+')</b>'+blocks.map((b,i)=>'<div class="icuBlockRow"><span>#'+(i+1)+' '+(b.label||'')+'</span><b>'+fmtDur(b.dur)+' · cible '+(b.target?Math.round(b.target)+' W':'—')+' · moy '+b.avg+' W</b></div>').join('');$('stopBlocks').classList.remove('hide');}
+  else $('stopBlocks').classList.add('hide');
   if(ok)drawSessionTrack();
 }
 $('exportFit').onclick=()=>{downloadBlob(fitBytes(),sessionFileName('fit'),'application/octet-stream');toast('Fichier .FIT téléchargé (Garmin, Strava).')};
@@ -5519,6 +5546,151 @@ updateGearUI();
   window._liveWeather=live;window._lastWeatherFetch=0;sync();
 })();
 
+/* ---------- v144 : intervals.icu — connexion, entraînement du jour, mode guidé ---------- */
+window._icu=null;window._icuBlocks=[];window._icuToken=null;window._icuAthlete=null;window._icuPending=null;
+try{window._icuToken=localStorage.getItem('velo3d-icu-token')||null;if(window._icuToken&&$('icuToken'))$('icuToken').value=window._icuToken;}catch(e){}
+async function icuApi(path){
+  const token=window._icuToken;if(!token)throw new Error('Non connecté à intervals.icu.');
+  const res=await fetch('https://intervals.icu/api/v1/'+path,{headers:{'Authorization':'Bearer '+token,'Accept':'application/json'},cache:'no-store'});
+  if(res.status===401||res.status===403)throw new Error('Clé API refusée (401/403) — régénère-la sur intervals.icu.');
+  if(!res.ok)throw new Error('intervals.icu HTTP '+res.status);
+  return res.json();
+}
+function icuSetStatus(msg){const s=$('icuStatus');if(s)s.textContent=msg;}
+async function icuConnect(){
+  const inp=$('icuToken'),token=inp&&inp.value.trim();
+  if(!token){icuSetStatus('Colle d’abord ta clé API intervals.icu.');return;}
+  icuSetStatus('Connexion à intervals.icu…');
+  try{
+    const a=await icuApi('athlete/0');
+    window._icuToken=token;window._icuAthlete=a;
+    try{localStorage.setItem('velo3d-icu-token',token);}catch(e){}
+    const name=a.name||((a.firstname||'')+' '+(a.lastname||'')).trim()||'Athlète';
+    icuSetStatus('✅ Connecté : '+name+(a.ftp?' · FTP '+a.ftp+' W':'')+'.');
+    toast('Connecté à intervals.icu ('+name+').');
+  }catch(e){icuSetStatus('❌ '+(e.message||e));}
+}
+function icuStepsFromDoc(doc,ftp){
+  const out=[];
+  for(const st of (doc&&doc.steps)||[]){
+    if(st.until_lap_press)continue;
+    const dur=Number(st.duration)||0;if(!(dur>0))continue;
+    let target=null;const label=st.text||'';
+    const p=st._power||null;
+    if(p){
+      if(Number.isFinite(Number(p.value)))target=Number(p.value);
+      else if(Number.isFinite(Number(p.start))&&Number.isFinite(Number(p.end)))target=(Number(p.start)+Number(p.end))/2;
+    }
+    if(target==null){const q=st.power||null;
+      if(q&&q.units==='%ftp'&&ftp){const v=Number(q.value)||((Number(q.start)||0)+(Number(q.end)||0))/2;target=v/100*ftp;}
+      else if(q&&Number.isFinite(Number(q.value))&&q.units!=='%ftp')target=Number(q.value);
+    }
+    const reps=Math.max(1,Math.min(30,Math.round(Number(st.reps)||1)));
+    for(let i=0;i<reps;i++)out.push({dur:dur,target:target,label:label||('Exercice '+(out.length+1))});
+  }
+  return out;
+}
+function icuStepsFromZwo(text,ftp){
+  const out=[];try{
+    const doc=new DOMParser().parseFromString(text,'text/xml');
+    for(const st of doc.querySelectorAll('step')){
+      const dEl=st.querySelector('duration');const dur=Number(dEl&&dEl.textContent)||0;if(!(dur>0))continue;
+      let target=null;const pEl=st.querySelector('power');
+      if(pEl){
+        const lo=pEl.querySelector('low'),hi=pEl.querySelector('high');
+        if(lo&&hi)target=(Number(lo.textContent)+Number(hi.textContent))/2*(ftp?ftp/100:1);
+        else{const v=Number(pEl.textContent);if(Number.isFinite(v))target=v*(v<=2&&ftp?ftp/100:1);}
+      }
+      const reps=Math.max(1,Math.min(30,Math.round(Number(st.querySelector('reps')&&st.querySelector('reps').textContent)||1)));
+      for(let i=0;i<reps;i++)out.push({dur:dur,target:target,label:'Exercice '+(out.length+1)});
+    }
+  }catch(e){}
+  return out;
+}
+async function icuLoadToday(){
+  if(!window._icuToken){icuSetStatus('Connecte-toi d’abord à intervals.icu.');return;}
+  icuSetStatus('Recherche de l’entraînement du jour…');
+  try{
+    const now=new Date(),d0=new Date(now.getFullYear(),now.getMonth(),now.getDate()),d1=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+    const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')+'T'+String(x.getHours()).padStart(2,'0')+':'+String(x.getMinutes()).padStart(2,'0')+':'+String(x.getSeconds()).padStart(2,'0');
+    const today=iso(d0).slice(0,10);
+    const events=await icuApi('athlete/0/events?category=WORKOUT&resolve=true&oldest='+iso(d0)+'&newest='+iso(d1));
+    const list=Array.isArray(events)?events:[];
+    const todays=list.filter(ev=>String(ev.start_date_local||'').slice(0,10)===today);
+    const ev=todays[0]||list[0];
+    if(!ev){icuSetStatus('Aucun entraînement prévu aujourd’hui sur intervals.icu.');return;}
+    let steps=icuStepsFromDoc(ev.workout_doc,window._icuAthlete&&window._icuAthlete.ftp);
+    if(!steps.length&&ev.workout_file_base64){try{steps=icuStepsFromZwo(atob(ev.workout_file_base64),window._icuAthlete&&window._icuAthlete.ftp);}catch(e){}}
+    if(!steps.length){icuSetStatus('Entraînement « '+(ev.name||'sans nom')+' » trouvé mais sans étapes exploitables.');return;}
+    const total=steps.reduce((a,s)=>a+s.dur,0);
+    window._icuPending={name:ev.name||'Entraînement du jour',steps:steps};
+    $('icuOfferName').textContent='📅 '+window._icuPending.name;
+    $('icuOfferInfo').textContent=steps.length+' exercices · '+fmtDur(total)+' au total'+(ev.description?' · '+String(ev.description).slice(0,120):'');
+    $('icuOffer').classList.remove('hide');
+    icuSetStatus('Entraînement du jour trouvé : '+window._icuPending.name+'.');
+  }catch(e){icuSetStatus('❌ '+(e.message||e));}
+}
+function icuStartWorkout(){
+  const w=window._icuPending;if(!w||!w.steps.length)return;
+  window._icuPending=null;$('icuOffer').classList.add('hide');
+  if(!route)demo();
+  if($('go').disabled)$('go').disabled=false;
+  $('go').click();
+  window._icu={active:true,phase:'intro',phaseT:0,steps:w.steps,idx:0,stepT:0,samples:[],blocks:[],name:w.name};
+  window._icuBlocks=window._icu.blocks;
+  toast('Entraînement « '+w.name+' » lancé · '+w.steps.length+' exercices.');
+}
+function updateIcu(power,dt){
+  const el=$('po'),icu=window._icu,center=$('icuCenter'),hud=$('icuHud');
+  if(!icu||!icu.active){if(el)el.style.color='';if(center)center.classList.add('hide');if(hud)hud.classList.add('hide');return;}
+  if(icu.phase==='intro'){
+    icu.phaseT+=dt;
+    const st=icu.steps[icu.idx];
+    if(center){center.innerHTML='<div class="icuStep">Premier exercice</div><div class="icuBig" style="font-size:30px">'+(st.label||'Exercice')+'</div><div class="icuTarget">'+(st.target?('🎯 Puissance cible : '+Math.round(st.target)+' W'):'')+(st.target?' · ':'')+'⏱ Durée : '+fmtDur(st.dur)+'</div>';center.classList.remove('hide');}
+    if(icu.phaseT>=5){icu.phase='count';icu.phaseT=0;}
+  }else if(icu.phase==='count'){
+    icu.phaseT+=dt;const n=3-Math.floor(icu.phaseT);
+    if(center){center.innerHTML='<div class="icuBig">'+(n>0?n:'…')+'</div>';center.classList.remove('hide');}
+    if(icu.phaseT>=3){icu.phase='go';icu.phaseT=0;}
+  }else if(icu.phase==='go'){
+    icu.phaseT+=dt;
+    if(center){center.innerHTML='<div class="icuBig icuGo">C’est parti !</div>';center.classList.remove('hide');}
+    if(icu.phaseT>=1.6){icu.phase='ride';icu.stepT=0;icu.samples=[];if(center)center.classList.add('hide');}
+  }else if(icu.phase==='ride'){
+    if(running){icu.stepT+=dt;if(Number.isFinite(power))icu.samples.push(power);}
+    const st=icu.steps[icu.idx];if(!st){icu.active=false;return;}
+    const rem=Math.max(0,st.dur-icu.stepT);
+    const avg=icu.samples.length?icu.samples.reduce((a,b)=>a+b,0)/icu.samples.length:0;
+    if(hud){hud.classList.remove('hide');hud.innerHTML='<b>'+(st.label||('Exercice '+(icu.idx+1)))+'</b><span>⏱ restant : '+fmtDur(rem)+'</span>'+(st.target?'<span>🎯 cible '+Math.round(st.target)+' W · moy '+Math.round(avg)+' W</span>':'');}
+    let warn='';
+    if(st.target&&icu.stepT>8){
+      if(avg>st.target*1.05)warn+='<span class="icuWarnRed">Puissance moyenne trop élevée</span>';
+      else if(avg<st.target*0.95)warn+='<span class="icuWarnBlue">Puissance moyenne trop basse</span>';
+    }
+    if(rem<=5&&rem>0){
+      const nxt=icu.steps[icu.idx+1];
+      warn+='<div class="icuNext">'+(nxt?'':'<b>Dernier exercice</b> · ')+'Prochain exercice'+(nxt?' : '+(nxt.label||'')+(nxt.target?' · 🎯 '+Math.round(nxt.target)+' W':'')+(nxt?' · ⏱ '+fmtDur(nxt.dur):''):'')+' · départ dans '+Math.ceil(rem)+' s</div>';
+    }
+    if(center){center.innerHTML=warn;center.classList.toggle('hide',!warn);}
+    if(el){if(st.target&&running){el.style.color=power>st.target*1.05?'#ff5a5a':(power<st.target*0.95?'#5aa2ff':'#4ade80');}else el.style.color='';}
+    if(icu.stepT>=st.dur){
+      icu.blocks.push({label:st.label||('Bloc '+(icu.blocks.length+1)),dur:st.dur,target:st.target,avg:Math.round(avg)});
+      icu.idx++;
+      if(icu.idx>=icu.steps.length){icu.phase='done';icu.phaseT=0;if(hud)hud.classList.add('hide');if(el)el.style.color='';}
+      else{icu.stepT=0;icu.samples=[];}
+    }
+  }else if(icu.phase==='done'){
+    icu.phaseT+=dt;
+    if(center){center.innerHTML='<div class="icuBig icuGo">Entraînement fini 👏</div>';center.classList.remove('hide');}
+    if(icu.phaseT>=3){icu.active=false;if(center)center.classList.add('hide');}
+  }
+}
+if($('icuConnect'))$('icuConnect').onclick=icuConnect;
+if($('icuToday'))$('icuToday').onclick=icuLoadToday;
+if($('icuAccept'))$('icuAccept').onclick=icuStartWorkout;
+if($('icuDecline'))$('icuDecline').onclick=()=>{window._icuPending=null;$('icuOffer').classList.add('hide');toast('Entraînement du jour refusé.');};
+if(window._icuToken)icuSetStatus('Clé API enregistrée — reconnecte-toi pour vérifier.');
+
 /* ---------- Boucle ---------- */
 
 let _wakeLock=null,_wakeLockWanted=false;
@@ -5547,6 +5719,7 @@ function loop(t){
     updateAmbiance(dt,t/1000); /* v136 : cycle jour/nuit + animations ambiantes */
     if(window._liveWeather&&proj&&route&&t-(window._lastWeatherFetch||0)>600000){window._lastWeatherFetch=t;const p=at(s);fetchWeatherAt(proj.la-p[2]/proj.kz,proj.lo+p[0]/proj.kx);} /* v138 : météo réelle en roulant, toutes les 10 min */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
+    updateIcu(power,dt); /* v144 : entraînement guidé intervals.icu */
   }
   R.render(S,cam);
 }
