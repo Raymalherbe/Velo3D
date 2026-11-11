@@ -271,7 +271,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #stopStats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
 #stopStats div{padding:6px 4px;border:1px solid var(--bd);border-radius:10px;background:rgba(255,255,255,.04);font-size:11px;color:var(--muted)}
 #stopStats b{display:block;font-size:16px;line-height:1.25;color:var(--fg);font-variant-numeric:tabular-nums}
-/* v144/v145 : intervals.icu */
+/* v144/v145/v146 : intervals.icu */
 #icuOverlay{position:fixed;z-index:40;inset:0;display:grid;place-items:center;pointer-events:none;text-align:center}
 #icuOverlay.hide{display:none!important}
 #icuOverlayTitle{font-size:clamp(22px,5vw,40px);font-weight:800;color:#fff;text-shadow:0 2px 18px #000}
@@ -287,6 +287,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #stopBlocks.hide{display:none!important}
 #stopBlocks div{padding:6px 4px;border:1px solid var(--bd);border-radius:10px;background:rgba(255,255,255,.04);font-size:11px;color:var(--muted)}
 #stopBlocks b{display:block;font-size:14px;line-height:1.25;color:var(--fg);font-variant-numeric:tabular-nums}
+#icuSteps{font-size:12px;color:var(--muted);max-height:150px;overflow:auto;margin:0 0 8px;line-height:1.6;font-variant-numeric:tabular-nums}
 @media(max-width:420px){#stopBlocks{grid-template-columns:repeat(2,1fr)}}
 #stopMap{position:relative;width:100%;height:clamp(170px,32vh,260px);margin:0 0 12px;border-radius:12px;overflow:hidden;background:#173a3f;border:1px solid var(--bd)}
 #stopMap canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -468,7 +469,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v145</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v146</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -585,7 +586,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div style="font-size:12px;color:var(--muted);margin:6px 0">Récupère un entraînement de ton calendrier intervals.icu (clé API : réglages intervals.icu → « Developer Settings »). L’app étant hébergée sur GitHub Pages sans serveur, l’appel API passe par un relais CORS public en cas de blocage navigateur : la clé transite alors par ce relais.</div>
 <div class="destRow" style="margin-bottom:6px"><input id="icuKey" type="password" autocomplete="off" placeholder="Clé API intervals.icu"><button id="icuCheck" type="button">Vérifier</button></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px;color:var(--muted)">Date : <input id="icuDate" type="date" style="font-size:14px;padding:4px;border-radius:8px"></label><button id="icuToday" type="button">📅 Voir l’entraînement</button><span id="icuInfo" style="font-size:12px;color:var(--muted)"></span></div>
-<div id="icuProposal" class="hide" style="margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:12px"><b id="icuWorkoutName"></b><div id="icuWorkoutMeta" style="font-size:12px;color:var(--muted);margin:4px 0 8px"></div><div class="row"><button id="icuAccept" class="primary" type="button">✅ Accepter</button><button id="icuRefuse" type="button">❌ Refuser</button></div></div>
+<div id="icuProposal" class="hide" style="margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:12px"><b id="icuWorkoutName"></b><div id="icuWorkoutMeta" style="font-size:12px;color:var(--muted);margin:4px 0 6px"></div><div id="icuSteps"></div><div class="row"><button id="icuAccept" class="primary" type="button">✅ Accepter</button><button id="icuRefuse" type="button">❌ Refuser</button><button id="icuDownload" type="button" title="Télécharger toi-même le fichier workout .zwo">⬇ .zwo</button></div></div>
 </details>
     <div class="row"><button id="gp">Choisir un GPX</button><button id="pg">Coller un GPX</button></div>
     <button id="dm" class="wide">Essayer la démonstration</button>
@@ -5554,7 +5555,7 @@ async function releaseWakeLock(){_wakeLockWanted=false;const lock=_wakeLock;_wak
 window._rideElapsed=0;
 let last=performance.now();
 function integrateRideSpeed(speed,power,grade,dt){const slope=Math.atan(Number(grade)||0),force=MASS*G0*(CRR*Math.cos(slope)+Math.sin(slope))+.5*RHO*CDA*speed*speed;const drive=power>0?Math.max(0,Math.min(power*.975/Math.max(speed,.5),Math.max(0,force+MASS*2.2))):0;return Math.max(0,speed+((drive-force)/MASS)*dt);}
-/* ---------- v144/v145 : intervals.icu — entraînement du calendrier ---------- */
+/* ---------- v144/v145/v146 : intervals.icu — entraînement du calendrier ---------- */
 const ICU_API='https://intervals.icu/api/v1/athlete/0';
 window._icuPlan=null;
 function icuKey(){return (($('icuKey')&&$('icuKey').value)||localStorage.getItem('velo3d-icu-key')||'').trim()}
@@ -5589,6 +5590,7 @@ function icuParseZwo(txt,ftp){
   });
   return steps;
 }
+function icuStepsHtml(steps){return steps.slice(0,40).map((s,i)=>(i+1)+'. '+fmtDur(s.dur)+' · '+(s.ramp?s.wLow+'→'+s.wHigh+' W':s.wLow+' W')).join('<br>')+(steps.length>40?'<br>… ('+steps.length+' exercices au total)':'')}
 function icuStepAt(p,t){let acc=0;for(let i=0;i<p.steps.length;i++){const st=p.steps[i];if(t<acc+st.dur)return{i:i,inT:t-acc,rem:acc+st.dur-t};acc+=st.dur}const last=Math.max(0,p.steps.length-1);return{i:last,inT:p.steps[last]?p.steps[last].dur:0,rem:0}}
 function icuTargetAt(p){if(!p||(p.phase!=='run'&&p.phase!=='next')||!p.cur)return 0;const st=p.steps[p.cur.i];if(!st||st.wLow<=0)return 0;if(st.ramp)return st.wLow+(st.wHigh-st.wLow)*Math.min(1,p.cur.inT/Math.max(.001,st.dur));return st.wLow}
 function icuOverlay(title,sub,count){const ov=$('icuOverlay');if(!ov)return;ov.classList.remove('hide');if(title!=null)$('icuOverlayTitle').textContent=title;if(sub!=null)$('icuOverlaySub').textContent=sub;if(count!=null)$('icuOverlayCount').textContent=count;else $('icuOverlayCount').textContent=''}
@@ -5644,23 +5646,38 @@ if($('icuToday'))$('icuToday').onclick=async()=>{
     const evs=await icuFetch('/events?category=WORKOUT&'+icuDateParam(dateStr));
     const list=(Array.isArray(evs)?evs:[]).filter(e=>e&&e.category==='WORKOUT');
     if(!list.length){info.textContent='Aucun entraînement le '+dateStr+'.';$('icuProposal').classList.add('hide');return;}
-    window._icuEvent=list[0];$('icuWorkoutName').textContent=list[0].name||'Entraînement';
-    $('icuWorkoutMeta').textContent=(list[0].start_date_local||dateStr)+' · '+(list.length>1?list.length+' entraînements ce jour, premier proposé':'calendrier intervals.icu');
-    info.textContent='Entraînement trouvé le '+dateStr+' : '+list[0].name;$('icuProposal').classList.remove('hide');
+    const ev=list[0];window._icuEvent=ev;
+    $('icuWorkoutName').textContent=ev.name||'Entraînement';
+    /* v146 : détail complet de l'entraînement (téléchargé tout de suite) */
+    try{
+      const zwo=await icuFetch('/events/'+encodeURIComponent(ev.id)+'/download.zwo',true);
+      ev.zwo=zwo;
+      const ftp=Math.max(50,Number(riderStyle.ftp)||200);
+      ev.steps=icuParseZwo(zwo,ftp);
+      const total=ev.steps.reduce((a,s)=>a+s.dur,0);
+      $('icuWorkoutMeta').textContent=(ev.start_date_local||dateStr)+' · '+ev.steps.length+' exercices · durée totale '+fmtDur(total)+(list.length>1?' · '+list.length+' entraînements ce jour, premier proposé':'');
+      $('icuSteps').innerHTML=icuStepsHtml(ev.steps);
+    }catch(e2){$('icuWorkoutMeta').textContent=(ev.start_date_local||dateStr)+(list.length>1?' · '+list.length+' entraînements ce jour':'');$('icuSteps').textContent='Détail indisponible : '+String(e2.message||e2);}
+    info.textContent='Entraînement trouvé le '+dateStr+' : '+ev.name;$('icuProposal').classList.remove('hide');
   }catch(e){info.textContent=String(e.message||e);}
 };
 if($('icuRefuse'))$('icuRefuse').onclick=()=>{$('icuProposal').classList.add('hide');$('icuInfo').textContent='Entraînement refusé.';toast('Entraînement refusé.');};
+if($('icuDownload'))$('icuDownload').onclick=()=>{ /* v146 : télécharger soi-même le fichier .zwo */
+  const ev=window._icuEvent;if(!ev)return;
+  if(!ev.zwo){toast('Lance d’abord « Voir l’entraînement » pour charger le fichier.');return;}
+  const name=String(ev.name||'workout').replace(/[^\w\-]+/g,'_')+'_'+String(ev.id||'').replace(/[^\w\-]+/g,'_')+'.zwo';
+  downloadBlob(ev.zwo,name,'text/xml');toast('Fichier .zwo téléchargé : '+name);
+};
 if($('icuAccept'))$('icuAccept').onclick=async()=>{
-  const ev=window._icuEvent;if(!ev)return;const info=$('icuInfo');info.textContent='Téléchargement de l’entraînement…';
+  const ev=window._icuEvent;if(!ev)return;const info=$('icuInfo');info.textContent='Préparation de l’entraînement…';
   try{
-    const zwo=await icuFetch('/events/'+encodeURIComponent(ev.id)+'/download.zwo',true);
-    const ftp=Math.max(50,Number(riderStyle.ftp)||200);
-    const steps=icuParseZwo(zwo,ftp);
+    let steps=ev.steps;
+    if(!steps){const zwo=await icuFetch('/events/'+encodeURIComponent(ev.id)+'/download.zwo',true);ev.zwo=zwo;const ftp=Math.max(50,Number(riderStyle.ftp)||200);steps=ev.steps=icuParseZwo(zwo,ftp);}
     if(!steps.length)throw new Error('Aucun exercice trouvé dans le fichier workout.');
     window._icuPlan={name:ev.name||'Entraînement',eventId:ev.id,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};
     $('icuProposal').classList.add('hide');info.textContent=steps.length+' exercices chargés · '+ev.name;
     toast('Entraînement accepté — il démarrera au lancement du parcours.');
-  }catch(e){info.textContent=String(e.message||e);toast('Téléchargement de l’entraînement impossible.');}
+  }catch(e){info.textContent=String(e.message||e);toast('Préparation de l’entraînement impossible.');}
 };
 function loop(t){
   requestAnimationFrame(loop);const dt=Math.max(0,Math.min((t-last)/1000,.1));last=t;
