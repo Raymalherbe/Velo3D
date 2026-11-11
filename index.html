@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v150 – import entraînement : repli regex/JSON + aperçu du fichier dans l’erreur</title>
+<title>Vélo 3D v151 – import .zwo : repli localName, durées mm:ss, UTF-16, diagnostic détaillé</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -469,7 +469,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v150</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v151</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -5645,28 +5645,36 @@ async function icuFetch(path,asText){
 function icuDateParam(dateStr){const d=new Date(dateStr+'T12:00:00');const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);return 'oldest='+dateStr+'&newest='+icuLocalDate(t)} /* v145 : n'importe quel jour du calendrier */
 function icuParseZwo(txt,ftp){
   const toW=v=>{if(v==null)return NaN;const s=String(v).trim().replace('%','');const n=Number(s);if(!Number.isFinite(n))return NaN;return n>250?n:(n>1.5?n/100*ftp:n*ftp)}; /* v150 : fraction FTP, % ou watts absolus */
+  const toDur=v=>{if(v==null)return NaN;v=String(v).trim();const m=v.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);if(m)return m[3]!=null?Number(m[1])*3600+Number(m[2])*60+Number(m[3]):Number(m[1])*60+Number(m[2]);return Number(v)}; /* v151 : accepte 300, 5:00 (mm:ss) ou 1:05:00 */
   const steps=[];
-  const push=(dur,low,high)=>{if(!(dur>0))return;const wl=toW(low),wh=toW(high);const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;steps.push({dur:dur,wLow:Math.round(l),wHigh:Math.round(h),ramp:l!==h})};
+  const push=(dur,low,high)=>{dur=toDur(dur);if(!(dur>0))return;const wl=toW(low),wh=toW(high);const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;steps.push({dur:dur,wLow:Math.round(l),wHigh:Math.round(h),ramp:l!==h})};
   let nodes=null;
   try{
     const doc=new DOMParser().parseFromString(txt,'text/xml');
     if(!doc.querySelector('parsererror')){
       nodes=doc.querySelectorAll('workout > step');
-      if(!nodes.length)nodes=doc.querySelectorAll('step'); /* repli si les <step> sont imbriqués autrement */
+      if(!nodes.length)nodes=doc.querySelectorAll('step');
+      if(!nodes.length){ /* v151 : repli par localName, insensible à la casse et aux préfixes d'espace de noms */
+        const all=doc.getElementsByTagName('*'),arr=[];
+        for(let i=0;i<all.length;i++)if(String(all[i].localName||'').toLowerCase()==='step')arr.push(all[i]);
+        if(arr.length)nodes=arr;
+      }
     }
   }catch(e){nodes=null}
   if(nodes&&nodes.length)nodes.forEach(st=>{
-    const durNode=st.querySelector('duration'),dur=Number(durNode?durNode.textContent:(st.getAttribute('duration')||0));
-    const pw=st.querySelector('power')||st.querySelector('watts');let low=null,high=null;
+    const durNode=st.querySelector('duration')||st.getElementsByTagName('duration')[0];
+    const dur=durNode?durNode.textContent:(st.getAttribute('duration')||0);
+    const pw=st.querySelector('power')||st.querySelector('watts')||st.getElementsByTagName('power')[0]||st.getElementsByTagName('watts')[0];
+    let low=null,high=null;
     if(pw){low=pw.getAttribute('low');high=pw.getAttribute('high');if(low==null&&high==null)low=high=pw.textContent;}
     push(dur,low,high);
   });
-  if(!steps.length){ /* v150 : repli regex si le XML est illisible ou sans <step> */
+  if(!steps.length){ /* repli regex si le XML est illisible ou sans <step> */
     const re=/<step\b([^>]*)>([\s\S]*?)<\/step\s*>/gi;let m;
     while((m=re.exec(txt))){
       const attrs=m[1]||'',body=m[2]||'';
-      let dur=Number(((body.match(/<duration[^>]*>([^<]+)/i)||[])[1]));
-      if(!Number.isFinite(dur))dur=Number(((attrs.match(/duration="([^"]+)"/i)||[])[1]));
+      let dur=((body.match(/<duration[^>]*>([^<]+)/i)||[])[1]);
+      if(dur==null)dur=((attrs.match(/duration="([^"]+)"/i)||[])[1]);
       const pwM=body.match(/<(?:power|watts)\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:power|watts)\s*>)/i);
       let low=null,high=null;
       if(pwM){
@@ -5815,8 +5823,9 @@ function icuImportText(txt,name){
     }
   }
   if(!steps||!steps.length){
-    const prev=String(txt).replace(/\s+/g,' ').trim().slice(0,160);
-    throw new Error('Aucun exercice trouvé dans ce fichier — essaie un .zwo, .erg ou .mrc standard. Début du fichier : « '+prev+' »');
+    const prev=String(txt).replace(/\s+/g,' ').trim().slice(0,400);
+    const nStep=(String(txt).match(/<step\b/gi)||[]).length;
+    throw new Error('Aucun exercice trouvé ('+nStep+' balise <step> dans le fichier) — essaie un .zwo, .erg ou .mrc standard. Début du fichier : « '+prev+' »');
   }
   const total=steps.reduce((a,s)=>a+s.dur,0);
   window._icuPlan={name:(name||'Entraînement importé').replace(/\.[a-z0-9]+$/i,''),eventId:null,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};
@@ -5826,9 +5835,18 @@ if($('icuImport'))$('icuImport').onclick=()=>{const f=$('icuFile');if(f)f.click(
 if($('icuFile'))$('icuFile').addEventListener('change',e=>{
   const file=e.target.files&&e.target.files[0];if(!file)return;
   const reader=new FileReader();
-  reader.onload=()=>{try{const msg=icuImportText(String(reader.result||''),file.name);$('icuInfo').textContent='Importé : '+file.name+' — '+msg;toast('Entraînement importé ('+msg+') — il démarrera au lancement du parcours.');}catch(err){$('icuInfo').textContent=String(err.message||err);toast('Import impossible : '+String(err.message||err));}e.target.value='';};
+  reader.onload=()=>{try{
+    let txt;const buf=reader.result;
+    if(buf instanceof ArrayBuffer){ /* v151 : détection BOM / UTF-16 */
+      const b=new Uint8Array(buf);let enc='utf-8';
+      if(b.length>=2&&b[0]===0xFF&&b[1]===0xFE)enc='utf-16le';
+      else if(b.length>=2&&b[0]===0xFE&&b[1]===0xFF)enc='utf-16be';
+      txt=new TextDecoder(enc).decode(buf);
+    }else txt=String(buf||'');
+    const msg=icuImportText(txt,file.name);$('icuInfo').textContent='Importé : '+file.name+' — '+msg;toast('Entraînement importé ('+msg+') — il démarrera au lancement du parcours.');
+  }catch(err){$('icuInfo').textContent=String(err.message||err);toast('Import impossible : '+String(err.message||err));}e.target.value='';};
   reader.onerror=()=>{toast('Lecture du fichier impossible.');e.target.value='';};
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
 });
 if($('icuAccept'))$('icuAccept').onclick=async()=>{
   const ev=window._icuEvent;if(!ev)return;const info=$('icuInfo');info.textContent='Préparation de l’entraînement…';
