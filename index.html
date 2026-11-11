@@ -469,7 +469,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v146</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v147</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -839,7 +839,30 @@ async function buildTerrain(target){
   }
   geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
   const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
-  mesh.receiveShadow=true;target.add(mesh);window._terrain=mesh;
+  mesh.receiveShadow=true;mesh.userData.ground={minX:minX,minZ:minZ,nx:nx,nz:nz};target.add(mesh);window._terrain=mesh;
+  if(window._osmGroundData)recolorTerrainByOSM(window._osmGroundData); /* v147 : recoloration si le décor OSM est arrivé avant le terrain */
+}
+/* v147 : sol colorié selon les données OSM (champs beige, forêts vert foncé, villages gris, eau bleue) */
+function osmPointInRing(x,z,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],zi=ring[i][1],xj=ring[j][0],zj=ring[j][1];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/((zj-zi)||1e-9)+xi))inside=!inside}return inside}
+function recolorTerrainByOSM(data){
+  window._osmGroundData=data;
+  const mesh=window._terrain;if(!mesh||!mesh.userData||!mesh.userData.ground)return;
+  const ud=mesh.userData.ground,pos=mesh.geometry.attributes.position,col=mesh.geometry.attributes.color;
+  if(!pos||!col)return;
+  const polys=[];
+  const push=(ring,colour)=>{if(ring&&ring.length>2)polys.push({ring:ring,colour:colour})};
+  for(const w of data.waters||[])push(Array.isArray(w[0])?w[0]:w,new THREE.Color(0x3b87c7));
+  for(const f of data.forests||[])push(Array.isArray(f[0])?f[0]:f,new THREE.Color(0x2e5d33));
+  const farmCol={farmland:0xc2a852,meadow:0x6f9e4f,orchard:0x5d8f3e,grass:0x7fae57};
+  for(const item of data.farmland||[]){const ring=Array.isArray(item[0])?item[0]:item,tags=Array.isArray(item[0])?item[1]:{};push(ring,new THREE.Color(farmCol[String(tags.landuse||'').toLowerCase()]||0xc2a852))}
+  for(const r of data.residential||[])push(Array.isArray(r[0])?r[0]:r,new THREE.Color(0x9d9d95));
+  if(!polys.length)return;
+  let changed=0;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i);
+    for(const p of polys){if(osmPointInRing(x,z,p.ring)){col.setXYZ(i,p.colour.r,p.colour.g,p.colour.b);changed++;break;}}
+  }
+  if(changed){col.needsUpdate=true;}
 }
 
 const V3=THREE.Vector3,UPV=new V3(0,1,0),CYL=new THREE.CylinderGeometry(1,1,1,12);
@@ -4806,7 +4829,7 @@ function applyOSM(elements,targetWorld){
     const tags=element.tags||{},points=osmElementPoints(element);
     if(element.type==='node'&&points.length&&/^(city|town|village|hamlet|suburb)$/.test(String(tags.place||''))&&String(tags.name||'').trim())localities.push({name:String(tags.name).trim(),place:tags.place,x:points[0][0],z:points[0][1]});
     if(element.type==='node'&&tags.natural==='tree'&&points.length){treeNodes.push(points[0]);continue;}
-    const landmarkKind=osmLandmarkKind(tags);if(landmarkKind&&points.length){landmarks.push({kind:landmarkKind,points,tags});if(element.type==='node')continue;}
+    const landmarkKind=osmLandmarkKind(tags);if(landmarkKind&&points.length){landmarks.push({kind:landmarkKind,points,tags});continue;} /* v147 : les églises/stades/tours sont dessinés en forme propre, pas en simple boîte */
     if(points.length<2)continue;
     if(tags.building){
       buildingsList.push([points,tags]);osmMapFeatures.push({type:'building',points:osmCopyPoints(points)});
@@ -4905,6 +4928,7 @@ function applyOSM(elements,targetWorld){
   const mkFlat=(arr,color)=>{if(arr.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));g.computeVertexNormals();target.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide})));}};
   mkFlat(waterwayParts,0x3b87c7);mkFlat(railBallast,0x5d5a52);mkFlat(railLine,0xb9bdc2);
   buildFarmland(farmlandList,target); /* v134 : champs et prairies */
+  recolorTerrainByOSM({forests:forests,residential:residentialAreas,farmland:farmlandList,waters:waters}); /* v147 : sol colorié selon les données OSM */
   buildSmoke(target); /* v134 : fumée des cheminées */
   buildFlow(waterways,target); /* v135 : écume animée des rivières */
   const bridgeCount=buildBridges(mergedSpans,bridgeOverpasses,target);
