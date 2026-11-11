@@ -271,7 +271,7 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #stopStats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
 #stopStats div{padding:6px 4px;border:1px solid var(--bd);border-radius:10px;background:rgba(255,255,255,.04);font-size:11px;color:var(--muted)}
 #stopStats b{display:block;font-size:16px;line-height:1.25;color:var(--fg);font-variant-numeric:tabular-nums}
-/* v144 : intervals.icu */
+/* v144/v145 : intervals.icu */
 #icuOverlay{position:fixed;z-index:40;inset:0;display:grid;place-items:center;pointer-events:none;text-align:center}
 #icuOverlay.hide{display:none!important}
 #icuOverlayTitle{font-size:clamp(22px,5vw,40px);font-weight:800;color:#fff;text-shadow:0 2px 18px #000}
@@ -468,7 +468,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v144</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v145</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -581,10 +581,10 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="freeMap" style="width:100%;height:220px;border-radius:12px;border:1px solid var(--bd);margin-bottom:8px"></div><div id="startDirections" class="hide" aria-hidden="true"></div><button id="enlargeMap" type="button" style="font-size:12px">Agrandir la carte</button>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px">Rayon : <select id="freeRadius" style="font-size:14px;padding:4px;border-radius:8px"><option value="2000" selected>2 km — recommandé</option><option value="5000">5 km</option><option value="10000">10 km</option><option value="20000">20 km</option></select></label><button id="startFreeRide" type="button">🚴 Rouler ici</button><button id="locateMe" type="button">📍 Ma position</button><span id="freeInfo" style="font-size:12px;color:var(--muted)">Secteur : Morville, Manche</span></div>
 </details>
-<details id="icuPanel" class="customize"><summary>🕒 intervals.icu — entraînement du jour</summary>
-<div style="font-size:12px;color:var(--muted);margin:6px 0">Récupère l’entraînement prévu aujourd’hui sur ton calendrier intervals.icu (clé API : réglages intervals.icu → « Developer Settings »). L’app étant hébergée sur GitHub Pages sans serveur, l’appel API passe par un relais CORS public en cas de blocage navigateur : la clé transite alors par ce relais.</div>
+<details id="icuPanel" class="customize"><summary>🕒 intervals.icu — entraînement du calendrier</summary>
+<div style="font-size:12px;color:var(--muted);margin:6px 0">Récupère un entraînement de ton calendrier intervals.icu (clé API : réglages intervals.icu → « Developer Settings »). L’app étant hébergée sur GitHub Pages sans serveur, l’appel API passe par un relais CORS public en cas de blocage navigateur : la clé transite alors par ce relais.</div>
 <div class="destRow" style="margin-bottom:6px"><input id="icuKey" type="password" autocomplete="off" placeholder="Clé API intervals.icu"><button id="icuCheck" type="button">Vérifier</button></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button id="icuToday" type="button">📅 Entraînement du jour</button><span id="icuInfo" style="font-size:12px;color:var(--muted)"></span></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px;color:var(--muted)">Date : <input id="icuDate" type="date" style="font-size:14px;padding:4px;border-radius:8px"></label><button id="icuToday" type="button">📅 Voir l’entraînement</button><span id="icuInfo" style="font-size:12px;color:var(--muted)"></span></div>
 <div id="icuProposal" class="hide" style="margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:12px"><b id="icuWorkoutName"></b><div id="icuWorkoutMeta" style="font-size:12px;color:var(--muted);margin:4px 0 8px"></div><div class="row"><button id="icuAccept" class="primary" type="button">✅ Accepter</button><button id="icuRefuse" type="button">❌ Refuser</button></div></div>
 </details>
     <div class="row"><button id="gp">Choisir un GPX</button><button id="pg">Coller un GPX</button></div>
@@ -5554,12 +5554,15 @@ async function releaseWakeLock(){_wakeLockWanted=false;const lock=_wakeLock;_wak
 window._rideElapsed=0;
 let last=performance.now();
 function integrateRideSpeed(speed,power,grade,dt){const slope=Math.atan(Number(grade)||0),force=MASS*G0*(CRR*Math.cos(slope)+Math.sin(slope))+.5*RHO*CDA*speed*speed;const drive=power>0?Math.max(0,Math.min(power*.975/Math.max(speed,.5),Math.max(0,force+MASS*2.2))):0;return Math.max(0,speed+((drive-force)/MASS)*dt);}
-/* ---------- v144 : intervals.icu — entraînement du jour ---------- */
+/* ---------- v144/v145 : intervals.icu — entraînement du calendrier ---------- */
 const ICU_API='https://intervals.icu/api/v1/athlete/0';
 window._icuPlan=null;
 function icuKey(){return (($('icuKey')&&$('icuKey').value)||localStorage.getItem('velo3d-icu-key')||'').trim()}
 function icuSaveKey(){try{localStorage.setItem('velo3d-icu-key',$('icuKey').value.trim())}catch(e){}}
 if($('icuKey'))$('icuKey').value=localStorage.getItem('velo3d-icu-key')||'';
+function icuLocalDate(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+function icuSelectedDate(){const v=$('icuDate')&&$('icuDate').value;return v||icuLocalDate(new Date())}
+if($('icuDate'))$('icuDate').value=icuLocalDate(new Date()); /* v145 : date du jour par défaut */
 async function icuFetch(path,asText){
   const key=icuKey();if(!key)throw new Error('Clé API intervals.icu manquante.');
   const url=ICU_API+path;let auth;try{auth='Basic '+btoa('API_KEY:'+key)}catch(e){throw new Error('Clé API illisible.')}
@@ -5571,7 +5574,7 @@ async function icuFetch(path,asText){
     return asText?r2.text():r2.json();
   }
 }
-function icuTodayParam(){const p=n=>String(n).padStart(2,'0'),f=x=>x.getFullYear()+'-'+p(x.getMonth()+1)+'-'+p(x.getDate());const d=new Date(),t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);return 'oldest='+f(d)+'&newest='+f(t)}
+function icuDateParam(dateStr){const d=new Date(dateStr+'T12:00:00');const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);return 'oldest='+dateStr+'&newest='+icuLocalDate(t)} /* v145 : n'importe quel jour du calendrier */
 function icuParseZwo(txt,ftp){
   const doc=new DOMParser().parseFromString(txt,'text/xml');
   if(doc.querySelector('parsererror'))throw new Error('Fichier workout illisible.');
@@ -5634,8 +5637,19 @@ function updateIcuPlan(dt,power){
 }
 if($('icuKey'))$('icuKey').addEventListener('change',icuSaveKey);
 if($('icuCheck'))$('icuCheck').onclick=async()=>{icuSaveKey();const info=$('icuInfo');info.textContent='Vérification de la connexion…';try{const a=await icuFetch('');info.textContent='Connecté à intervals.icu'+(a&&a.name?' · '+a.name:'');toast('Connexion intervals.icu OK.');}catch(e){info.textContent=String(e.message||e);toast('Échec de connexion intervals.icu.');}};
-if($('icuToday'))$('icuToday').onclick=async()=>{icuSaveKey();const info=$('icuInfo');info.textContent='Recherche de l’entraînement du jour…';try{const evs=await icuFetch('/events?category=WORKOUT&'+icuTodayParam());const list=(Array.isArray(evs)?evs:[]).filter(e=>e&&e.category==='WORKOUT');if(!list.length){info.textContent='Aucun entraînement prévu aujourd’hui.';$('icuProposal').classList.add('hide');return;}window._icuEvent=list[0];$('icuWorkoutName').textContent=list[0].name||'Entraînement';$('icuWorkoutMeta').textContent=(list[0].start_date_local||'')+' · '+(list.length>1?list.length+' entraînements aujourd’hui, premier proposé':'calendrier intervals.icu');info.textContent='Entraînement trouvé : '+list[0].name;$('icuProposal').classList.remove('hide');}catch(e){info.textContent=String(e.message||e);}};
-if($('icuRefuse'))$('icuRefuse').onclick=()=>{$('icuProposal').classList.add('hide');$('icuInfo').textContent='Entraînement refusé.';toast('Entraînement du jour refusé.');};
+if($('icuToday'))$('icuToday').onclick=async()=>{
+  icuSaveKey();const info=$('icuInfo');const dateStr=icuSelectedDate();
+  info.textContent='Recherche de l’entraînement du '+dateStr+'…';
+  try{
+    const evs=await icuFetch('/events?category=WORKOUT&'+icuDateParam(dateStr));
+    const list=(Array.isArray(evs)?evs:[]).filter(e=>e&&e.category==='WORKOUT');
+    if(!list.length){info.textContent='Aucun entraînement le '+dateStr+'.';$('icuProposal').classList.add('hide');return;}
+    window._icuEvent=list[0];$('icuWorkoutName').textContent=list[0].name||'Entraînement';
+    $('icuWorkoutMeta').textContent=(list[0].start_date_local||dateStr)+' · '+(list.length>1?list.length+' entraînements ce jour, premier proposé':'calendrier intervals.icu');
+    info.textContent='Entraînement trouvé le '+dateStr+' : '+list[0].name;$('icuProposal').classList.remove('hide');
+  }catch(e){info.textContent=String(e.message||e);}
+};
+if($('icuRefuse'))$('icuRefuse').onclick=()=>{$('icuProposal').classList.add('hide');$('icuInfo').textContent='Entraînement refusé.';toast('Entraînement refusé.');};
 if($('icuAccept'))$('icuAccept').onclick=async()=>{
   const ev=window._icuEvent;if(!ev)return;const info=$('icuInfo');info.textContent='Téléchargement de l’entraînement…';
   try{
