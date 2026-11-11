@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v149 – sol satellite/OSM au choix, son sur +/−, import entraînement renforcé</title>
+<title>Vélo 3D v150 – import entraînement : repli regex/JSON + aperçu du fichier dans l’erreur</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -469,7 +469,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v149</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v150</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -5644,20 +5644,40 @@ async function icuFetch(path,asText){
 }
 function icuDateParam(dateStr){const d=new Date(dateStr+'T12:00:00');const t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);return 'oldest='+dateStr+'&newest='+icuLocalDate(t)} /* v145 : n'importe quel jour du calendrier */
 function icuParseZwo(txt,ftp){
-  const doc=new DOMParser().parseFromString(txt,'text/xml');
-  if(doc.querySelector('parsererror'))throw new Error('Fichier workout illisible.');
-  let nodes=doc.querySelectorAll('workout > step');
-  if(!nodes.length)nodes=doc.querySelectorAll('step'); /* v149 : repli si les <step> sont imbriqués autrement */
-  const norm=v=>{if(v==null)return NaN;const s=String(v).trim().replace('%','');const n=Number(s);if(!Number.isFinite(n))return NaN;return n>1.5?n/100:n}; /* v149 : accepte 0.75 ou 75% */
+  const toW=v=>{if(v==null)return NaN;const s=String(v).trim().replace('%','');const n=Number(s);if(!Number.isFinite(n))return NaN;return n>250?n:(n>1.5?n/100*ftp:n*ftp)}; /* v150 : fraction FTP, % ou watts absolus */
   const steps=[];
-  nodes.forEach(st=>{
+  const push=(dur,low,high)=>{if(!(dur>0))return;const wl=toW(low),wh=toW(high);const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;steps.push({dur:dur,wLow:Math.round(l),wHigh:Math.round(h),ramp:l!==h})};
+  let nodes=null;
+  try{
+    const doc=new DOMParser().parseFromString(txt,'text/xml');
+    if(!doc.querySelector('parsererror')){
+      nodes=doc.querySelectorAll('workout > step');
+      if(!nodes.length)nodes=doc.querySelectorAll('step'); /* repli si les <step> sont imbriqués autrement */
+    }
+  }catch(e){nodes=null}
+  if(nodes&&nodes.length)nodes.forEach(st=>{
     const durNode=st.querySelector('duration'),dur=Number(durNode?durNode.textContent:(st.getAttribute('duration')||0));
-    if(!(dur>0))return;
-    const pw=st.querySelector('power')||st.querySelector('watts');let low=NaN,high=NaN;
-    if(pw){low=norm(pw.getAttribute('low'));high=norm(pw.getAttribute('high'));if(!Number.isFinite(low)&&!Number.isFinite(high)){const v=norm(pw.textContent);low=high=v;}}
-    if(!Number.isFinite(low))low=0;if(!Number.isFinite(high))high=low;
-    steps.push({dur:dur,wLow:Math.round(low*ftp),wHigh:Math.round(high*ftp),ramp:low!==high});
+    const pw=st.querySelector('power')||st.querySelector('watts');let low=null,high=null;
+    if(pw){low=pw.getAttribute('low');high=pw.getAttribute('high');if(low==null&&high==null)low=high=pw.textContent;}
+    push(dur,low,high);
   });
+  if(!steps.length){ /* v150 : repli regex si le XML est illisible ou sans <step> */
+    const re=/<step\b([^>]*)>([\s\S]*?)<\/step\s*>/gi;let m;
+    while((m=re.exec(txt))){
+      const attrs=m[1]||'',body=m[2]||'';
+      let dur=Number(((body.match(/<duration[^>]*>([^<]+)/i)||[])[1]));
+      if(!Number.isFinite(dur))dur=Number(((attrs.match(/duration="([^"]+)"/i)||[])[1]));
+      const pwM=body.match(/<(?:power|watts)\b([^>]*?)(?:\/>|>([\s\S]*?)<\/(?:power|watts)\s*>)/i);
+      let low=null,high=null;
+      if(pwM){
+        const a=pwM[1]||'';
+        low=((a.match(/low="([^"]*)"/i)||[])[1]);
+        high=((a.match(/high="([^"]*)"/i)||[])[1]);
+        if(low==null&&high==null)low=high=pwM[2];
+      }
+      push(dur,low,high);
+    }
+  }
   return steps;
 }
 function icuStepsHtml(steps){return steps.slice(0,40).map((s,i)=>(i+1)+'. '+fmtDur(s.dur)+' · '+(s.ramp?s.wLow+'→'+s.wHigh+' W':s.wLow+' W')).join('<br>')+(steps.length>40?'<br>… ('+steps.length+' exercices au total)':'')}
@@ -5768,9 +5788,36 @@ function icuImportText(txt,name){
   const ftp=Math.max(50,Number(riderStyle.ftp)||200);
   const unitHint=/\.mrc$/i.test(String(name||''))?'min':'sec';
   let steps=null;
-  if(/<workout_file|<workout/i.test(txt)){try{steps=icuParseZwo(txt,ftp)}catch(e){steps=null}} /* v149 : ZWO d'abord si XML */
-  if(!steps||!steps.length)steps=icuParseErg(txt,ftp,unitHint); /* v149 : repli ERG/MRC (texte, ou XML sans étape) */
-  if(!steps||!steps.length)throw new Error('Aucun exercice trouvé dans ce fichier — essaie un .zwo, .erg ou .mrc standard (étapes avec durées).');
+  if(/<workout_file|<workout|<step\b/i.test(txt)){try{steps=icuParseZwo(txt,ftp)}catch(e){steps=null}} /* v150 : ZWO d'abord si XML */
+  if(!steps||!steps.length)steps=icuParseErg(txt,ftp,unitHint); /* repli ERG/MRC (texte, ou XML sans étape) */
+  if(!steps||!steps.length){ /* v150 : dernier repli — JSON contenant des étapes duration/power */
+    const t0=String(txt).trim();
+    if(t0.charAt(0)==='{'||t0.charAt(0)==='['){
+      try{
+        const j=JSON.parse(t0);steps=[];
+        (function walk(o){
+          if(!o||typeof o!=='object')return;
+          if(Array.isArray(o)){o.forEach(walk);return;}
+          const dur=Number(o.duration!=null?o.duration:o.time);
+          const pw=o.power!=null?o.power:(o.watts!=null?o.watts:null);
+          if(dur>0&&pw!=null){
+            let low,high;
+            if(typeof pw==='object'&&pw!==null){low=pw.low!=null?pw.low:pw.value;high=pw.high!=null?pw.high:low;}
+            else low=high=pw;
+            const toW=v=>{const n=Number(String(v).trim().replace('%',''));if(!Number.isFinite(n))return 0;return n>250?n:(n>1.5?n/100*ftp:n*ftp)};
+            const wl=toW(low),wh=toW(high);
+            const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;
+            steps.push({dur:dur,wLow:Math.round(l),wHigh:Math.round(h),ramp:l!==h});
+          }
+          for(const k in o)walk(o[k]);
+        })(j);
+      }catch(e){steps=null}
+    }
+  }
+  if(!steps||!steps.length){
+    const prev=String(txt).replace(/\s+/g,' ').trim().slice(0,160);
+    throw new Error('Aucun exercice trouvé dans ce fichier — essaie un .zwo, .erg ou .mrc standard. Début du fichier : « '+prev+' »');
+  }
   const total=steps.reduce((a,s)=>a+s.dur,0);
   window._icuPlan={name:(name||'Entraînement importé').replace(/\.[a-z0-9]+$/i,''),eventId:null,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};
   return steps.length+' exercices · durée totale '+fmtDur(total);
