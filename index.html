@@ -469,7 +469,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v147</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v148</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -586,7 +586,8 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div style="font-size:12px;color:var(--muted);margin:6px 0">Récupère un entraînement de ton calendrier intervals.icu (clé API : réglages intervals.icu → « Developer Settings »). L’app étant hébergée sur GitHub Pages sans serveur, l’appel API passe par un relais CORS public en cas de blocage navigateur : la clé transite alors par ce relais.</div>
 <div class="destRow" style="margin-bottom:6px"><input id="icuKey" type="password" autocomplete="off" placeholder="Clé API intervals.icu"><button id="icuCheck" type="button">Vérifier</button></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px;color:var(--muted)">Date : <input id="icuDate" type="date" style="font-size:14px;padding:4px;border-radius:8px"></label><button id="icuToday" type="button">📅 Voir l’entraînement</button><span id="icuInfo" style="font-size:12px;color:var(--muted)"></span></div>
-<div id="icuProposal" class="hide" style="margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:12px"><b id="icuWorkoutName"></b><div id="icuWorkoutMeta" style="font-size:12px;color:var(--muted);margin:4px 0 6px"></div><div id="icuSteps"></div><div class="row"><button id="icuAccept" class="primary" type="button">✅ Accepter</button><button id="icuRefuse" type="button">❌ Refuser</button><button id="icuDownload" type="button" title="Télécharger toi-même le fichier workout .zwo">⬇ .zwo</button></div></div>
+<div id="icuProposal" class="hide" style="margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:12px"><b id="icuWorkoutName"></b><div id="icuWorkoutMeta" style="font-size:12px;color:var(--muted);margin:4px 0 6px"></div><div id="icuSteps"></div><div class="row"><button id="icuAccept" class="primary" type="button">✅ Accepter</button><button id="icuRefuse" type="button">❌ Refuser</button><button id="icuDownload" type="button" title="Télécharger le fichier workout .zwo">⬇ .zwo</button></div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><input id="icuFile" type="file" accept=".zwo,.erg,.mrc,.txt" class="hide"><button id="icuImport" type="button">📥 Importer un entraînement (.zwo/.erg/.mrc)</button><span style="font-size:12px;color:var(--muted)">fichier perso, sans clé API</span></div>
 </details>
     <div class="row"><button id="gp">Choisir un GPX</button><button id="pg">Coller un GPX</button></div>
     <button id="dm" class="wide">Essayer la démonstration</button>
@@ -5692,6 +5693,44 @@ if($('icuDownload'))$('icuDownload').onclick=()=>{ /* v146 : télécharger soi-m
   const name=String(ev.name||'workout').replace(/[^\w\-]+/g,'_')+'_'+String(ev.id||'').replace(/[^\w\-]+/g,'_')+'.zwo';
   downloadBlob(ev.zwo,name,'text/xml');toast('Fichier .zwo téléchargé : '+name);
 };
+/* v148 : importer soi-même un fichier d'entraînement (.zwo XML, .erg/.mrc texte) */
+function icuParseErg(txt){
+  const lines=String(txt).split(/\r?\n/);let inData=false;const rows=[];
+  for(const raw of lines){
+    const line=raw.trim();if(!line||line.startsWith('#'))continue;
+    if(/^\[.*\]$/.test(line)){inData=/COURSE DATA/i.test(line);continue;}
+    if(!inData)continue;
+    const cols=line.split(/[\t ,;]+/).map(Number).filter(v=>Number.isFinite(v));
+    if(cols.length>=2)rows.push(cols);
+  }
+  const steps=[];
+  for(let i=0;i<rows.length;i++){
+    const t=rows[i][0],w=rows[i][1],w2=rows[i].length>2?rows[i][2]:rows[i][1],end=i+1<rows.length?rows[i+1][0]:t+60;
+    const dur=end-t;if(!(dur>0))continue;
+    const last=steps[steps.length-1];
+    if(last&&!last.ramp&&last.wLow===Math.round(w)&&last.wHigh===Math.round(w2)){last.dur+=dur;continue;}
+    steps.push({dur:dur,wLow:Math.round(w),wHigh:Math.round(w2),ramp:w2!==w});
+  }
+  return steps;
+}
+function icuImportText(txt,name){
+  const ftp=Math.max(50,Number(riderStyle.ftp)||200);
+  let steps=null;
+  if(/<workout_file|<workout/i.test(txt))steps=icuParseZwo(txt,ftp);
+  else steps=icuParseErg(txt);
+  if(!steps||!steps.length)throw new Error('Aucun exercice trouvé dans ce fichier.');
+  const total=steps.reduce((a,s)=>a+s.dur,0);
+  window._icuPlan={name:(name||'Entraînement importé').replace(/\.[a-z0-9]+$/i,''),eventId:null,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};
+  return steps.length+' exercices · durée totale '+fmtDur(total);
+}
+if($('icuImport'))$('icuImport').onclick=()=>{const f=$('icuFile');if(f)f.click();};
+if($('icuFile'))$('icuFile').addEventListener('change',e=>{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{try{const msg=icuImportText(String(reader.result||''),file.name);$('icuInfo').textContent='Importé : '+file.name+' — '+msg;toast('Entraînement importé ('+msg+') — il démarrera au lancement du parcours.');}catch(err){$('icuInfo').textContent=String(err.message||err);toast('Import impossible : '+String(err.message||err));}e.target.value='';};
+  reader.onerror=()=>{toast('Lecture du fichier impossible.');e.target.value='';};
+  reader.readAsText(file);
+});
 if($('icuAccept'))$('icuAccept').onclick=async()=>{
   const ev=window._icuEvent;if(!ev)return;const info=$('icuInfo');info.textContent='Préparation de l’entraînement…';
   try{
