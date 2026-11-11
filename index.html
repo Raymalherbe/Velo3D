@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v151 – import .zwo : repli localName, durées mm:ss, UTF-16, diagnostic détaillé</title>
+<title>Vélo 3D v152 – .zwo IntervalCoach, MRC %FTP, cibles + graphique du workout</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -279,6 +279,10 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #icuOverlayCount{font-size:clamp(40px,10vw,84px);font-weight:900;color:var(--ac);margin-top:10px;text-shadow:0 2px 22px #000;font-variant-numeric:tabular-nums}
 #icuChip{position:fixed;right:10px;bottom:70px;z-index:25;background:rgba(8,26,30,.88);border:1px solid var(--bd);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
 #icuChip.hide{display:none!important}
+#icuTargets{position:fixed;right:10px;bottom:118px;z-index:25;background:rgba(8,26,30,.88);border:1px solid var(--bd);border-radius:12px;padding:6px 10px;font-size:12px;color:var(--fg);font-variant-numeric:tabular-nums;max-width:46vw}
+#icuTargets.hide{display:none!important}
+#icuGraph{width:100%;height:64px;display:block;margin-top:6px;border-radius:8px;background:rgba(0,0,0,.18)}
+#icuGraph.hide{display:none!important}
 #icuWarn{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);z-index:39;font-size:clamp(18px,4vw,30px);font-weight:800;padding:10px 18px;border-radius:14px;background:rgba(8,26,30,.82);pointer-events:none;text-align:center;white-space:nowrap}
 #icuWarn.hide{display:none!important}
 #icuWarn.over{color:#ff7b7b}#icuWarn.under{color:#7db9ff}
@@ -463,13 +467,14 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
     <output id="gearReadout" aria-live="polite">48 × 21</output>
     <div id="cassetteAssembly"><div class="cassetteHeader"><span>Cassette <b>10–36</b></span></div><div class="cassetteScale"><button id="gearEasier" type="button" aria-label="Moins : passer vers un pignon plus grand" title="− · vers 36 dents, braquet plus facile">−</button><div class="cassetteDiagram"><svg id="cassetteTeeth" viewBox="0 0 136 136" role="group" aria-label="Cassette 10–36, choisir un pignon; le pignon sélectionné est coloré"></svg><output id="rearGearReadout" aria-live="polite">21</output></div><button id="gearHarder" type="button" aria-label="Plus : passer vers un pignon plus petit" title="+ · vers 10 dents, braquet plus dur">+</button></div></div>
   </div>
-  <div class="row" id="actionControls"><button id="pause" aria-label="Mettre en pause">Pause</button><button id="stopBtn" aria-label="Arrêter l'entraînement" title="Arrêter l'entraînement">⏹️</button><button id="turnAround" disabled aria-label="Faire demi-tour">↶ Demi-tour</button><button id="fsBtn" aria-label="Plein écran">⛶ Plein écran</button><button id="bt">Trainer</button><button id="hb">Cardio</button><button id="mn">Menu</button></div><button id="barHide" type="button" title="Replier le bandeau du bas" aria-label="Replier le bandeau inférieur">▾</button><div id="exportPanel" class="hide"><b>Entraînement arrêté</b><br><span id="exportInfo"></span></div>
+  <div class="row" id="actionControls"><button id="pause" aria-label="Mettre en pause">Pause</button><button id="stopBtn" aria-label="Arrêter l'entraînement" title="Arrêter l'entraînement">⏹️</button><button id="turnAround" disabled aria-label="Faire demi-tour">↶ Demi-tour</button><button id="fsBtn" aria-label="Plein écran">⛶ Plein écran</button><button id="bt">Trainer</button><button id="hb">Cardio</button><button id="mn">Menu</button></div>  <canvas id="icuGraph" class="hide" aria-label="Graphique de l'entraînement en cours"></canvas>
+<button id="barHide" type="button" title="Replier le bandeau du bas" aria-label="Replier le bandeau inférieur">▾</button><div id="exportPanel" class="hide"><b>Entraînement arrêté</b><br><span id="exportInfo"></span></div>
 </div>
 <button id="barShow" type="button" title="Faire réapparaître le bandeau du bas">▴</button><button id="cameraToggle" type="button" aria-label="Changer de vue caméra" title="Changer de vue caméra (suivi · paysage · profil · cintre)">📹</button><button id="turnAroundFloat" type="button" class="hide" title="Faire demi-tour" aria-label="Faire demi-tour">↶</button><div id="gearDock" class="hide" aria-label="Changement de vitesse virtuelle"></div>
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v151</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v152</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -606,6 +611,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="icuOverlay" class="hide" role="status"><div><div id="icuOverlayTitle"></div><div id="icuOverlaySub"></div><div id="icuOverlayCount"></div></div></div>
 <div id="icuWarn" class="hide" role="alert"></div>
 <div id="icuChip" class="hide"></div>
+<div id="icuTargets" class="hide"></div>
 <div id="stopDialog" class="hide" role="dialog" aria-modal="true" aria-labelledby="stopTitle"><section class="stopCard"><h2 id="stopTitle">Séance terminée</h2><p id="stopInfo"></p><div id="stopStats"></div><div id="stopBlocks" class="hide"></div><div id="stopMap" aria-label="Tracé effectué sur la carte" role="img"></div><div class="stopActions"><button id="exportFit" class="primary">⬇ FIT (Garmin, Strava)</button><button id="exportTcx">⬇ TCX (Garmin Connect)</button><button id="exportGpx">⬇ GPX (tracé)</button><button id="openStrava">Voir sur Strava ↗</button><button id="resumeStop" class="wideAction">▶ Reprendre l’entraînement</button><button id="quitStop" class="wideAction">⏹ Fermer et revenir à l’accueil</button></div><small id="stopHelp">Garmin Connect (ordinateur, ou Chrome en mode ordinateur) : Importer des données, puis choisis le .FIT ou le .TCX. Sur un compteur ou une montre : copie le .FIT dans le dossier Garmin/NewFiles par USB. Strava : Upload, Fichier.</small></section></div>
 <div id="fatal" class="hide" role="alert"><h2>La scène 3D ne peut pas démarrer</h2><p id="fatalText"></p></div>
 
@@ -5648,9 +5654,9 @@ function icuParseZwo(txt,ftp){
   const toDur=v=>{if(v==null)return NaN;v=String(v).trim();const m=v.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);if(m)return m[3]!=null?Number(m[1])*3600+Number(m[2])*60+Number(m[3]):Number(m[1])*60+Number(m[2]);return Number(v)}; /* v151 : accepte 300, 5:00 (mm:ss) ou 1:05:00 */
   const steps=[];
   const push=(dur,low,high)=>{dur=toDur(dur);if(!(dur>0))return;const wl=toW(low),wh=toW(high);const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;steps.push({dur:dur,wLow:Math.round(l),wHigh:Math.round(h),ramp:l!==h})};
-  let nodes=null;
+  let nodes=null,lastDoc=null;
   try{
-    const doc=new DOMParser().parseFromString(txt,'text/xml');
+    const doc=new DOMParser().parseFromString(txt,'text/xml');lastDoc=doc;
     if(!doc.querySelector('parsererror')){
       nodes=doc.querySelectorAll('workout > step');
       if(!nodes.length)nodes=doc.querySelectorAll('step');
@@ -5669,6 +5675,15 @@ function icuParseZwo(txt,ftp){
     if(pw){low=pw.getAttribute('low');high=pw.getAttribute('high');if(low==null&&high==null)low=high=pw.textContent;}
     push(dur,low,high);
   });
+  if(!steps.length&&lastDoc){ /* v152 : dialecte IntervalCoach/intervals.icu — <Warmup>/<SteadyState>/<Interval>/<Ramp>... en attributs */
+    const names=/^(warmup|steadystate|interval|cooldown|ramp|freeride|rest)$/i;
+    const attrOf=(el,n)=>{for(let k=0;k<el.attributes.length;k++)if(el.attributes[k].name.toLowerCase()===n)return el.attributes[k].value;return null};
+    const all=lastDoc.getElementsByTagName('*');
+    for(let i=0;i<all.length;i++){const el=all[i];if(!names.test(String(el.localName||'')))continue;
+      const pl=attrOf(el,'powerlow'),ph=attrOf(el,'powerhigh'),pp=attrOf(el,'power');
+      push(attrOf(el,'duration'),pl!=null?pl:pp,ph!=null?ph:pp);
+    }
+  }
   if(!steps.length){ /* repli regex si le XML est illisible ou sans <step> */
     const re=/<step\b([^>]*)>([\s\S]*?)<\/step\s*>/gi;let m;
     while((m=re.exec(txt))){
@@ -5685,6 +5700,13 @@ function icuParseZwo(txt,ftp){
       }
       push(dur,low,high);
     }
+    const re2=/<(warmup|steadystate|interval|cooldown|ramp|freeride|rest)\b([^>]*?)\/?>/gi;let m2; /* v152 : même dialecte en repli regex */
+    while((m2=re2.exec(txt))){
+      const a=m2[2]||'';
+      const at=n=>{const mm=a.match(new RegExp(n+'="([^"]*)"','i'));return mm?mm[1]:null};
+      const pl=at('powerlow'),ph=at('powerhigh'),pp=at('power');
+      push(at('duration'),pl!=null?pl:pp,ph!=null?ph:pp);
+    }
   }
   return steps;
 }
@@ -5693,8 +5715,47 @@ function icuStepAt(p,t){let acc=0;for(let i=0;i<p.steps.length;i++){const st=p.s
 function icuTargetAt(p){if(!p||(p.phase!=='run'&&p.phase!=='next')||!p.cur)return 0;const st=p.steps[p.cur.i];if(!st||st.wLow<=0)return 0;if(st.ramp)return st.wLow+(st.wHigh-st.wLow)*Math.min(1,p.cur.inT/Math.max(.001,st.dur));return st.wLow}
 function icuOverlay(title,sub,count){const ov=$('icuOverlay');if(!ov)return;ov.classList.remove('hide');if(title!=null)$('icuOverlayTitle').textContent=title;if(sub!=null)$('icuOverlaySub').textContent=sub;if(count!=null)$('icuOverlayCount').textContent=count;else $('icuOverlayCount').textContent=''}
 function icuSetWarn(mode,text){const w=$('icuWarn');if(!w)return;if(!mode){w.classList.add('hide');return}w.classList.remove('hide');w.className=mode;w.textContent=text}
+function updateIcuTargets(p){
+  const el=$('icuTargets');if(!el)return;
+  const active=p.phase!=='done'&&p.phase!=='doneIdle';
+  el.classList.toggle('hide',!active);
+  if(!active)return;
+  const i=(p.phase==='run'||p.phase==='next')?p.cur.i:0;
+  const st=p.steps[i],nx=p.steps[i+1];
+  const fmt=s=>!s?'—':(s.ramp?s.wLow+'→'+s.wHigh+' W':s.wLow+' W');
+  const txt='🎯 cible '+fmt(st)+(nx?' · prochain '+fmt(nx):'')+' · bloc '+(i+1)+'/'+p.steps.length;
+  if(p._tTxt!==txt){p._tTxt=txt;el.textContent=txt;}
+}
+function drawIcuGraph(p){
+  const cv=$('icuGraph');if(!cv)return;
+  const active=p.phase!=='done'&&p.phase!=='doneIdle';
+  cv.classList.toggle('hide',!active);
+  if(!active)return;
+  const dpr=Math.min(devicePixelRatio||1,2),w=cv.clientWidth||300,h=64;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  const ctx=cv.getContext('2d');if(!ctx)return;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const steps=p.steps,total=Math.max(1,steps.reduce((a,s)=>a+s.dur,0));
+  let maxW=100;for(const s of steps)maxW=Math.max(maxW,s.wHigh,s.wLow);
+  const X=cv.width,Y=cv.height,pad=2;
+  const cur=(p.phase==='run'||p.phase==='next')?p.cur.i:-1;
+  let acc=0;
+  for(let i=0;i<steps.length;i++){
+    const s=steps[i],x0=pad+acc/total*(X-2*pad),x1=pad+(acc+s.dur)/total*(X-2*pad);acc+=s.dur;
+    const yL=Y-pad-(s.wLow/maxW)*(Y-2*pad),yH=Y-pad-(s.wHigh/maxW)*(Y-2*pad);
+    ctx.fillStyle=i===cur?'#e8a33d':'rgba(121,223,197,.75)';
+    ctx.beginPath();ctx.moveTo(x0,Y-pad);ctx.lineTo(x0,yL);ctx.lineTo(x1,yH);ctx.lineTo(x1,Y-pad);ctx.closePath();ctx.fill();
+  }
+  const t=(p.phase==='run'||p.phase==='next')?(p.t||0):0;
+  const lx=pad+Math.min(1,t/total)*(X-2*pad);
+  ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(1.5,dpr);ctx.beginPath();ctx.moveTo(lx,pad);ctx.lineTo(lx,Y-pad);ctx.stroke();
+}
 function updateIcuPlan(dt,power){
-  const p=window._icuPlan;if(!p)return;
+  const p=window._icuPlan;
+  if(!p){const g=$('icuGraph'),t=$('icuTargets');if(g)g.classList.add('hide');if(t)t.classList.add('hide');return}
+  updateIcuTargets(p);
+  const _gKey=Math.round((p.t||0)*2)+'_'+((p.cur&&p.cur.i)||0)+'_'+p.phase;
+  if(p._gKey!==_gKey){p._gKey=_gKey;drawIcuGraph(p)}
   const ov=$('icuOverlay'),chip=$('icuChip');
   if(p.phase==='done'||p.phase==='doneIdle'){
     if(p.phase==='done'&&performance.now()-(p.doneAt||0)>5000){ov.classList.add('hide');p.phase='doneIdle';icuSetWarn(null);}
@@ -5769,7 +5830,9 @@ if($('icuDownload'))$('icuDownload').onclick=()=>{ /* v146 : télécharger soi-m
 /* v148 : importer soi-même un fichier d'entraînement (.zwo XML, .erg/.mrc texte) */
 function icuParseErg(txt,ftp,unitHint){
   ftp=Math.max(50,Number(ftp)||200);
-  const mult=unitHint==='min'?60:1; /* v149 : .mrc = minutes, .erg = secondes */
+  const head=String(txt).slice(0,2000);
+  let unit=unitHint==='min'?'min':'sec'; /* v152 : unité déclarée dans l'en-tête si présente */
+  if(/minute/i.test(head))unit='min';else if(/second/i.test(head))unit='sec';
   const rows=[];let inData=false,sawSection=false;
   const tok=t=>{t=String(t).trim();const pct=t.endsWith('%');if(pct)t=t.slice(0,-1);if(/^\d+,\d+$/.test(t))t=t.replace(',','.');const n=Number(t);return Number.isFinite(n)?{n:n,pct:pct}:null};
   for(const raw of String(txt).split(/\r?\n/)){
@@ -5780,15 +5843,24 @@ function icuParseErg(txt,ftp,unitHint){
     if(nums.length<2&&line.indexOf(',')>=0)nums=line.split(',').map(tok).filter(Boolean); /* v149 : repli séparateur virgule */
     if(nums.length>=2)rows.push([nums[0].n,nums[1].n,nums.length>2?nums[2].n:nums[1].n,nums[1].pct||(nums.length>2&&nums[2].pct)]);
   }
-  const steps=[];
-  for(let i=0;i<rows.length;i++){
-    const r=rows[i],t=r[0]*mult;let w=r[1],w2=r[2];
-    if(r[3]){w=w/100*ftp;w2=w2/100*ftp;} /* v149 : colonnes en %FTP */
-    const end=(i+1<rows.length?rows[i+1][0]*mult:t+60);
-    const dur=end-t;if(!(dur>0))continue;
-    const last=steps[steps.length-1];
-    if(last&&!last.ramp&&last.wLow===Math.round(w)&&last.wHigh===Math.round(w2)){last.dur+=dur;continue;}
-    steps.push({dur:dur,wLow:Math.round(w),wHigh:Math.round(w2),ramp:w2!==w});
+  const build=mult=>{
+    const pctMode=unit==='min'; /* v152 : MRC = %FTP par défaut ; ERG = watts */
+    const steps=[];
+    for(let i=0;i<rows.length;i++){
+      const r=rows[i],t=r[0]*mult;let w=r[1],w2=r[2];
+      if(r[3]||pctMode){w=w/100*ftp;w2=w2/100*ftp;}
+      const end=(i+1<rows.length?rows[i+1][0]*mult:t+60);
+      const dur=end-t;if(!(dur>0))continue;
+      const last=steps[steps.length-1];
+      if(last&&!last.ramp&&last.wLow===Math.round(w)&&last.wHigh===Math.round(w2)){last.dur+=dur;continue;}
+      steps.push({dur:dur,wLow:Math.round(w),wHigh:Math.round(w2),ramp:w2!==w});
+    }
+    return steps;
+  };
+  let steps=build(unit==='min'?60:1);
+  if(unit==='sec'&&rows.length>=3){ /* v152 : .erg en minutes mal étiqueté — total < 5 min suspect */
+    const tot=steps.reduce((a,s)=>a+s.dur,0);
+    if(tot>0&&tot<300)steps=build(60);
   }
   return steps;
 }
