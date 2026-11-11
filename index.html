@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v143 – secteur rouler libre réparé, zoom auto sur l’avatar</title>
+<title>Vélo 3D v149 – sol satellite/OSM au choix, son sur +/−, import entraînement renforcé</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -469,7 +469,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v148</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v149</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -594,6 +594,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
     <div id="pb" role="progressbar" aria-label="Chargement des routes et du décor" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="pf"></i></div>
     <div id="hs" role="status"></div><div style="font-size:11px;color:var(--muted)">Posture : <b id="posture">Assis</b> · Automatique selon l’effort ou choix manuel depuis la barre.</div>
     <div class="row" style="margin-top:8px"><button id="dayNightBtn" type="button" title="Cycle jour/nuit : automatique, jour fixe ou nuit fixe">🌗 Jour/nuit : auto</button><span id="weatherChip" style="flex:1;min-width:0;font-size:12px;color:var(--muted);align-self:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🌡️ Météo : chargement…</span></div>
+    <div class="row" style="margin-top:6px"><label style="font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap">🛰️ Sol : <select id="groundStyle" style="font-size:13px;padding:4px;border-radius:8px"><option value="osm" selected>Carte OSM (couleurs)</option><option value="satellite">Photos satellite (Esri)</option></select><span style="font-size:11px">le mode satellite télécharge des tuiles en ligne</span></label></div>
     <label style="display:flex;gap:8px;align-items:center;font-size:12px;margin-top:6px;color:var(--muted)"><input id="liveWeather" type="checkbox" style="min-height:22px;min-width:22px;accent-color:var(--ac)"> Météo réelle en roulant (relevée toutes les 10 min à ta position GPS)</label>
     <button id="go" class="wide primary" disabled>Lancer le parcours</button>
     <button id="skipScenery" class="wide hide">Lancer sans attendre le décor</button>
@@ -840,14 +841,16 @@ async function buildTerrain(target){
   }
   geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
   const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
-  mesh.receiveShadow=true;mesh.userData.ground={minX:minX,minZ:minZ,nx:nx,nz:nz};target.add(mesh);window._terrain=mesh;
+  mesh.receiveShadow=true;mesh.userData.ground={minX:minX,minZ:minZ,nx:nx,nz:nz,w:w,d:d};mesh.userData.elevColors=colors.slice(0);target.add(mesh);window._terrain=mesh;
   if(window._osmGroundData)recolorTerrainByOSM(window._osmGroundData); /* v147 : recoloration si le décor OSM est arrivé avant le terrain */
+  if(groundStyle()==="satellite")setGroundStyle("satellite",true); /* v149 : réapplique la texture satellite si le terrain est reconstruit */
 }
 /* v147 : sol colorié selon les données OSM (champs beige, forêts vert foncé, villages gris, eau bleue) */
 function osmPointInRing(x,z,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],zi=ring[i][1],xj=ring[j][0],zj=ring[j][1];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/((zj-zi)||1e-9)+xi))inside=!inside}return inside}
 function recolorTerrainByOSM(data){
   window._osmGroundData=data;
   const mesh=window._terrain;if(!mesh||!mesh.userData||!mesh.userData.ground)return;
+  if(groundStyle()==="satellite"){_restoreElevColors(mesh);return;} /* v149 : en mode satellite le sol garde la teinte d'altitude */
   const ud=mesh.userData.ground,pos=mesh.geometry.attributes.position,col=mesh.geometry.attributes.color;
   if(!pos||!col)return;
   const polys=[];
@@ -865,6 +868,45 @@ function recolorTerrainByOSM(data){
   }
   if(changed){col.needsUpdate=true;}
 }
+/* v149 : choix du style de sol — couleurs OSM (vectoriel) ou photos satellite Esri */
+function groundStyle(){let m='osm';try{m=localStorage.getItem('velo3d-ground')||'osm'}catch(e){}return m==='satellite'?'satellite':'osm'}
+function _restoreElevColors(mesh){const ud=mesh&&mesh.userData;if(!ud||!ud.elevColors)return;const col=mesh.geometry.attributes.color;if(!col)return;col.array.set(ud.elevColors);col.needsUpdate=true;}
+function _mercY(lat){const r=lat*Math.PI/180;return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2}
+async function loadSatelliteTexture(){
+  const mesh=window._terrain;if(!mesh||!proj)return null;
+  const ud=mesh.userData.ground;if(!ud)return null;
+  const w=ud.w,d=ud.d,S=1024;
+  const latC=proj.la-(ud.minZ+d/2)/proj.kz,lonC=proj.lo+(ud.minX+w/2)/proj.kx;
+  const z=Math.max(13,Math.min(18,Math.ceil(Math.log2(156543.03392804097*Math.cos(latC*Math.PI/180)/Math.max(1,Math.min(w,d)/S)))));
+  const n=256*Math.pow(2,z),wx0=((lonC+180)/360)*n-S/2,wy0=_mercY(latC)*n-S/2;
+  const cv=document.createElement('canvas');cv.width=S;cv.height=S;const ctx=cv.getContext('2d');
+  ctx.fillStyle='#5d7a4a';ctx.fillRect(0,0,S,S);
+  const tx0=Math.floor(wx0/256),tx1=Math.floor((wx0+S)/256),ty0=Math.floor(wy0/256),ty1=Math.floor((wy0+S)/256),jobs=[];
+  for(let ty=ty0;ty<=ty1;ty++)for(let tx=tx0;tx<=tx1;tx++){
+    if(tx<0||ty<0||tx>=n/256||ty>=n/256)continue;
+    jobs.push(new Promise(res=>{const img=new Image();img.crossOrigin='anonymous';const to=setTimeout(()=>res(false),15000);img.onload=()=>{clearTimeout(to);try{ctx.drawImage(img,tx*256-wx0,ty*256-wy0,256,256)}catch(e){}res(true)};img.onerror=()=>{clearTimeout(to);res(false)};img.src='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/'+z+'/'+ty+'/'+tx;}));
+  }
+  const rs=await Promise.all(jobs);
+  if(!rs.some(Boolean))return null;
+  const tex=new THREE.CanvasTexture(cv);tex.encoding=THREE.sRGBEncoding;tex.anisotropy=4;tex.needsUpdate=true;
+  return tex;
+}
+async function setGroundStyle(mode,quiet){
+  try{localStorage.setItem('velo3d-ground',mode==='satellite'?'satellite':'osm')}catch(e){}
+  const sel=$('groundStyle');if(sel)sel.value=mode==='satellite'?'satellite':'osm';
+  const mesh=window._terrain;
+  if(mode==='satellite'){
+    if(!mesh||!proj){if(!quiet)toast("Charge d'abord un parcours pour activer le sol satellite.");return;}
+    if(!window._satTex||window._satTexFor!==window._worldToken){if(!quiet)toast('Téléchargement des photos satellite…');window._satTex=await loadSatelliteTexture();window._satTexFor=window._worldToken;}
+    if(!window._satTex){if(!quiet)toast('Photos satellite indisponibles (hors ligne ?) — sol OSM conservé.');try{localStorage.setItem('velo3d-ground','osm')}catch(e){}if(sel)sel.value='osm';return;}
+    mesh.material.map=window._satTex;mesh.material.needsUpdate=true;_restoreElevColors(mesh);
+  }else if(mesh){
+    mesh.material.map=null;mesh.material.needsUpdate=true;
+    if(window._osmGroundData)recolorTerrainByOSM(window._osmGroundData);else _restoreElevColors(mesh);
+  }
+  if(!quiet)toast(mode==='satellite'?'🛰️ Sol en photos satellite (Esri).':'🗺️ Sol en couleurs OSM.');
+}
+if($('groundStyle')){const gs=$('groundStyle');gs.value=groundStyle();gs.onchange=e=>setGroundStyle(e.target.value);}
 
 const V3=THREE.Vector3,UPV=new V3(0,1,0),CYL=new THREE.CylinderGeometry(1,1,1,12);
 function setBar(mesh,p,q,radius){const direction=new V3(q[0]-p[0],q[1]-p[1],q[2]-p[2]),length=direction.length()||.001;mesh.position.set((p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2);mesh.quaternion.setFromUnitVectors(UPV,direction.divideScalar(length));mesh.scale.set(radius,length,radius)}
@@ -5537,8 +5579,8 @@ $('openStrava').onclick=()=>{window.open('https://www.strava.com/upload/select',
 $('go').addEventListener('click',()=>{sessionSamples=[];sessionStart=Date.now();lastSampleT=0;$('exportPanel').classList.add('hide');$('stopDialog').classList.add('hide');requestWakeLock();window._rideElapsed=0;window._powerStarted=false;window._rideGain=0;window._rideDir=1;if($('turnAround'))$('turnAround').disabled=false; /* v127 : demi-tour aussi disponible en mode démo */})
 $('skipScenery').onclick=()=>{++osmTok;$('skipScenery').classList.add('hide');$('go').disabled=false;prog(1,'Chargement interrompu. Parcours prêt sans décor supplémentaire.')};
 $('pw').oninput=e=>{$('pv').textContent=e.target.value};
-$('gearEasier').onclick=()=>{if(virtualRearIndex<VIRTUAL_COGS.length-1){virtualRearIndex++;updateGearUI()}};
-$('gearHarder').onclick=()=>{if(virtualRearIndex>0){virtualRearIndex--;updateGearUI()}};
+$('gearEasier').onclick=()=>{if(virtualRearIndex<VIRTUAL_COGS.length-1){virtualRearIndex++;updateGearUI();shiftClack();}}; /* v149 : son aussi sur − */
+$('gearHarder').onclick=()=>{if(virtualRearIndex>0){virtualRearIndex--;updateGearUI();shiftClack();}}; /* v149 : son aussi sur + */
 $('frontGear').onclick=()=>{virtualFront=virtualFront===48?35:48;updateGearUI();shiftClack();}; /* v139 : clic de plateau */
 const heldCocottes=new Map();let cocottesPairHandled=false;
 function shiftFromCocotte(side){
@@ -5604,12 +5646,15 @@ function icuDateParam(dateStr){const d=new Date(dateStr+'T12:00:00');const t=new
 function icuParseZwo(txt,ftp){
   const doc=new DOMParser().parseFromString(txt,'text/xml');
   if(doc.querySelector('parsererror'))throw new Error('Fichier workout illisible.');
+  let nodes=doc.querySelectorAll('workout > step');
+  if(!nodes.length)nodes=doc.querySelectorAll('step'); /* v149 : repli si les <step> sont imbriqués autrement */
+  const norm=v=>{if(v==null)return NaN;const s=String(v).trim().replace('%','');const n=Number(s);if(!Number.isFinite(n))return NaN;return n>1.5?n/100:n}; /* v149 : accepte 0.75 ou 75% */
   const steps=[];
-  doc.querySelectorAll('workout > step').forEach(st=>{
-    const durNode=st.querySelector('duration'),dur=Number(durNode?durNode.textContent:0);
+  nodes.forEach(st=>{
+    const durNode=st.querySelector('duration'),dur=Number(durNode?durNode.textContent:(st.getAttribute('duration')||0));
     if(!(dur>0))return;
-    const pw=st.querySelector('power');let low=NaN,high=NaN;
-    if(pw){if(pw.getAttribute('low')!=null)low=Number(pw.getAttribute('low'));if(pw.getAttribute('high')!=null)high=Number(pw.getAttribute('high'));if(!Number.isFinite(low)&&!Number.isFinite(high)){const v=Number(pw.textContent||'NaN');low=high=v;}}
+    const pw=st.querySelector('power')||st.querySelector('watts');let low=NaN,high=NaN;
+    if(pw){low=norm(pw.getAttribute('low'));high=norm(pw.getAttribute('high'));if(!Number.isFinite(low)&&!Number.isFinite(high)){const v=norm(pw.textContent);low=high=v;}}
     if(!Number.isFinite(low))low=0;if(!Number.isFinite(high))high=low;
     steps.push({dur:dur,wLow:Math.round(low*ftp),wHigh:Math.round(high*ftp),ramp:low!==high});
   });
@@ -5694,18 +5739,24 @@ if($('icuDownload'))$('icuDownload').onclick=()=>{ /* v146 : télécharger soi-m
   downloadBlob(ev.zwo,name,'text/xml');toast('Fichier .zwo téléchargé : '+name);
 };
 /* v148 : importer soi-même un fichier d'entraînement (.zwo XML, .erg/.mrc texte) */
-function icuParseErg(txt){
-  const lines=String(txt).split(/\r?\n/);let inData=false;const rows=[];
-  for(const raw of lines){
-    const line=raw.trim();if(!line||line.startsWith('#'))continue;
-    if(/^\[.*\]$/.test(line)){inData=/COURSE DATA/i.test(line);continue;}
-    if(!inData)continue;
-    const cols=line.split(/[\t ,;]+/).map(Number).filter(v=>Number.isFinite(v));
-    if(cols.length>=2)rows.push(cols);
+function icuParseErg(txt,ftp,unitHint){
+  ftp=Math.max(50,Number(ftp)||200);
+  const mult=unitHint==='min'?60:1; /* v149 : .mrc = minutes, .erg = secondes */
+  const rows=[];let inData=false,sawSection=false;
+  const tok=t=>{t=String(t).trim();const pct=t.endsWith('%');if(pct)t=t.slice(0,-1);if(/^\d+,\d+$/.test(t))t=t.replace(',','.');const n=Number(t);return Number.isFinite(n)?{n:n,pct:pct}:null};
+  for(const raw of String(txt).split(/\r?\n/)){
+    const line=raw.trim();if(!line||line.startsWith('#')||line.startsWith('//'))continue;
+    if(/^\[.*\]$/.test(line)){sawSection=true;inData=/COURSE DATA/i.test(line)&&!/END COURSE DATA/i.test(line);continue;}
+    if(!inData&&sawSection)continue; /* v149 : hors [COURSE DATA] on ignore, sauf si le fichier n'a aucune section */
+    let nums=line.split(/[\t ;]+/).map(tok).filter(Boolean);
+    if(nums.length<2&&line.indexOf(',')>=0)nums=line.split(',').map(tok).filter(Boolean); /* v149 : repli séparateur virgule */
+    if(nums.length>=2)rows.push([nums[0].n,nums[1].n,nums.length>2?nums[2].n:nums[1].n,nums[1].pct||(nums.length>2&&nums[2].pct)]);
   }
   const steps=[];
   for(let i=0;i<rows.length;i++){
-    const t=rows[i][0],w=rows[i][1],w2=rows[i].length>2?rows[i][2]:rows[i][1],end=i+1<rows.length?rows[i+1][0]:t+60;
+    const r=rows[i],t=r[0]*mult;let w=r[1],w2=r[2];
+    if(r[3]){w=w/100*ftp;w2=w2/100*ftp;} /* v149 : colonnes en %FTP */
+    const end=(i+1<rows.length?rows[i+1][0]*mult:t+60);
     const dur=end-t;if(!(dur>0))continue;
     const last=steps[steps.length-1];
     if(last&&!last.ramp&&last.wLow===Math.round(w)&&last.wHigh===Math.round(w2)){last.dur+=dur;continue;}
@@ -5715,10 +5766,11 @@ function icuParseErg(txt){
 }
 function icuImportText(txt,name){
   const ftp=Math.max(50,Number(riderStyle.ftp)||200);
+  const unitHint=/\.mrc$/i.test(String(name||''))?'min':'sec';
   let steps=null;
-  if(/<workout_file|<workout/i.test(txt))steps=icuParseZwo(txt,ftp);
-  else steps=icuParseErg(txt);
-  if(!steps||!steps.length)throw new Error('Aucun exercice trouvé dans ce fichier.');
+  if(/<workout_file|<workout/i.test(txt)){try{steps=icuParseZwo(txt,ftp)}catch(e){steps=null}} /* v149 : ZWO d'abord si XML */
+  if(!steps||!steps.length)steps=icuParseErg(txt,ftp,unitHint); /* v149 : repli ERG/MRC (texte, ou XML sans étape) */
+  if(!steps||!steps.length)throw new Error('Aucun exercice trouvé dans ce fichier — essaie un .zwo, .erg ou .mrc standard (étapes avec durées).');
   const total=steps.reduce((a,s)=>a+s.dur,0);
   window._icuPlan={name:(name||'Entraînement importé').replace(/\.[a-z0-9]+$/i,''),eventId:null,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};
   return steps.length+' exercices · durée totale '+fmtDur(total);
