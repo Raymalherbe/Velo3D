@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v139 – bouton caméra 📹 à côté du demi-tour, sons de roue libre et de cassette</title>
+<title>Vélo 3D v140 – monuments, stades, Tour Eiffel, Arc de Triomphe + textures casque/maillot ajustables</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -451,7 +451,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v139</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v140</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -519,6 +519,15 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
             <input id="garmentScale" type="range" min="0.25" max="3" step="0.05" value="1">
             <output id="garmentScaleValue" for="garmentScale">100%</output>
           </label>
+          <label for="garmentStretchX">Étirement horizontal (v140)
+            <input id="garmentStretchX" type="range" min="0.25" max="3" step="0.05" value="1">
+            <output id="garmentStretchXValue" for="garmentStretchX">100%</output>
+          </label>
+          <label for="garmentStretchY">Étirement vertical (v140)
+            <input id="garmentStretchY" type="range" min="0.25" max="3" step="0.05" value="1">
+            <output id="garmentStretchYValue" for="garmentStretchY">100%</output>
+          </label>
+          <div class="editorRow"><button id="garmentAutoFit" type="button">✨ Ajuster parfaitement à la pièce</button></div>
           <small id="garmentEditStatus" class="editorHelp" aria-live="polite">Sélectionne une pièce et charge sa photo pour l’ajuster.</small>
         </section>
         <label class="choice">Casque<input id="helmetColor" type="color" value="#128f9a"></label>
@@ -1823,9 +1832,9 @@ avatarFitLoad();avatarHiddenLoad();avatarFitSyncSliders();avatarSyncPedalUI();
 /* ---------- v89 : tenue par photos — maillot devant/arrière, cuissard, chaussettes ---------- */
 const _texTargets={shortTex:{key:'shorts',also:['waist'],label:'le cuissard',thumb:'shortThumb'},sockTex:{key:'sock',also:[],label:'les chaussettes',thumb:'sockThumb'}};
 const _garmentPhotoKeys={jerseyFront:'velo3d-tex-jerseyF',jerseyBack:'velo3d-tex-jerseyB',shorts:'velo3d-tex-shorts',socks:'velo3d-tex-sock',face:'velo3d-tex-face',helmet:'velo3d-tex-helmet',sunglasses:'velo3d-tex-sunglasses'};
-const _garmentDefaults={scale:1,dx:0,dy:0};
+const _garmentDefaults={scale:1,dx:0,dy:0,sx:1,sy:1}; /* v140 : étirement horizontal/vertical indépendant */
 let _garmentTransforms={};
-try{const saved=JSON.parse(localStorage.getItem('velo3d-garment-transform-v95')||'{}');for(const key of Object.keys(_garmentPhotoKeys)){const t=saved[key]||{};_garmentTransforms[key]={scale:Math.max(.25,Math.min(3,Number(t.scale)||1)),dx:Math.max(-.8,Math.min(.8,Number(t.dx)||0)),dy:Math.max(-.8,Math.min(.8,Number(t.dy)||0))};}}catch(e){for(const key of Object.keys(_garmentPhotoKeys))_garmentTransforms[key]={..._garmentDefaults};}
+try{const saved=JSON.parse(localStorage.getItem('velo3d-garment-transform-v95')||'{}');for(const key of Object.keys(_garmentPhotoKeys)){const t=saved[key]||{};_garmentTransforms[key]={scale:Math.max(.25,Math.min(3,Number(t.scale)||1)),dx:Math.max(-.8,Math.min(.8,Number(t.dx)||0)),dy:Math.max(-.8,Math.min(.8,Number(t.dy)||0)),sx:Math.max(.25,Math.min(3,Number(t.sx)||1)),sy:Math.max(.25,Math.min(3,Number(t.sy)||1))};}}catch(e){for(const key of Object.keys(_garmentPhotoKeys))_garmentTransforms[key]={..._garmentDefaults};}
 for(const key of Object.keys(_garmentPhotoKeys))if(!_garmentTransforms[key])_garmentTransforms[key]={..._garmentDefaults};
 let _activeGarmentKey='jerseyFront',_outfitEditMode=false,_outfitPointerDrag=false,_garmentApplyTimer=0,_garmentSaveTimer=0;
 let _jerseyTexCurrent=null,_jerseyAccent=null;const _plainTexCache={};
@@ -1833,11 +1842,18 @@ const _garmentTransformFor=key=>_garmentTransforms[key]||(_garmentTransforms[key
 const _garmentHasPhoto=key=>{try{return !!localStorage.getItem(_garmentPhotoKeys[key]);}catch(e){return false;}};
 function _saveGarmentTransforms(){clearTimeout(_garmentSaveTimer);_garmentSaveTimer=setTimeout(()=>{try{localStorage.setItem('velo3d-garment-transform-v95',JSON.stringify(_garmentTransforms));}catch(e){}},180);}
 function _queueGarmentApply(key){clearTimeout(_garmentApplyTimer);_garmentApplyTimer=setTimeout(()=>{if(key==='jerseyFront'||key==='jerseyBack')rebuildJerseyTexture();else if(key==='sunglasses')applySunglassesPhoto();else if(key==='face')applyFacePhoto();else if(key==='helmet')applyHelmetPhoto();else{const storage=_garmentPhotoKeys[key];let data=null;try{data=localStorage.getItem(storage)}catch(e){}if(data){const target=key==='shorts'?_texTargets.shortTex:_texTargets.sockTex;loadPlainTexture(target,data);}}},90);}
-function _syncGarmentEditor(){const sel=$('garmentAdjustTarget'),scale=$('garmentScale'),val=$('garmentScaleValue'),btn=$('garmentEditMode'),status=$('garmentEditStatus');if(sel&&sel.value!==_activeGarmentKey)sel.value=_activeGarmentKey;const t=_garmentTransformFor(_activeGarmentKey);if(scale)scale.value=String(t.scale);if(val)val.textContent=Math.round(t.scale*100)+'%';const ready=_garmentHasPhoto(_activeGarmentKey);if(btn){btn.disabled=!ready&&!_outfitEditMode;btn.classList.toggle('active',_outfitEditMode);btn.setAttribute('aria-pressed',_outfitEditMode?'true':'false');btn.textContent=_outfitEditMode?'✓ Déplacement actif':'✋ Déplacer sur l’avatar';}if(status)status.textContent=ready?(_outfitEditMode?'Glisse la photo sur l’avatar; pince pour zoomer.':'Photo prête. Active le déplacement ou tourne le cycliste.'):'Charge d’abord la photo correspondant à la pièce sélectionnée.';}
+function _syncGarmentEditor(){const sel=$('garmentAdjustTarget'),scale=$('garmentScale'),val=$('garmentScaleValue'),btn=$('garmentEditMode'),status=$('garmentEditStatus'),sx=$('garmentStretchX'),sy=$('garmentStretchY'),sxv=$('garmentStretchXValue'),syv=$('garmentStretchYValue');if(sel&&sel.value!==_activeGarmentKey)sel.value=_activeGarmentKey;const t=_garmentTransformFor(_activeGarmentKey);if(scale)scale.value=String(t.scale);if(val)val.textContent=Math.round(t.scale*100)+'%';if(sx)sx.value=String(t.sx||1);if(sxv)sxv.textContent=Math.round((t.sx||1)*100)+'%';if(sy)sy.value=String(t.sy||1);if(syv)syv.textContent=Math.round((t.sy||1)*100)+'%';const ready=_garmentHasPhoto(_activeGarmentKey);if(btn){btn.disabled=!ready&&!_outfitEditMode;btn.classList.toggle('active',_outfitEditMode);btn.setAttribute('aria-pressed',_outfitEditMode?'true':'false');btn.textContent=_outfitEditMode?'✓ Déplacement actif':'✋ Déplacer sur l’avatar';}if(status)status.textContent=ready?(_outfitEditMode?'Glisse la photo sur l’avatar; pince pour zoomer.':'Photo prête. Active le déplacement ou tourne le cycliste.'):'Charge d’abord la photo correspondant à la pièce sélectionnée.';}
 function _resetGarmentTransform(key){_garmentTransforms[key]={..._garmentDefaults};_saveGarmentTransforms();_syncGarmentEditor();_queueGarmentApply(key);}
 $('garmentAdjustTarget')?.addEventListener('change',e=>{_outfitEditMode=false;_activeGarmentKey=e.target.value;_syncGarmentEditor();});
 $('garmentEditMode')?.addEventListener('click',()=>{if(!_garmentHasPhoto(_activeGarmentKey)){_syncGarmentEditor();toast('Charge d’abord la photo de la pièce sélectionnée.');return;}_outfitEditMode=!_outfitEditMode;_syncGarmentEditor();});
 $('garmentScale')?.addEventListener('input',e=>{_garmentTransformFor(_activeGarmentKey).scale=Math.max(.25,Math.min(3,Number(e.target.value)||1));_saveGarmentTransforms();_syncGarmentEditor();_queueGarmentApply(_activeGarmentKey);});
+$('garmentStretchX')?.addEventListener('input',e=>{_garmentTransformFor(_activeGarmentKey).sx=Math.max(.25,Math.min(3,Number(e.target.value)||1));_saveGarmentTransforms();_syncGarmentEditor();_queueGarmentApply(_activeGarmentKey);}); /* v140 */
+$('garmentStretchY')?.addEventListener('input',e=>{_garmentTransformFor(_activeGarmentKey).sy=Math.max(.25,Math.min(3,Number(e.target.value)||1));_saveGarmentTransforms();_syncGarmentEditor();_queueGarmentApply(_activeGarmentKey);}); /* v140 */
+$('garmentAutoFit')?.addEventListener('click',()=>{ /* v140 : la photo s'ajuste parfaitement à la pièce */
+  if(!_garmentHasPhoto(_activeGarmentKey)){toast('Charge d’abord la photo de la pièce sélectionnée.');return;}
+  _garmentTransforms[_activeGarmentKey]={..._garmentDefaults};_saveGarmentTransforms();_syncGarmentEditor();_queueGarmentApply(_activeGarmentKey);
+  toast('Photo ajustée automatiquement sur la pièce.');
+});
 $('resetGarmentPlacement')?.addEventListener('click',()=>_resetGarmentTransform(_activeGarmentKey));
 function _texDataSets(){const list=[];try{if(typeof rider!=='undefined'&&rider&&rider.userData&&rider.userData.materials)list.push(rider.userData);}catch(e){}try{if(typeof previewRider!=='undefined'&&previewRider&&previewRider.userData&&previewRider.userData.materials)list.push(previewRider.userData);}catch(e){}return list;}
 function applyJerseyTexture(texOrNull){
@@ -1879,10 +1895,10 @@ function _trimTransparent(img,margin=.035){
   out.getContext('2d').drawImage(src,x0,y0,out.width,out.height,0,0,out.width,out.height);
   return out;
 }
-async function _coverCanvas(img,w,h,transform={scale:1,dx:0,dy:0}){
+async function _coverCanvas(img,w,h,transform={scale:1,dx:0,dy:0,sx:1,sy:1}){
   const cv=document.createElement('canvas');cv.width=w;cv.height=h;const ctx=cv.getContext('2d');
   const source=_trimTransparent(img),fit=Math.min(w/source.width,h/source.height)*.94;
-  const scale=fit*Math.max(.25,Math.min(3,Number(transform.scale)||1)),dw=source.width*scale,dh=source.height*scale;
+  const scale=fit*Math.max(.25,Math.min(3,Number(transform.scale)||1)),dw=source.width*scale*(Number(transform.sx)||1),dh=source.height*scale*(Number(transform.sy)||1); /* v140 : étirement X/Y */
   ctx.drawImage(source,(w-dw)/2+(Number(transform.dx)||0)*w,(h-dh)/2+(Number(transform.dy)||0)*h,dw,dh);return cv;
 }
 /* ---------- v98 : découpe automatique du fond (portée de Cycliste 3D v16), photos visage et casque ---------- */
@@ -1941,7 +1957,7 @@ function _photoHalfCanvas(img,rh,transform={},baseColor='#ffffff'){
   const g=c.getContext('2d');g.fillStyle=baseColor;g.fillRect(0,0,1024,1024);
   const source=_trimTransparent(img),w=512,h=Math.round(1024*rh),fit=Math.min(w/source.width,h/source.height)*.90;
   const scale=fit*Math.max(.25,Math.min(3,Number(transform.scale)||1));
-  const dw=source.width*scale,dh=source.height*scale,dx=(Number(transform.dx)||0)*w,dy=(Number(transform.dy)||0)*h;
+  const dw=source.width*scale*(Number(transform.sx)||1),dh=source.height*scale*(Number(transform.sy)||1),dx=(Number(transform.dx)||0)*w,dy=(Number(transform.dy)||0)*h; /* v140 : étirement X/Y */
   /* Chaque demi-texture conserve le sujet entier et laisse une marge de sécurité UV. */
   g.save();g.translate(1024,0);g.scale(-1,1);g.save();g.beginPath();g.rect(0,0,w,h);g.clip();g.drawImage(source,(w-dw)/2+dx,(h-dh)/2+dy,dw,dh);g.restore();g.restore();
   g.save();g.beginPath();g.rect(0,0,w,h);g.clip();g.drawImage(source,(w-dw)/2+dx,(h-dh)/2+dy,dw,dh);g.restore();
@@ -2034,7 +2050,7 @@ function handleGarmentUpload(inputId,thumbId,storageKey,label,onDone){
       try{localStorage.setItem(storageKey,dataURL);}catch(err){toast('Photo appliquée pour cette session (trop grande pour être gardée).');}
       _texThumb(thumbId,dataURL);
       const garmentKey=({jerseyFrontTex:'jerseyFront',jerseyBackTex:'jerseyBack',shortTex:'shorts',sockTex:'socks',faceTex:'face',helmetTex:'helmet',sunglassesTex:'sunglasses'})[inputId];
-      if(garmentKey){_outfitEditMode=false;_activeGarmentKey=garmentKey;_syncGarmentEditor();}
+      if(garmentKey){_garmentTransforms[garmentKey]={..._garmentDefaults};_saveGarmentTransforms(); /* v140 : à chaque nouvelle photo, ajustement parfait automatique sur la pièce */_outfitEditMode=false;_activeGarmentKey=garmentKey;_syncGarmentEditor();}
       toast('Photo appliquée sur '+label+'.');
       if(onDone)onDone();
       e.target.value='';
@@ -3224,7 +3240,7 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
   for(let attempt=0;attempt<servers.length+1;attempt++){
     const server=servers[attempt%servers.length],r=areas[Math.min(attempt,areas.length-1)],localityRadius=Math.max(r,25000),host=new URL(server).hostname;
     onProgress(Math.min(.12+attempt*.10,.42),'Téléchargement des routes et du décor · serveur '+(attempt+1)+'/'+(servers.length+1)+'…');
-    const q=`[out:json][timeout:25];way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way["highway"](around:${r},${center.lat},${center.lon});way["building"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});way["natural"~"^(water|wood|hedge|tree_row)$"](around:${r},${center.lat},${center.lon});way["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});node["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});way["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});node["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});way["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});node["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});way["landuse"~"^(forest|hedge|residential|farmland|meadow|orchard|grass)$"](around:${r},${center.lat},${center.lon});way["barrier"="hedge"](around:${r},${center.lat},${center.lon});way["place"~"^(city|town|village)$"](around:${r},${center.lat},${center.lon});way["traffic_sign"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});node["traffic_sign"](around:${r},${center.lat},${center.lon}););out body geom 12000;node["place"~"^(city|town|village)$"]["name"](around:${localityRadius},${center.lat},${center.lon});out body;`;
+    const q=`[out:json][timeout:25];way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way["highway"](around:${r},${center.lat},${center.lon});way["building"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});way["natural"~"^(water|wood|hedge|tree_row)$"](around:${r},${center.lat},${center.lon});way["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});node["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});way["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});node["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});way["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});node["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});way["landuse"~"^(forest|hedge|residential|farmland|meadow|orchard|grass)$"](around:${r},${center.lat},${center.lon});way["barrier"="hedge"](around:${r},${center.lat},${center.lon});way["place"~"^(city|town|village)$"](around:${r},${center.lat},${center.lon});way["traffic_sign"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});node["traffic_sign"](around:${r},${center.lat},${center.lon}););way["leisure"="stadium"](around:${r},${center.lat},${center.lon});node["leisure"="stadium"](around:${r},${center.lat},${center.lon});way["man_made"="tower"](around:${r},${center.lat},${center.lon});node["man_made"="tower"](around:${r},${center.lat},${center.lon});way["historic"](around:${r},${center.lat},${center.lon});node["historic"](around:${r},${center.lat},${center.lon});out body geom 12000;node["place"~"^(city|town|village)$"]["name"](around:${localityRadius},${center.lat},${center.lon});out body;`;
     try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),28000);let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const elements=data.elements.filter(e=>e&&(['way','node'].includes(e.type)));onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
     catch(error){last=error&&error.name==='AbortError'?host+' délai dépassé':(error.message||String(error));onProgress(Math.min(.12+attempt*.10,.42),'Serveur OSM indisponible · nouvel essai…');}
   }
@@ -4123,9 +4139,12 @@ async function loadOSM(){
         way["landuse"="hedge"](around:90,${corridor});
         way["natural"="hedge"](around:90,${corridor});
         way["natural"="tree_row"](around:90,${corridor});
-        way["amenity"="place_of_worship"](around:220,${corridor});node["amenity"="place_of_worship"](around:220,${corridor});
-        way["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:220,${corridor});node["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:220,${corridor});
-        way["tourism"~"^(museum|artwork|attraction)$"](around:220,${corridor});node["tourism"~"^(museum|artwork|attraction)$"](around:220,${corridor});
+        way["amenity"="place_of_worship"](around:300,${corridor});node["amenity"="place_of_worship"](around:300,${corridor});
+        way["historic"](around:300,${corridor});node["historic"](around:300,${corridor});
+        way["tourism"~"^(museum|artwork|attraction|viewpoint)$"](around:300,${corridor});node["tourism"~"^(museum|artwork|attraction|viewpoint)$"](around:300,${corridor});
+        way["leisure"="stadium"](around:300,${corridor});node["leisure"="stadium"](around:300,${corridor});
+        way["man_made"="tower"](around:300,${corridor});node["man_made"="tower"](around:300,${corridor});
+        way["building"="tower"](around:300,${corridor});
         node["traffic_sign"](around:70,${corridor});
         node["highway"~"^(traffic_signals|stop|give_way)$"](around:70,${corridor});
         way["highway"~"^(traffic_signals|stop|give_way)$"](around:70,${corridor});
@@ -4486,8 +4505,25 @@ function hedgesLegacy(hedgeParts,targetWorld){
   return count;
 }
 
-function osmLandmarkKind(tags={}){const worship=String(tags.amenity||'')==='place_of_worship'||/^(church|chapel|cathedral|mosque|temple|synagogue)$/i.test(String(tags.building||''));if(worship)return'church';const h=String(tags.historic||'').toLowerCase(),t=String(tags.tourism||'').toLowerCase();return/^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$/.test(h)||/^(museum|artwork|attraction)$/.test(t)?'monument':null;}
-function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,180)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const near=nearestOnRoute(x,z);if(!near||near.dist2>230*230)continue;const g=new THREE.Group();g.position.set(x,near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=4.4+seed*2,d=7+seed*3,h=4.4+seed*1.5;const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.76,2.5+seed,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.05,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(1.5,5.2,1.5),matChurch);tower.position.set(0,2.6,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.05,2.7,8),matRoof);spire.position.set(0,6.5,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.10,.72,.08),matDark);crossV.position.set(0,8.17,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.46,.09,.08),matDark);crossH.position.set(0,8.28,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(.72,1.65,.08),matDark);door.position.set(0,.83,d/2+.04);g.add(door);}else{const plinth=new THREE.Mesh(new THREE.BoxGeometry(2.7,.45,2.7),matStone);plinth.position.y=.23;g.add(plinth);const col=new THREE.Mesh(new THREE.CylinderGeometry(.32,.54,2.8,8),matStone);col.position.y=1.83;g.add(col);const obelisk=new THREE.Mesh(new THREE.ConeGeometry(.42,1.25,4),matStone);obelisk.position.y=3.85;obelisk.rotation.y=Math.PI/4;g.add(obelisk);const cap=new THREE.Mesh(new THREE.SphereGeometry(.35,10,8),matRoof);cap.position.y=4.42;g.add(cap);}g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});targetWorld.add(g);count++;}return count;}
+function osmLandmarkKind(tags={}){const worship=String(tags.amenity||'')==='place_of_worship'||/^(church|chapel|cathedral|mosque|temple|synagogue)$/i.test(String(tags.building||''));if(worship)return'church';const h=String(tags.historic||'').toLowerCase(),t=String(tags.tourism||'').toLowerCase(),name=String(tags.name||'').toLowerCase();if(String(tags.leisure||'').toLowerCase()==='stadium')return'stadium'; /* v140 : stades */if(/eiffel/.test(name)||String(tags.man_made||'').toLowerCase()==='tower')return'tower'; /* v140 : tours (Tour Eiffel) */if(/arc de triomphe/.test(name))return'arch'; /* v140 : Arc de Triomphe */return/^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$/.test(h)||/^(museum|artwork|attraction|viewpoint)$/.test(t)?'monument':null;}
+function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const near=nearestOnRoute(x,z);if(!near||near.dist2>350*350)continue;const g=new THREE.Group();g.position.set(x,near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=4.4+seed*2,d=7+seed*3,h=4.4+seed*1.5;const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.76,2.5+seed,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.05,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(1.5,5.2,1.5),matChurch);tower.position.set(0,2.6,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.05,2.7,8),matRoof);spire.position.set(0,6.5,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.10,.72,.08),matDark);crossV.position.set(0,8.17,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.46,.09,.08),matDark);crossH.position.set(0,8.28,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(.72,1.65,.08),matDark);door.position.set(0,.83,d/2+.04);g.add(door);}
+else if(item.kind==='stadium'){ /* v140 : stade — pelouse + tribunes en bol */
+  const field=new THREE.Mesh(new THREE.CircleGeometry(17,28),new THREE.MeshStandardMaterial({color:0x4e8f3a,roughness:1}));field.rotation.x=-Math.PI/2;field.position.y=.12;g.add(field);
+  const bowl=new THREE.Mesh(new THREE.CylinderGeometry(26,26,9,28,1,true),new THREE.MeshStandardMaterial({color:0xb9b2a4,roughness:.9,side:THREE.DoubleSide}));bowl.position.y=4.5;g.add(bowl);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(26,1.1,8,28),new THREE.MeshStandardMaterial({color:0x8f887a,roughness:.8}));rim.rotation.x=Math.PI/2;rim.position.y=9;g.add(rim);
+}else if(item.kind==='tower'){ /* v140 : tour façon Tour Eiffel — fût qui s'évase, plateformes, antenne */
+  const th=Math.min(80,Math.max(24,osmMetres(item.tags&&item.tags.height,NaN,24,300)||24));
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(1.1,5.2,th,4,1),matStone);body.rotation.y=Math.PI/4;body.position.y=th/2;g.add(body);
+  const p1=new THREE.Mesh(new THREE.BoxGeometry(9,1,9),matStone);p1.position.y=th*.42;g.add(p1);
+  const p2=new THREE.Mesh(new THREE.BoxGeometry(5.5,1,5.5),matStone);p2.position.y=th*.72;g.add(p2);
+  const ant=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,7,6),matDark);ant.position.y=th+3.5;g.add(ant);
+}else if(item.kind==='arch'){ /* v140 : Arc de Triomphe — deux piliers, entablement, attique */
+  const w=16,d=12,h=17;
+  const pl=new THREE.Mesh(new THREE.BoxGeometry(4.5,h,d),matStone);pl.position.set(-(w/2-2.25),h/2,0);g.add(pl);
+  const pr=new THREE.Mesh(new THREE.BoxGeometry(4.5,h,d),matStone);pr.position.set(w/2-2.25,h/2,0);g.add(pr);
+  const top=new THREE.Mesh(new THREE.BoxGeometry(w,5,d),matStone);top.position.y=h+2.5;g.add(top);
+  const attic=new THREE.Mesh(new THREE.BoxGeometry(w-2,3.4,d-2),matStone);attic.position.y=h+7.7;g.add(attic);
+}else{const plinth=new THREE.Mesh(new THREE.BoxGeometry(2.7,.45,2.7),matStone);plinth.position.y=.23;g.add(plinth);const col=new THREE.Mesh(new THREE.CylinderGeometry(.32,.54,2.8,8),matStone);col.position.y=1.83;g.add(col);const obelisk=new THREE.Mesh(new THREE.ConeGeometry(.42,1.25,4),matStone);obelisk.position.y=3.85;obelisk.rotation.y=Math.PI/4;g.add(obelisk);const cap=new THREE.Mesh(new THREE.SphereGeometry(.35,10,8),matRoof);cap.position.y=4.42;g.add(cap);}g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});targetWorld.add(g);count++;}return count;}
 
 function osmWaterwayWidth(tags){const w=osmMetres(tags.width,NaN,2,30);if(isFinite(w))return Math.min(16,Math.max(1.2,w));const t=String((tags||{}).waterway||'').toLowerCase();if(t==='river')return 7;if(t==='canal')return 5.5;if(t==='stream')return 3.2;return 1.6;}
 /* v129 : détecte où la route croise un cours d'eau -> portées de pont à ces endroits */
