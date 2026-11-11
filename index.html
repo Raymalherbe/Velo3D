@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v140 – monuments, stades, Tour Eiffel, Arc de Triomphe + textures casque/maillot ajustables</title>
+<title>Vélo 3D v141 – correctif rouler libre, roue libre à cadence 0, chants d’oiseaux, mode heure réelle</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -451,7 +451,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v140</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v141</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -595,6 +595,7 @@ let AC=null,noiseBuf=null;
 function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();const b=AC.createBuffer(1,Math.floor(AC.sampleRate*.5),AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;noiseBuf=b;}catch(e){return null}}if(AC.state==='suspended')AC.resume();return AC}
 function tick(freq,dur,vol,type){const ac=audio();if(!ac||!noiseBuf)return;try{const t=ac.currentTime,src=ac.createBufferSource();src.buffer=noiseBuf;src.loop=true;const f=ac.createBiquadFilter();f.type=type||'bandpass';f.frequency.value=freq;f.Q.value=9;const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);src.connect(f);f.connect(g);g.connect(ac.destination);src.start(t);src.stop(t+dur+.03)}catch(e){}}
 function shiftClack(){tick(2600,.05,.16);setTimeout(()=>tick(1700,.06,.13),50)} /* v139 : deux clics de dérailleur (cassette puis plateau) */
+function birdChirp(){const ac=audio();if(!ac)return;try{const t=ac.currentTime,n=2+Math.floor(Math.random()*3);for(let i=0;i<n;i++){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';const f=2400+Math.random()*1600;const t0=t+i*.09;o.frequency.setValueAtTime(f,t0);o.frequency.exponentialRampToValueAtTime(f*.55,t0+.07);g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(.05,t0+.015);g.gain.exponentialRampToValueAtTime(.0001,t0+.08);o.connect(g);g.connect(ac.destination);o.start(t0);o.stop(t0+.09);}}catch(e){}} /* v141 : chant d'oiseau */
 const prog=(fraction,text)=>{const percent=Math.max(0,Math.min(100,Math.round(fraction*100)));$('pf').style.width=percent+'%';$('pb').setAttribute('aria-valuenow',String(percent));toast(text)};
 if(typeof THREE==='undefined')throw new Error('La bibliothèque Three.js n’a pas pu être chargée. Vérifiez votre connexion Internet puis rechargez la page.');
 const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true,powerPreference:'high-performance'});
@@ -678,9 +679,11 @@ function buildAmbiance(target){
   }
 }
 function updateAmbiance(dt,t){
-  /* v138 : cycle jour/nuit auto (~2 min 30) OU mode manuel (jour/nuit fixe) choisi sur l'accueil */
+  /* v138/v141 : cycle auto (~2 min 30), mode manuel fixe, OU heure réelle (le ciel suit l'heure actuelle et avance en temps réel) */
   const dm=window._dayMode||'auto';
-  if(dm==='day')dayTime=.5;else if(dm==='night')dayTime=.97;else dayTime=(dayTime+dt/150)%1;
+  if(dm==='day')dayTime=.5;else if(dm==='night')dayTime=.97;
+  else if(dm==='realtime'){const n=new Date();dayTime=(((n.getHours()*3600+n.getMinutes()*60+n.getSeconds())/86400)%1+1)%1;}
+  else dayTime=(dayTime+dt/150)%1;
   const ang=dayTime*Math.PI*2,elev=Math.sin(ang),az=Math.cos(ang);
   const dim=(window._weatherFx&&window._weatherFx.dim)||1; /* v138 : la météo assombrit la scène */
   const dayF=Math.max(0,Math.min(1,elev*1.7+.06))*dim,nightF=1-dayF;
@@ -704,6 +707,7 @@ function updateAmbiance(dt,t){
     const x2=cam.position.x+Math.cos(a+.05)*u.r,z2=cam.position.z+Math.sin(a+.05)*u.r;
     b.position.set(x,y,z);b.lookAt(x2,y,z2);
     const f=Math.sin(t*11+u.ph)*.65;u.wl.rotation.z=f;u.wr.rotation.z=-f;}
+  if(Math.random()<dt*.22)birdChirp(); /* v141 : chants d'oiseaux occasionnels */
   /* drapeaux qui flottent */
   for(let i=0;i<(window._flags||[]).length;i++){const f=window._flags[i];f.rotation.y=Math.sin(t*2.6+i)*.35;f.scale.x=1+Math.sin(t*6+i)*.07;}
   /* trafic */
@@ -3240,7 +3244,7 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
   for(let attempt=0;attempt<servers.length+1;attempt++){
     const server=servers[attempt%servers.length],r=areas[Math.min(attempt,areas.length-1)],localityRadius=Math.max(r,25000),host=new URL(server).hostname;
     onProgress(Math.min(.12+attempt*.10,.42),'Téléchargement des routes et du décor · serveur '+(attempt+1)+'/'+(servers.length+1)+'…');
-    const q=`[out:json][timeout:25];way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way["highway"](around:${r},${center.lat},${center.lon});way["building"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});way["natural"~"^(water|wood|hedge|tree_row)$"](around:${r},${center.lat},${center.lon});way["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});node["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});way["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});node["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});way["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});node["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});way["landuse"~"^(forest|hedge|residential|farmland|meadow|orchard|grass)$"](around:${r},${center.lat},${center.lon});way["barrier"="hedge"](around:${r},${center.lat},${center.lon});way["place"~"^(city|town|village)$"](around:${r},${center.lat},${center.lon});way["traffic_sign"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});node["traffic_sign"](around:${r},${center.lat},${center.lon}););way["leisure"="stadium"](around:${r},${center.lat},${center.lon});node["leisure"="stadium"](around:${r},${center.lat},${center.lon});way["man_made"="tower"](around:${r},${center.lat},${center.lon});node["man_made"="tower"](around:${r},${center.lat},${center.lon});way["historic"](around:${r},${center.lat},${center.lon});node["historic"](around:${r},${center.lat},${center.lon});out body geom 12000;node["place"~"^(city|town|village)$"]["name"](around:${localityRadius},${center.lat},${center.lon});out body;`;
+    const q=`[out:json][timeout:25];way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon}way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon};way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way["highway"](around:${r},${center.lat},${center.lon};way["building"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});way["natural"~"^(water|wood|hedge|tree_row)$"](around:${r},${center.lat},${center.lon});way["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});node["amenity"="place_of_worship"](around:${r},${center.lat},${center.lon});way["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});node["historic"~"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$"](around:${r},${center.lat},${center.lon});way["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});node["tourism"~"^(museum|artwork|attraction)$"](around:${r},${center.lat},${center.lon});way["landuse"~"^(forest|hedge|residential|farmland|meadow|orchard|grass)$"](around:${r},${center.lat},${center.lon});way["barrier"="hedge"](around:${r},${center.lat},${center.lon});way["place"~"^(city|town|village)$"](around:${r},${center.lat},${center.lon});way["traffic_sign"](around:${r},${center.lat},${center.lon});node["natural"="tree"](around:${r},${center.lat},${center.lon});node["traffic_sign"](around:${r},${center.lat},${center.lon}););way["leisure"="stadium"](around:${r},${center.lat},${center.lon});node["leisure"="stadium"](around:${r},${center.lat},${center.lon});way["man_made"="tower"](around:${r},${center.lat},${center.lon});node["man_made"="tower"](around:${r},${center.lat},${center.lon});way["historic"](around:${r},${center.lat},${center.lon});node["historic"](around:${r},${center.lat},${center.lon}););out body geom 12000;node["place"~"^(city|town|village)$"]["name"](around:${localityRadius},${center.lat},${center.lon});out body;`;
     try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),28000);let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const elements=data.elements.filter(e=>e&&(['way','node'].includes(e.type)));onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
     catch(error){last=error&&error.name==='AbortError'?host+' délai dépassé':(error.message||String(error));onProgress(Math.min(.12+attempt*.10,.42),'Serveur OSM indisponible · nouvel essai…');}
   }
@@ -5495,12 +5499,12 @@ updateGearUI();
 /* v138 : bouton manuel jour/nuit + météo réelle */
 (function(){
   const btn=$('dayNightBtn'),cb=$('liveWeather');
-  const modes=[['auto','🌗 Jour/nuit : auto'],['day','☀️ Jour fixe'],['night','🌙 Nuit fixe']];
+  const modes=[['auto','🌗 Jour/nuit : auto'],['day','☀️ Jour fixe'],['night','🌙 Nuit fixe'],['realtime','🕐 Heure réelle']]; /* v141 : heure réelle */
   let mode='auto';
-  try{mode=localStorage.getItem('velo3d-daymode')||'auto';if(!['auto','day','night'].includes(mode))mode='auto';}catch(e){}
+  try{mode=localStorage.getItem('velo3d-daymode')||'auto';if(!['auto','day','night','realtime'].includes(mode))mode='auto';}catch(e){}
   window._dayMode=mode;
   const sync=()=>{const m=modes.find(x=>x[0]===mode)||modes[0];if(btn){btn.textContent=m[1];btn.title='Mode actuel : '+m[0]+' — appuie pour changer';}};
-  if(btn)btn.onclick=()=>{mode=mode==='auto'?'day':mode==='day'?'night':'auto';window._dayMode=mode;try{localStorage.setItem('velo3d-daymode',mode)}catch(e){}sync();toast(mode==='auto'?'Cycle jour/nuit automatique.':mode==='day'?'Jour fixe ☀️':'Nuit fixe 🌙');};
+  if(btn)btn.onclick=()=>{mode=mode==='auto'?'day':mode==='day'?'night':mode==='night'?'realtime':'auto';window._dayMode=mode;try{localStorage.setItem('velo3d-daymode',mode)}catch(e){}sync();toast(mode==='auto'?'Cycle jour/nuit automatique.':mode==='day'?'Jour fixe ☀️':mode==='night'?'Nuit fixe 🌙':'🕐 Heure réelle : le ciel suit l’heure actuelle et avance en temps réel.');};
   let live=false;try{live=localStorage.getItem('velo3d-liveweather')==='1';}catch(e){}
   if(cb){cb.checked=live;cb.onchange=()=>{live=cb.checked;try{localStorage.setItem('velo3d-liveweather',live?'1':'0')}catch(e){}window._liveWeather=live;if(live)toast('Météo réelle activée : relevée toutes les 10 min à ta position.');else toast('Météo réelle désactivée.');};}
   window._liveWeather=live;window._lastWeatherFetch=0;sync();
@@ -5528,7 +5532,7 @@ function loop(t){
     if(window._freeNavigation&&window._freeNavigation.active)freeAdvanceNavigation();
     if(_effRunning&&t-lastSampleT>1000){lastSampleT=t;if(!sessionStart)sessionStart=Date.now();const here=at(s),gps=proj?here:null,lat=gps?proj.la-gps[2]/proj.kz:null,lon=gps?proj.lo+gps[0]/proj.kx:null;sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power:ctl?lastP:+$('pw').value,hr,cad:rideCadence(v,power),lat,lon,alt:gps?gps[1]:null,spd:v,x:here[0],z:here[2]});}
     if(_effRunning&&window._powerStarted)window._rideElapsed+=dt;place(false,dt);
-    if(_effRunning&&power<=0&&v>2.5){window._fw=(window._fw||0)+v*dt*2.4;if(window._fw>=1){window._fw%=1;tick(3000+Math.random()*900,.03,.045,'highpass');}} /* v139 : clics de roue libre quand on cesse de pédaler */if(window._levelCrossings)updateLevelCrossings(s,dt); /* v133 : animation des passages à niveau */
+    if(_effRunning&&(power<=0||rideCadence(v,power)<=0)&&v>2.5){window._fw=(window._fw||0)+v*dt*2.4;if(window._fw>=1){window._fw%=1;tick(3000+Math.random()*900,.03,.045,'highpass');}} /* v139/v141 : clics de roue libre quand on cesse de pédaler (cadence à zéro) */if(window._levelCrossings)updateLevelCrossings(s,dt); /* v133 : animation des passages à niveau */
     if(window._smoke)updateSmoke(dt); /* v134 : fumée des cheminées */
     if(window._flows)updateFlow(dt); /* v135 : rivières animées */
     updateAmbiance(dt,t/1000); /* v136 : cycle jour/nuit + animations ambiantes */
