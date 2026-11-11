@@ -255,13 +255,13 @@ button.wide{width:100%;display:block;margin-bottom:8px;min-height:48px}
 body.homeOpen #routeArrows{display:none!important}
 body.homeOpen #hudToggle{display:none!important} /* v121 : icône 📊 données masquée sur la page d'accueil, visible pendant la sortie */
 /* v139 : bouton caméra 📹 déplacé à côté du bouton demi-tour, en bas à droite */
-#cameraToggle{position:fixed;right:12px;bottom:calc(168px + env(safe-area-inset-bottom,0px));z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:16px;backdrop-filter:blur(12px)}
+#cameraToggle{position:fixed;right:12px;bottom:calc(var(--bar-height,150px) + 64px + env(safe-area-inset-bottom,0px)); /* v153 : ancrée en bas à droite, au-dessus du bandeau */z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:16px;backdrop-filter:blur(12px)}
 body.homeOpen #cameraToggle{display:none!important} /* v123 : icône caméra aussi masquée sur la page d'accueil */
 /* v125 : bouton demi-tour flottant à droite, visible même quand le bandeau est replié */
-#turnAroundFloat{position:fixed;right:12px;bottom:calc(110px + env(safe-area-inset-bottom,0px));z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:14px;font-weight:700;backdrop-filter:blur(12px)}
+#turnAroundFloat{position:fixed;right:12px;bottom:calc(var(--bar-height,150px) + 10px + env(safe-area-inset-bottom,0px)); /* v153 : en bas à droite, sous l’icône caméra */z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:14px;font-weight:700;backdrop-filter:blur(12px)}
 #turnAroundFloat:disabled{opacity:.4;cursor:wait}
 body.homeOpen #turnAroundFloat{display:none!important}
-@media(orientation:landscape) and (max-height:620px){#cameraToggle{right:8px;bottom:calc(148px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:14px}#turnAroundFloat{right:8px;bottom:calc(96px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:12px}}
+@media(orientation:landscape) and (max-height:620px){#cameraToggle{right:8px;bottom:calc(var(--bar-height,120px) + 52px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:14px}#turnAroundFloat{right:8px;bottom:calc(var(--bar-height,120px) + 6px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:12px}}
 body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expanded){translate:0 var(--arrowsH,0px)}
 
 /* v74 : résumé de séance, carte du tracé effectué, exports Garmin */
@@ -513,6 +513,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
         <label class="choice wrapRow">Lunettes — monture/visière (photo)<input id="sunglassesTex" type="file" accept="image/*"><img id="sunglassesThumb" class="texThumb hide" alt="Lunettes (photo)"></label>
         <label class="choice wrapRow">Maillot — devant (photo)<input id="jerseyFrontTex" type="file" accept="image/*"><img id="jerseyFrontThumb" class="texThumb hide" alt="Maillot devant"></label>
         <label class="choice wrapRow">Maillot — arrière (photo)<input id="jerseyBackTex" type="file" accept="image/*"><img id="jerseyBackThumb" class="texThumb hide" alt="Maillot arrière"></label>
+        <label class="choice wrapRow">Cuissard (photo)<input id="shortTex" type="file" accept="image/*"><img id="shortThumb" class="texThumb hide" alt="Cuissard"></label>
         <label class="choice wrapRow">Chaussettes (photo)<input id="sockTex" type="file" accept="image/*"><img id="sockThumb" class="texThumb hide" alt="Chaussettes"></label>
         <label class="choice wrapRow">Visage (photo)<input id="faceTex" type="file" accept="image/*"><img id="faceThumb" class="texThumb hide" alt="Visage"></label>
         <label class="choice wrapRow">Casque (photo)<input id="helmetTex" type="file" accept="image/*"><img id="helmetThumb" class="texThumb hide" alt="Casque"></label>
@@ -1271,6 +1272,7 @@ function makeCyclist() {
     const mesh = new THREE.Mesh(geometry || tubeGeo, material);
     parent.add(mesh);
     return r4Seg(mesh, a, b, radius);
+  };
   const addMesh = (parent, geometry, material, position, scale) => {
     const mesh = new THREE.Mesh(geometry, material);
     if (position) mesh.position.copy(position);
@@ -2016,6 +2018,7 @@ function _trimTransparent(img,margin=.035){
   const sg=src.getContext('2d',{willReadFrequently:true});sg.drawImage(img,0,0,w,h);
   let data;try{data=sg.getImageData(0,0,w,h).data}catch(_){return img}
   let x0=w,y0=h,x1=-1,y1=-1;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>18){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
   if(x1<x0||y1<y0)return img;
   const bw=x1-x0+1,bh=y1-y0+1,padx=Math.round(bw*margin),pady=Math.round(bh*margin);
   x0=Math.max(0,x0-padx);y0=Math.max(0,y0-pady);x1=Math.min(w-1,x1+padx);y1=Math.min(h-1,y1+pady);
@@ -2816,6 +2819,7 @@ function freeStartingDirections(way,segment,t,snap,nav){
         const destination=freeNodeKey(reversePoints.at(-1)),endIndex=way.pts.findIndex(point=>freeNodeKey(point)===destination);
         const reverse={way,points:reversePoints,destination,endIndex,direction:reverseDir,angle:Math.PI,arrow:'↓',city:''};
         if(freeOptionHasContinuation(reverse,key,nav))options.push(reverse);
+      }
       for(const option of options)freeSetTownHint(option,nav);
       return options;
     }
@@ -3562,6 +3566,7 @@ function makeWorld(){
     const quad=[[a2[0]+nx2,a2[1]+.016,a2[2]+nz2],[b2[0]+nx2,b2[1]+.016,b2[2]+nz2],[b2[0]-nx2,b2[1]+.016,b2[2]-nz2],[a2[0]-nx2,a2[1]+.016,a2[2]-nz2]];
     for(const k of[0,1,2,0,2,3])dashPositions.push(...quad[k]);}
   if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();world.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0xefece0,side:THREE.DoubleSide})));}
+  let minY=Infinity,x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;for(let i=0;i<=n;i++){minY=Math.min(minY,Y[i]);x0=Math.min(x0,X[i]);x1=Math.max(x1,X[i]);z0=Math.min(z0,Z[i]);z1=Math.max(z1,Z[i])}
   const base=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0+1200,z1-z0+1200),new THREE.MeshLambertMaterial({color:0x71964c}));base.rotation.x=-Math.PI/2;base.position.set((x0+x1)/2,minY-12,(z0+z1)/2);world.add(base);
   if(!proj){
     const count=440,trunkGeo=new THREE.CylinderGeometry(.20,.30,3,6),leafGeo=new THREE.IcosahedronGeometry(1,1),trunks=new THREE.InstancedMesh(trunkGeo,new THREE.MeshLambertMaterial({color:0x71563e}),count),crowns=new THREE.InstancedMesh(leafGeo,new THREE.MeshLambertMaterial({color:0x4b7b36}),count*2),matrix=new THREE.Matrix4();
@@ -4362,6 +4367,7 @@ function facade(){
 }
 
 /* Retained building/facade renderer, now using the shared route-projection helper. */
+function buildings(buildingParts,targetWorld){
   const list=[];
   for(const [raw,tags] of buildingParts){
     const closed=osmClosed(raw),points=closed?raw.slice(0,-1):raw;
@@ -5162,6 +5168,7 @@ function selectRoadsForScene(roadParts,maxWays=1200){
   if(selected.size<maxWays){const remaining=[];bins.forEach(bin=>bin.forEach((distance2,index)=>{if(!selected.has(index))remaining.push([index,distance2])}));remaining.sort((a,b)=>a[1]-b[1]);for(const [index]of remaining){if(selected.size>=maxWays)break;selected.add(index)}}
   return[...selected].map(index=>roadParts[index]);
 }
+
 let _stopSignTexture=null;const _speedSignTextures={};
 function stopSignTexture(){if(_stopSignTexture)return _stopSignTexture;const c=document.createElement('canvas');c.width=256;c.height=96;const g=c.getContext('2d');g.fillStyle='#fff';g.font='bold 62px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('STOP',128,50);_stopSignTexture=new THREE.CanvasTexture(c);return _stopSignTexture;}
 function speedSignTexture(value){if(_speedSignTextures[value])return _speedSignTextures[value];const c=document.createElement('canvas');c.width=128;c.height=128;const g=c.getContext('2d');g.fillStyle='#16181c';g.font='bold '+(String(value).length>2?68:84)+'px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(value,64,68);const t=new THREE.CanvasTexture(c);_speedSignTextures[value]=t;return t;}
@@ -5734,6 +5741,7 @@ function icuParseZwo(txt,ftp){
 }
 function icuStepsHtml(steps){return steps.slice(0,40).map((s,i)=>(i+1)+'. '+fmtDur(s.dur)+' · '+(s.ramp?s.wLow+'→'+s.wHigh+' W':s.wLow+' W')).join('<br>')+(steps.length>40?'<br>… ('+steps.length+' exercices au total)':'')}
 function icuStepAt(p,t){let acc=0;for(let i=0;i<p.steps.length;i++){const st=p.steps[i];if(t<acc+st.dur)return{i:i,inT:t-acc,rem:acc+st.dur-t};acc+=st.dur}const last=Math.max(0,p.steps.length-1);return{i:last,inT:p.steps[last]?p.steps[last].dur:0,rem:0}}
+function icuTargetAt(p){if(!p||(p.phase!=='run'&&p.phase!=='next')||!p.cur)return 0;const st=p.steps[p.cur.i];if(!st||st.wLow<=0)return 0;if(st.ramp)return st.wLow+(st.wHigh-st.wLow)*Math.min(1,p.cur.inT/Math.max(.001,st.dur));return st.wLow}
 function icuOverlay(title,sub,count){const ov=$('icuOverlay');if(!ov)return;ov.classList.remove('hide');if(title!=null)$('icuOverlayTitle').textContent=title;if(sub!=null)$('icuOverlaySub').textContent=sub;if(count!=null)$('icuOverlayCount').textContent=count;else $('icuOverlayCount').textContent=''}
 function icuSetWarn(mode,text){const w=$('icuWarn');if(!w)return;if(!mode){w.classList.add('hide');return}w.classList.remove('hide');w.className=mode;w.textContent=text}
 function updateIcuTargets(p){
