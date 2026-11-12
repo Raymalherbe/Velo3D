@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v155 – églises, secteurs denses, relief, puissance moyenne %FTP</title>
+<title>Vélo 3D v156 – routes complètes, Tour Eiffel, ponts, montagnes, W moy</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -431,7 +431,6 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
   <div class="m"><b id="po">0</b><i id="poLabel">watts</i></div>
   <div class="m"><b id="gr">0</b><i>pente %</i></div>
   <div class="m"><b id="di">0.0</b><i>km parcourus</i></div><div class="m"><b id="du">00:00</b><i>durée</i></div><div class="m"><b id="avgSpeed">0.0</b><i>km/h moyenne</i></div>
-  <div class="m"><b id="avgPw">–</b><i id="avgPwLabel">W moy</i></div>
   <div class="m"><b id="hr">–</b><i>bpm</i></div>
   <div class="m"><b id="ca">–</b><i id="cadenceType">tr/min virtuels</i></div>
   <div class="m"><b id="dp">–</b><i>dénivelé m</i></div>
@@ -464,6 +463,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="bar">
   <div id="msg" role="status">Parcours de démonstration prêt.</div>
   <div class="row" id="sl"><label for="pw">Puissance <b id="pv">0</b> W</label><input id="pw" type="range" min="0" max="500" step="5" value="0"><select id="postureMode" aria-label="Posture du cycliste" title="Posture du cycliste"><option value="auto">Auto</option><option value="seated">Assis</option><option value="standing">Danseuse</option><option value="aero">Aéro</option></select></div>
+  <div class="row" style="justify-content:flex-end;margin-top:-6px"><span id="pwAvg" style="font-size:11px;color:var(--muted)">moy – W</span></div> <!-- v156 : puissance moyenne sous le curseur -->
   <div class="row" id="gearControls" role="group" aria-label="Changement de plateau et cassette virtuelle">
     <div class="frontGearAssembly"><button id="frontGear" class="chainringButton" type="button" aria-label="Changer de plateau, actuellement 48 dents" title="Appuyer pour passer entre les plateaux 48 et 35"><span id="frontGearValue">48</span></button><span class="gearPartLabel">Plateau</span></div>
     <output id="gearReadout" aria-live="polite">48 × 21</output>
@@ -476,7 +476,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v155</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v156</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -877,6 +877,19 @@ async function buildTerrain(target){
   geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
   const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
   mesh.receiveShadow=true;mesh.userData.ground={minX:minX,minZ:minZ,nx:nx,nz:nz,w:w,d:d};mesh.userData.elevColors=colors.slice(0);target.add(mesh);window._terrain=mesh;
+  /* v156 : silhouettes de crêtes en anneau si le relief du secteur est marqué */
+  const relief=eMax-eMin;
+  if(relief>120){
+    const rockMat=new THREE.MeshLambertMaterial({color:0x6f6a60}),snowMat=new THREE.MeshLambertMaterial({color:0xeef1f4});
+    const cx0=(minX+maxX)/2,cz0=(minZ+maxZ)/2,R=Math.max(w,d)*.98,nRing=Math.max(12,Math.round(R/240));
+    for(let k=0;k<nRing;k++){
+      const a=k/nRing*Math.PI*2+osmNoise(k*7.3,1.7)*.4,rr=R*(.9+Math.abs(osmNoise(k*3.1,9.4))*.2);
+      const h=relief*(.5+Math.abs(osmNoise(k*5.7,3.3))*.9)+80,rad=110+Math.abs(osmNoise(k*2.9,4.4))*150;
+      const cone=new THREE.Mesh(new THREE.ConeGeometry(rad,h,7),rockMat);
+      cone.position.set(cx0+Math.cos(a)*rr,eMin-12+h/2,cz0+Math.sin(a)*rr);target.add(cone);
+      if(h>relief+60){const cap=new THREE.Mesh(new THREE.ConeGeometry(rad*.34,h*.2,7),snowMat);cap.position.set(cone.position.x,eMin-12+h-h*.1+.4,cone.position.z);target.add(cap);}
+    }
+  }
   if(window._osmGroundData)recolorTerrainByOSM(window._osmGroundData); /* v147 : recoloration si le décor OSM est arrivé avant le terrain */
   if(groundStyle()==="satellite")setGroundStyle("satellite",true); /* v149 : réapplique la texture satellite si le terrain est reconstruit */
 }
@@ -2386,7 +2399,7 @@ if($('restoreBike')) $('restoreBike').onclick=()=>{ if(window._realBike){rider.r
 /* ---------- Rouler libre : routes du secteur, départ et carrefours ---------- */
 let freeMap=null,freeMarker=null,freeCenter={lat:49.4736,lon:-1.5125};
 let freeGraph=null,freeJunctions=null,freeNavigation=null,freeRadiusUsed=2000;
-const freeRouteableHighways=new Set(['trunk','trunk_link','primary','primary_link','secondary','secondary_link','tertiary','tertiary_link','unclassified','residential','living_street','road']);
+const freeRouteableHighways=new Set(['trunk','trunk_link','primary','primary_link','secondary','secondary_link','tertiary','tertiary_link','unclassified','residential','living_street','road','service','pedestrian','cycleway','track','path','footway']); /* v156 : petites rues, pistes cyclables et zones piétonnes empruntables */
 function freeNodeKey(point){return point&&point.nodeId!=null?'n:'+point.nodeId:point?'p:'+Number(point.lat).toFixed(6)+','+Number(point.lon).toFixed(6):''}
 function freeValidCoord(point){return point&&Number.isFinite(Number(point.lat))&&Number.isFinite(Number(point.lon))&&Math.abs(Number(point.lat))<=90&&Math.abs(Number(point.lon))<=180}
 function freeMapRadius(){const radius=Math.max(750,Number($('freeRadius')&&$('freeRadius').value)||2000);if(window._freeCircle){window._freeCircle.setRadius(radius);if(freeCenter)window._freeCircle.setLatLng([freeCenter.lat,freeCenter.lon]);}return radius;}
@@ -3381,7 +3394,7 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
   for(let attempt=0;attempt<servers.length+areas.length-1;attempt++){ /* v155 : plus de tentatives */
     const server=servers[attempt%servers.length],r=areas[Math.min(attempt,areas.length-1)],localityRadius=Math.max(r,25000),host=new URL(server).hostname;
     onProgress(Math.min(.12+attempt*.10,.42),'Téléchargement des routes et du décor · serveur '+(attempt+1)+'/'+(servers.length+1)+'…');
-    const q=`[out:json][timeout:40];way[ /* v155 : timeout Overpass plus long */\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way[\"highway\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 12000;node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
+    const q=`[out:json][timeout:40];way[ /* v155 : timeout Overpass plus long */\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way[\"highway\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon}); /* v156 : cols et sommets */node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 12000;node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
     try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000); /* v155 : 45 s par serveur */let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const elements=data.elements.filter(e=>e&&(['way','node'].includes(e.type)));onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
     catch(error){last=error&&error.name==='AbortError'?host+' délai dépassé':(error.message||String(error));onProgress(Math.min(.12+attempt*.10,.42),'Serveur OSM indisponible · nouvel essai…');}
   }
@@ -4294,6 +4307,7 @@ async function loadOSM(){
         way["traffic_sign"](around:70,${corridor});
         way["traffic_sign:forward"](around:70,${corridor});
         way["traffic_sign:backward"](around:70,${corridor});
+        node["mountain_pass"](around:2600,${corridor});node["natural"="peak"](around:2600,${corridor}); /* v156 */
         node["place"~"^(city|town|village|hamlet|suburb)$"]["name"](around:2000,${corridor});
         way["landuse"="residential"](around:120,${corridor});
         way["place"~"^(city|town|village)$"](around:120,${corridor});
@@ -4652,12 +4666,14 @@ else if(item.kind==='stadium'){ /* v140 : stade — pelouse + tribunes en bol */
   const field=new THREE.Mesh(new THREE.CircleGeometry(17,28),new THREE.MeshStandardMaterial({color:0x4e8f3a,roughness:1}));field.rotation.x=-Math.PI/2;field.position.y=.12;g.add(field);
   const bowl=new THREE.Mesh(new THREE.CylinderGeometry(26,26,9,28,1,true),new THREE.MeshStandardMaterial({color:0xb9b2a4,roughness:.9,side:THREE.DoubleSide}));bowl.position.y=4.5;g.add(bowl);
   const rim=new THREE.Mesh(new THREE.TorusGeometry(26,1.1,8,28),new THREE.MeshStandardMaterial({color:0x8f887a,roughness:.8}));rim.rotation.x=Math.PI/2;rim.position.y=9;g.add(rim);
-}else if(item.kind==='tower'){ /* v140 : tour façon Tour Eiffel — fût qui s'évase, plateformes, antenne */
-  const th=Math.min(80,Math.max(24,osmMetres(item.tags&&item.tags.height,NaN,24,300)||24));
-  const body=new THREE.Mesh(new THREE.CylinderGeometry(1.1,5.2,th,4,1),matStone);body.rotation.y=Math.PI/4;body.position.y=th/2;g.add(body);
-  const p1=new THREE.Mesh(new THREE.BoxGeometry(9,1,9),matStone);p1.position.y=th*.42;g.add(p1);
-  const p2=new THREE.Mesh(new THREE.BoxGeometry(5.5,1,5.5),matStone);p2.position.y=th*.72;g.add(p2);
-  const ant=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,7,6),matDark);ant.position.y=th+3.5;g.add(ant);
+}else if(item.kind==='tower'){ /* v156 : Tour Eiffel — 4 pieds écartés, 3 plateformes, fût rétréci, grande hauteur */
+  const th=Math.min(320,Math.max(60,osmMetres(item.tags&&item.tags.height,NaN,60,330)||330));
+  for(const lp of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.5,1.6,th*.6,6),matStone);leg.position.set(lp[0]*4.4,th*.3,lp[1]*4.4);leg.rotation.z=lp[0]*-.17;leg.rotation.x=lp[1]*.17;g.add(leg);}
+  const p1=new THREE.Mesh(new THREE.BoxGeometry(14,1.2,14),matStone);p1.position.y=th*.32;g.add(p1);
+  const p2=new THREE.Mesh(new THREE.BoxGeometry(8.5,1,8.5),matStone);p2.position.y=th*.64;g.add(p2);
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.8,3.2,th*.34,6),matStone);shaft.position.y=th*.83;g.add(shaft);
+  const p3=new THREE.Mesh(new THREE.BoxGeometry(4.2,.8,4.2),matStone);p3.position.y=th-1.4;g.add(p3);
+  const ant=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,th*.08,6),matDark);ant.position.y=th+th*.04;g.add(ant);
 }else if(item.kind==='arch'){ /* v140 : Arc de Triomphe — deux piliers, entablement, attique */
   const w=16,d=12,h=17;
   const pl=new THREE.Mesh(new THREE.BoxGeometry(4.5,h,d),matStone);pl.position.set(-(w/2-2.25),h/2,0);g.add(pl);
@@ -4726,8 +4742,8 @@ function buildBridges(spans,overpasses,targetWorld){
     const pileS=[sp.s0+1.6,(sp.s0+sp.s1)/2,sp.s1-1.6];
     for(const s2 of pileS){
       const p=at(Math.max(sp.s0,Math.min(sp.s1,s2)));
-      const pile=new THREE.Mesh(new THREE.BoxGeometry(.9,8.6,.9),pillarMat); /* v131 : piles plus hautes, tirant d'air ~4,2 m */
-      pile.position.set(p[0],p[1]-4.25,p[2]);pile.castShadow=true;targetWorld.add(pile);
+      const pile=new THREE.Mesh(new THREE.BoxGeometry(.9,10.6,.9),pillarMat); /* v156 : tirant d'air ~6 m */
+      pile.position.set(p[0],p[1]-5.25,p[2]); /* v156 */pile.castShadow=true;targetWorld.add(pile);
       const head=new THREE.Mesh(new THREE.BoxGeometry(half*2+.8,.5,.85),pillarMat);
       head.position.set(p[0],p[1]-.28,p[2]);targetWorld.add(head);
     }
@@ -4735,7 +4751,7 @@ function buildBridges(spans,overpasses,targetWorld){
   }
   /* viaducs : routes/voies taguées bridge qui enjambent la route suivie — v131 : ponts plus hauts (4,2 m) et reliés à leur route par des rampes des deux côtés */
   for(const [raw,tags] of overpasses||[]){
-    const w=tags.railway?2.3:osmRoadWidth(tags),lift=4.2+Math.max(0,(Number(tags.layer)||1)-1)*1.5;
+    const w=tags.railway?2.3:osmRoadWidth(tags),lift=6+Math.max(0,(Number(tags.layer)||1)-1)*1.5; /* v156 : viaducs plus hauts */
     const pts=osmSampleLine(raw,5),centres=[];
     for(const p of pts){const near=nearestOnRoute(p[0],p[1]);centres.push(!near||near.dist2>190*190?null:{x:p[0],z:p[1],y:near.y+lift});}
     if(centres.filter(Boolean).length<2)continue;
@@ -4898,15 +4914,28 @@ function buildTunnels(tunnelWays,targetWorld){
   return spans.length;
 }
 
+/* v156 : vraies montagnes aux cols (mountain_pass) et sommets (natural=peak) OSM proches de la route */
+function buildMountainDecor(passes,peaksList,targetWorld){
+  if(!route||!targetWorld)return 0;
+  let count=0;
+  const rockMat=new THREE.MeshLambertMaterial({color:0x6f6a60}),snowMat=new THREE.MeshLambertMaterial({color:0xeef1f4});
+  const mkPeak=(x,z,ele)=>{const near=nearestOnRoute(x,z);if(!near||near.dist2>2600*2600)return;const h=Math.max(140,Math.min(900,(ele>0?ele:near.y+420)-near.y+280));const rad=h*(.55+Math.abs(osmNoise(x*.01,z*.013))*.35);const g=new THREE.Group();g.position.set(x,near.y-2,z);const cone=new THREE.Mesh(new THREE.ConeGeometry(rad,h,7),rockMat);cone.position.y=h/2;cone.castShadow=true;g.add(cone);if(ele>1800){const cap=new THREE.Mesh(new THREE.ConeGeometry(rad*.34,h*.2,7),snowMat);cap.position.y=h-h*.1+.3;g.add(cap);}targetWorld.add(g);count++;};
+  for(const p of passes||[])mkPeak(p.x,p.z,p.ele);
+  for(const p of peaksList||[])mkPeak(p.x,p.z,p.ele);
+  return count;
+}
+
 function applyOSM(elements,targetWorld){
   const target=targetWorld||world;
   if(!target||!route)return{b:0,w:0,t:0,h:0,r:0,c:0};
   resetSceneryData();
-  const buildingsList=[],waters=[],forests=[],roads=[],hedgeList=[],treeRows=[],treeNodes=[],residentialAreas=[],localities=[],landmarks=[],waterways=[],bridgeWays=[],railways=[],tunnelWays=[],farmlandList=[];
+  const buildingsList=[],waters=[],forests=[],roads=[],hedgeList=[],treeRows=[],treeNodes=[],residentialAreas=[],localities=[],landmarks=[],waterways=[],bridgeWays=[],railways=[],tunnelWays=[],farmlandList=[],mountainPasses=[],peaks=[]; /* v156 */
   for(const element of elements||[]){
     const tags=element.tags||{},points=osmElementPoints(element);
     if(element.type==='node'&&points.length&&/^(city|town|village|hamlet|suburb)$/.test(String(tags.place||''))&&String(tags.name||'').trim())localities.push({name:String(tags.name).trim(),place:tags.place,x:points[0][0],z:points[0][1]});
     if(element.type==='node'&&tags.natural==='tree'&&points.length){treeNodes.push(points[0]);continue;}
+    if(element.type==='node'&&points.length&&tags.mountain_pass){mountainPasses.push({x:points[0][0],z:points[0][1],name:String(tags.name||''),ele:Number(tags.ele)||0});continue;} /* v156 : col OSM */
+    if(element.type==='node'&&points.length&&tags.natural==='peak'){peaks.push({x:points[0][0],z:points[0][1],name:String(tags.name||''),ele:Number(tags.ele)||0});continue;} /* v156 : sommet OSM */
     const landmarkKind=osmLandmarkKind(tags);if(landmarkKind&&points.length){landmarks.push({kind:landmarkKind,points,tags});continue;} /* v147 : les églises/stades/tours sont dessinés en forme propre, pas en simple boîte */
     if(points.length<2)continue;
     if(tags.building){
@@ -4977,7 +5006,7 @@ function applyOSM(elements,targetWorld){
   bridgeSpans.sort((a,b)=>a.s0-b.s0);
   const mergedSpans=[];
   for(const sp of bridgeSpans){const last=mergedSpans[mergedSpans.length-1];if(last&&sp.s0<=last.s1+5)last.s1=Math.max(last.s1,sp.s1);else mergedSpans.push({s0:sp.s0,s1:sp.s1});}
-  /* v131 : rubans — rivières et voies ferrées, abaissées sous les ponts (tirant d'air ~4,2 m) */
+  /* v156 : rubans abaissés sous les ponts (tirant d'air ~6 m) */
   const ribbon=(line,halfW,off,yFn,parts)=>{
     const strip=[];
     for(let i=0;i<line.length;i++){
@@ -4990,7 +5019,7 @@ function applyOSM(elements,targetWorld){
     }
     for(let i=1;i<strip.length;i++){const a=strip[i-1],b=strip[i];if(!a||!b)continue;parts.push(a[0],a[1],a[2],a[3],a[4],a[5],b[3],b[4],b[5],a[0],a[1],a[2],b[3],b[4],b[5],b[0],b[1],b[2]);}
   };
-  const underSpan=near=>spanNear(near.distance,mergedSpans)?4.2:0;
+  const underSpan=near=>spanNear(near.distance,mergedSpans)?6:0; /* v156 */
   const waterwayParts=[],railBallast=[],railLine=[];
   for(const [pts,tags] of waterways.slice(0,150)){
     if(pts.length<2)continue;
@@ -5010,6 +5039,7 @@ function applyOSM(elements,targetWorld){
   buildSmoke(target); /* v134 : fumée des cheminées */
   buildFlow(waterways,target); /* v135 : écume animée des rivières */
   const bridgeCount=buildBridges(mergedSpans,bridgeOverpasses,target);
+  buildMountainDecor(mountainPasses,peaks,target); /* v156 : décor de vraie montagne aux cols/sommets */
 
   /* v133 : passages à niveau animés (barrières + feux + train occasionnel) et tunnels (voûte sombre) */
   window._levelCrossings=[];
@@ -5998,7 +6028,7 @@ function loop(t){
     if(window._icuPlan)updateIcuPlan(dt,power); /* v144 : déroulement de l'entraînement intervals.icu */
     if(window._icuPlan&&(window._icuPlan.phase==='run'||window._icuPlan.phase==='next')&&!ctl&&performance.now()-(window._pwManualAt||0)>8000){const _it=icuTargetAt(window._icuPlan); /* v153 : 8 s de grâce après une saisie manuelle */if(_it>0&&$('pw')){$('pw').value=Math.round(_it);if($('pv'))$('pv').textContent=Math.round(_it);}} /* v144 : mode manuel, la cible règle le curseur de puissance */
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);
-    if($('avgPw')){const _ap=window._rideElapsed>0?(window._ridePwSum||0)/window._rideElapsed:0;$('avgPw').textContent=_ap>0?Math.round(_ap):'–';const _ftp=Number(riderStyle.ftp)||0;if($('avgPwLabel'))$('avgPwLabel').textContent=_ftp>=50?('moy · '+Math.round(_ap/_ftp*100)+'% FTP'):'W moy';} /* v155 : puissance moyenne en W avec %FTP */$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
+    if($('pwAvg')){const _ap=window._rideElapsed>0?(window._ridePwSum||0)/window._rideElapsed:0;const _ftp=Number(riderStyle.ftp)||0;$('pwAvg').textContent=_ap>0?('moy '+Math.round(_ap)+' W'+(_ftp>=50?' · '+Math.round(_ap/_ftp*100)+'% FTP':'')):'moy – W';} /* v156 : puissance moyenne sous le curseur de puissance */$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
     {const _it=(window._icuPlan&&running)?icuTargetAt(window._icuPlan):0,_po=$('po');if(_po){if(!_it)_po.className='';else if(power>_it*1.05)_po.className='over';else if(power<_it*0.95)_po.className='under';else _po.className='ok';}} /* v144 : puissance colorée selon la cible de l'exercice en cours */
   }
   R.render(S,cam);
