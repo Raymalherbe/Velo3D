@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v154 – jour/nuit réparé, ⏭, retirer entraînement, icônes côte à côte</title>
+<title>Vélo 3D v154 – correctifs : mode jour, ⏭, démo 150 W, retirer entraînement</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -255,13 +255,13 @@ button.wide{width:100%;display:block;margin-bottom:8px;min-height:48px}
 body.homeOpen #routeArrows{display:none!important}
 body.homeOpen #hudToggle{display:none!important} /* v121 : icône 📊 données masquée sur la page d'accueil, visible pendant la sortie */
 /* v139 : bouton caméra 📹 déplacé à côté du bouton demi-tour, en bas à droite */
-#cameraToggle{position:fixed;right:12px;bottom:calc(var(--bar-height,150px) + 10px + env(safe-area-inset-bottom,0px)); /* v154 : en bas à droite, à côté du demi-tour */z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:16px;backdrop-filter:blur(12px)}
+#cameraToggle{position:fixed;right:76px;bottom:calc(var(--bar-height,150px) + 10px + env(safe-area-inset-bottom,0px)); /* v154 : côte à côte avec ↶, en bas à droite */z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:16px;backdrop-filter:blur(12px)}
 body.homeOpen #cameraToggle{display:none!important} /* v123 : icône caméra aussi masquée sur la page d'accueil */
 /* v125 : bouton demi-tour flottant à droite, visible même quand le bandeau est replié */
-#turnAroundFloat{position:fixed;right:calc(12px + 62px);bottom:calc(var(--bar-height,150px) + 10px + env(safe-area-inset-bottom,0px)); /* v154 : à côté de l’icône caméra, même ligne */z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:14px;font-weight:700;backdrop-filter:blur(12px)}
+#turnAroundFloat{position:fixed;right:12px;bottom:calc(var(--bar-height,150px) + 10px + env(safe-area-inset-bottom,0px)); /* v154 : en bas à droite, à côté de 📹 */z-index:19;min-height:46px;min-width:52px;padding:6px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg);font-size:14px;font-weight:700;backdrop-filter:blur(12px)}
 #turnAroundFloat:disabled{opacity:.4;cursor:wait}
 body.homeOpen #turnAroundFloat{display:none!important}
-@media(orientation:landscape) and (max-height:620px){#cameraToggle{right:8px;bottom:calc(var(--bar-height,120px) + 6px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:14px}#turnAroundFloat{right:calc(8px + 52px);bottom:calc(var(--bar-height,120px) + 6px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:12px}}
+@media(orientation:landscape) and (max-height:620px){#cameraToggle{right:64px;bottom:calc(var(--bar-height,120px) + 6px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:14px}#turnAroundFloat{right:8px;bottom:calc(var(--bar-height,120px) + 6px + env(safe-area-inset-bottom,0px));min-height:38px;min-width:44px;font-size:12px}}
 body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expanded){translate:0 var(--arrowsH,0px)}
 
 /* v74 : résumé de séance, carte du tracé effectué, exports Garmin */
@@ -591,9 +591,9 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <details id="icuPanel" class="customize"><summary>🕒 intervals.icu — entraînement du calendrier</summary>
 <div style="font-size:12px;color:var(--muted);margin:6px 0">Récupère un entraînement de ton calendrier intervals.icu (clé API : réglages intervals.icu → « Developer Settings »). L’app étant hébergée sur GitHub Pages sans serveur, l’appel API passe par un relais CORS public en cas de blocage navigateur : la clé transite alors par ce relais.</div>
 <div class="destRow" style="margin-bottom:6px"><input id="icuKey" type="password" autocomplete="off" placeholder="Clé API intervals.icu"><button id="icuCheck" type="button">Vérifier</button></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px;color:var(--muted)">Date : <input id="icuDate" type="date" style="font-size:14px;padding:4px;border-radius:8px"></label><button id="icuToday" type="button">📅 Voir l’entraînement</button><span id="icuInfo" style="font-size:12px;color:var(--muted)"></span><button id="icuClear" type="button" class="hide" title="Retirer l’entraînement chargé" style="min-height:30px;padding:4px 10px;font-size:12px">✖ Retirer</button></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label style="font-size:12px;color:var(--muted)">Date : <input id="icuDate" type="date" style="font-size:14px;padding:4px;border-radius:8px"></label><button id="icuToday" type="button">📅 Voir l’entraînement</button><span id="icuInfo" style="font-size:12px;color:var(--muted)"></span></div>
 <div id="icuProposal" class="hide" style="margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:12px"><b id="icuWorkoutName"></b><div id="icuWorkoutMeta" style="font-size:12px;color:var(--muted);margin:4px 0 6px"></div><div id="icuSteps"></div><div class="row"><button id="icuAccept" class="primary" type="button">✅ Accepter</button><button id="icuRefuse" type="button">❌ Refuser</button><button id="icuDownload" type="button" title="Télécharger le fichier workout .zwo">⬇ .zwo</button></div></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><input id="icuFile" type="file" accept=".zwo,.erg,.mrc,.txt" class="hide"><button id="icuImport" type="button">📥 Importer un entraînement (.zwo/.erg/.mrc)</button><span style="font-size:12px;color:var(--muted)">fichier perso, sans clé API</span></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><input id="icuFile" type="file" accept=".zwo,.erg,.mrc,.txt" class="hide"><button id="icuImport" type="button">📥 Importer un entraînement (.zwo/.erg/.mrc)</button><button id="icuRemove" type="button" class="hide">🗑 Retirer l’entraînement</button><span style="font-size:12px;color:var(--muted)">fichier perso, sans clé API</span></div>
 </details>
     <div class="row"><button id="gp">Choisir un GPX</button><button id="pg">Coller un GPX</button></div>
     <button id="dm" class="wide">Essayer la démonstration</button>
@@ -718,8 +718,8 @@ function buildAmbiance(target){
 function updateAmbiance(dt,t){
   /* v138/v141 : cycle auto (~2 min 30), mode manuel fixe, OU heure réelle (le ciel suit l'heure actuelle et avance en temps réel) */
   const dm=window._dayMode||'auto';
-  if(dm==='day')dayTime=.25;else if(dm==='night')dayTime=.75; /* v154 : .25 = soleil au zénith (avant .5 = horizon = nuit) */
-  else if(dm==='realtime'){const n=new Date();let _dt=(((n.getHours()*3600+n.getMinutes()*60+n.getSeconds())/86400)%1+1)%1;const st=window._sunTimes;if(st&&st.sunrise&&st.sunset){const now=n.getTime(),_r=st.sunrise.getTime(),_s=st.sunset.getTime();if(now<_r||now>_s)_dt=.75;else _dt=.5*Math.min(1,Math.max(0,(now-_r)/(_s-_r))); /* v154 : arc jour 0→0.5, zénith à 0.25 */}dayTime=_dt;} /* v153 : nuit/jour sur les vrais lever/coucher du soleil (Open-Meteo) */
+  if(dm==='day')dayTime=.25;else if(dm==='night')dayTime=.97; /* v154 : .25 = midi (sin(2π·.25)=1), .5 donnait elev=0 donc la nuit */
+  else if(dm==='realtime'){const n=new Date();let _dt=(((n.getHours()*3600+n.getMinutes()*60+n.getSeconds())/86400)%1+1)%1;const st=window._sunTimes;if(st&&st.sunrise&&st.sunset){const now=n.getTime(),_r=st.sunrise.getTime(),_s=st.sunset.getTime();if(now<_r||now>_s)_dt=.97;else _dt=.25+.5*Math.min(1,Math.max(0,(now-_r)/(_s-_r)));}dayTime=_dt;} /* v153 : nuit/jour sur les vrais lever/coucher du soleil (Open-Meteo) */
   else dayTime=(dayTime+dt/150)%1;
   const ang=dayTime*Math.PI*2,elev=Math.sin(ang),az=Math.cos(ang);
   const dim=(window._weatherFx&&window._weatherFx.dim)||1; /* v138 : la météo assombrit la scène */
@@ -5414,7 +5414,7 @@ $('pl').onclick=()=>{
   try{if(window._clearFreeNavigation)window._clearFreeNavigation();build(parseGPX($('pt').value));$('pp').classList.add('hide');toast('Parcours chargé : '+(route.len/1000).toFixed(1)+' km.')}
   catch(err){$('pe').textContent='GPX illisible : '+err.message}
 };
-$('dm').onclick=()=>{$('exportPanel').classList.add('hide');demo();if(Number($('pw').value)<=0){$('pw').value=150;$('pv').textContent='150';} /* v154 : démo à 150 W */toast('Démonstration prête · lieux et haies fictifs.')};
+$('dm').onclick=()=>{$('exportPanel').classList.add('hide');demo();toast('Démonstration prête · lieux et haies fictifs.')};
 
 
 
@@ -5760,10 +5760,13 @@ function icuSkip(){ /* v153 : sauter l'exercice en cours et passer au suivant */
   const p=window._icuPlan;if(!p||(p.phase!=='run'&&p.phase!=='next')||!p.steps.length)return;
   const nx=p.steps[p.cur.i+1],chip=$('icuChip');
   if(!nx){p.phase='done';p.doneAt=performance.now();icuSetWarn(null);icuOverlay('Entraînement fini',p.blocks.length+' bloc'+(p.blocks.length>1?'s':'')+' réalisé'+(p.blocks.length>1?'s':''),null);if(chip){chip.classList.remove('hide');chip.textContent='🏁 Entraînement terminé · '+p.blocks.length+' blocs'}toast('⏭ Dernier exercice passé · séance terminée.');return;}
-  let _acc=0;for(let k=0;k<=p.cur.i&&k<p.steps.length;k++)_acc+=p.steps[k].dur; /* v154 : on décale startElapsed (p.t est recalculé à chaque frame) */
-  p.startElapsed=window._rideElapsed-_acc;p.accP=0;p.accT=0;p.phase='run';
+  let _tN=0;for(let k=0;k<=p.cur.i;k++)_tN+=p.steps[k].dur; /* v154 : on recale startElapsed au début de l'étape suivante, sinon p.t est recalculé à la frame suivante et le saut est annulé */
+  p.startElapsed=window._rideElapsed-_tN;p.t=_tN;p.cur=icuStepAt(p,_tN);p.accP=0;p.accT=0;p.phase='run';
   toast('⏭ Exercice passé : '+(nx.label||('bloc '+(p.cur.i+1))));
 }
+function icuRefreshRemove(){const b=$('icuRemove');if(b)b.classList.toggle('hide',!window._icuPlan)}
+if($('icuRemove'))$('icuRemove').onclick=()=>{window._icuPlan=null;icuRefreshRemove();['icuChip','icuTargets','icuGraph','icuProposal'].forEach(id=>{const el=$(id);if(el)el.classList.add('hide')});const info=$('icuInfo');if(info)info.textContent='Entraînement retiré.';toast('🗑 Entraînement retiré — aucun exercice chargé.');};
+icuRefreshRemove();
 const _icuSkipBtn=$('icuSkip');if(_icuSkipBtn)_icuSkipBtn.onclick=()=>icuSkip();
 function drawIcuGraph(p){
   const cv=$('icuGraph');if(!cv)return;
@@ -5789,9 +5792,8 @@ function drawIcuGraph(p){
   const lx=pad+Math.min(1,t/total)*(X-2*pad);
   ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(1.5,dpr);ctx.beginPath();ctx.moveTo(lx,pad);ctx.lineTo(lx,Y-pad);ctx.stroke();
 }
-function icuSyncClear(){const b=$('icuClear');if(b)b.classList.toggle('hide',!window._icuPlan)} /* v154 : bouton Retirer visible s'il y a un entraînement chargé */
 function updateIcuPlan(dt,power){
-  const p=window._icuPlan;icuSyncClear();
+  const p=window._icuPlan;
   if(!p){const g=$('icuGraph'),t=$('icuTargets');if(g)g.classList.add('hide');if(t)t.classList.add('hide');return}
   updateIcuTargets(p);
   const _gKey=Math.round((p.t||0)*2)+'_'+((p.cur&&p.cur.i)||0)+'_'+p.phase;
@@ -5941,10 +5943,9 @@ function icuImportText(txt,name){
     throw new Error('Aucun exercice trouvé ('+nStep+' balise <step> dans le fichier) — essaie un .zwo, .erg ou .mrc standard. Début du fichier : « '+prev+' »');
   }
   const total=steps.reduce((a,s)=>a+s.dur,0);
-  window._icuPlan={name:(name||'Entraînement importé').replace(/\.[a-z0-9]+$/i,''),eventId:null,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};
+  window._icuPlan={name:(name||'Entraînement importé').replace(/\.[a-z0-9]+$/i,''),eventId:null,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};icuRefreshRemove();
   return steps.length+' exercices · durée totale '+fmtDur(total);
 }
-if($('icuClear'))$('icuClear').onclick=()=>{window._icuPlan=null;const g=$('icuGraph');if(g)g.classList.add('hide');const c=$('icuChip');if(c)c.classList.add('hide');const t=$('icuTargets');if(t)t.classList.add('hide');const w=$('icuWarn');if(w)w.classList.add('hide');const i=$('icuInfo');if(i)i.textContent='Entraînement retiré.';icuSyncClear();toast('Entraînement retiré — il ne démarrera plus au lancement.');}; /* v154 */
 if($('icuImport'))$('icuImport').onclick=()=>{const f=$('icuFile');if(f)f.click();};
 if($('icuFile'))$('icuFile').addEventListener('change',e=>{
   const file=e.target.files&&e.target.files[0];if(!file)return;
@@ -5968,7 +5969,7 @@ if($('icuAccept'))$('icuAccept').onclick=async()=>{
     let steps=ev.steps;
     if(!steps){const zwo=await icuFetch('/events/'+encodeURIComponent(ev.id)+'/download.zwo',true);ev.zwo=zwo;const ftp=Math.max(50,Number(riderStyle.ftp)||200);steps=ev.steps=icuParseZwo(zwo,ftp);}
     if(!steps.length)throw new Error('Aucun exercice trouvé dans le fichier workout.');
-    window._icuPlan={name:ev.name||'Entraînement',eventId:ev.id,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};
+    window._icuPlan={name:ev.name||'Entraînement',eventId:ev.id,steps:steps,phase:'armed',cur:{i:0,inT:0,rem:steps[0].dur},blocks:[]};icuRefreshRemove();
     $('icuProposal').classList.add('hide');info.textContent=steps.length+' exercices chargés · '+ev.name;
     toast('Entraînement accepté — il démarrera au lancement du parcours.');
   }catch(e){info.textContent=String(e.message||e);toast('Préparation de l’entraînement impossible.');}
@@ -5977,7 +5978,7 @@ function loop(t){
   requestAnimationFrame(loop);const dt=Math.max(0,Math.min((t-last)/1000,.1));last=t;
   updateSky(dt);
   if(route){
-    const power=ctl?lastP:+$('pw').value,grade=at(s)[3];
+    const power=ctl?lastP:Math.max(+$('pw').value,(proj?0:150)),grade=at(s)[3]; /* v154 : en démo le cycliste avance même curseur à 0 (150 W min) */
     const _hasPower=power>0,_effRunning=running;
     /* v73 : la sortie ne démarre vraiment qu'au premier watt de puissance.
        Avant cela : vélo immobile et chrono à l'arrêt. Ensuite, la vitesse
