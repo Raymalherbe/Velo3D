@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v159 – rues complètes en ville, sens uniques signalés, Tour Eiffel, montagnes, W moy</title>
+<title>Vélo 3D v160 – montagnes à l'échelle, horizon 8 km, rues complètes, sens uniques signalés</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -482,7 +482,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v159</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v160</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -644,8 +644,8 @@ if(typeof THREE==='undefined')throw new Error('La bibliothèque Three.js n’a p
 const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true,powerPreference:'high-performance'});
 R.setPixelRatio(Math.min(devicePixelRatio||1,1.75));R.outputEncoding=THREE.sRGBEncoding;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.05;
 R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
-const S=new THREE.Scene();S.background=new THREE.Color(0xd7e9f2);S.fog=new THREE.Fog(0xd7e9f2,160,750);
-const cam=new THREE.PerspectiveCamera(55,1,.1,3500) /* v157 : montagnes lointaines visibles */;
+const S=new THREE.Scene();S.background=new THREE.Color(0xd7e9f2);S.fog=new THREE.Fog(0xd7e9f2,650,8000); /* v160 : brume lointaine seulement (avant : tout disparaissait à 750 m — vues plates) */
+const cam=new THREE.PerspectiveCamera(55,1,.1,9000) /* v160 : horizon porté à 9 km pour les massifs lointains */;
 const hemi=new THREE.HemisphereLight(0xf3f9ff,0x777b4f,.85);S.add(hemi);
 /* v77 : ciel dégradé — dôme hémisphérique (horizon clair -> zénith bleu), soleil visible
    avec halo, nuages qui dérivent lentement et suivent le cycliste. */
@@ -807,7 +807,7 @@ function applyWeatherScene(code){
   const w=weatherInfo(code);window._weatherFx=w;
   if(cloudMat)cloudMat.opacity=.92*w.cloud;
   precip.rain.mesh.visible=w.rain;precip.snow.mesh.visible=w.snow;
-  if(S.fog){if(w.fog){S.fog.near=25;S.fog.far=230;}else{S.fog.near=160;S.fog.far=750;}}
+  if(S.fog){if(w.fog){S.fog.near=25;S.fog.far=230;}else{S.fog.near=650;S.fog.far=8000;}} /* v160 : même réglage que la scène */
   snowGround(w.snow); /* v153 : neige au sol (terrain, champs, herbe) */
   puddles(w.rain);   /* v153 : flaques sur la route quand il pleut */
   return w;
@@ -850,15 +850,16 @@ async function buildTerrain(target){
   const token=window._worldToken;
   let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity,minY=Infinity,maxY=-Infinity;
   for(let i=0;i<route.n;i++){minX=Math.min(minX,route.X[i]);maxX=Math.max(maxX,route.X[i]);minZ=Math.min(minZ,route.Z[i]);maxZ=Math.max(maxZ,route.Z[i]);minY=Math.min(minY,route.Y[i]);maxY=Math.max(maxY,route.Y[i]);}
-  const M=650;minX-=M;maxX+=M;minZ-=M;maxZ+=M;
-  const w=maxX-minX,d=maxZ-minZ,cell=Math.max(20,Math.max(w,d)/84); /* v155 : maillage de terrain plus fin */
-  const nx=Math.max(4,Math.min(84,Math.round(w/cell)+1)),nz=Math.max(4,Math.min(84,Math.round(d/cell)+1)); /* v155 */
+  const M=1000;minX-=M;maxX+=M;minZ-=M;maxZ+=M; /* v160 : terrain élargi (avant 650 m) */
+  const w=maxX-minX,d=maxZ-minZ,cell=Math.max(20,Math.max(w,d)/92); /* v160 : maillage un peu plus fin */
+  const nx=Math.max(4,Math.min(92,Math.round(w/cell)+1)),nz=Math.max(4,Math.min(92,Math.round(d/cell)+1)); /* v160 */
   const lats=[],lons=[];
   for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const x=minX+i*(w/(nx-1)),z=minZ+j*(d/(nz-1));lats.push(proj.la-z/proj.kz);lons.push(proj.lo+x/proj.kx);}
   const n=nx*nz;let ele=new Float32Array(n).fill(NaN);let okCount=0;
-  try{
-    for(let off=0;off<n;off+=100){
-      const la=lats.slice(off,off+100).map(v=>v.toFixed(6)).join(','),lo=lons.slice(off,off+100).map(v=>v.toFixed(6)).join(',');
+  const jobs=[];
+  for(let off=0;off<n;off+=100){
+    const la=lats.slice(off,off+100).map(q=>q.toFixed(6)).join(','),lo=lons.slice(off,off+100).map(q=>q.toFixed(6)).join(',');
+    jobs.push((async()=>{
       const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
       let resp;
       try{resp=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+la+'&longitude='+lo,{mode:'cors',credentials:'omit',cache:'force-cache',signal:ctrl.signal});}
@@ -866,9 +867,10 @@ async function buildTerrain(target){
       if(!resp.ok)throw new Error('HTTP '+resp.status);
       const data=await resp.json();
       if(!Array.isArray(data.elevation))throw new Error('réponse invalide');
-      for(let i=0;i<data.elevation.length;i++){const v=Number(data.elevation[i]);if(Number.isFinite(v)){ele[off+i]=v;okCount++;}}
-    }
-  }catch(_){}
+      for(let i=0;i<data.elevation.length;i++){const ve=Number(data.elevation[i]);if(Number.isFinite(ve)){ele[off+i]=ve;okCount++;}}
+    })());
+  }
+  for(let j0=0;j0<jobs.length;j0+=6){try{await Promise.all(jobs.slice(j0,j0+6));}catch(_){}} /* v160 : requêtes parallèles par groupes de 6 (chargement ~6× plus rapide) */
   if(token!==window._worldToken)return; /* le monde a été reconstruit entre-temps */
   if(okCount<n*.5){const flat=(minY+maxY)/2;for(let i=0;i<n;i++)if(!Number.isFinite(ele[i]))ele[i]=flat;} /* repli : terrain plat */
   let eMin=Infinity,eMax=-Infinity;for(let i=0;i<n;i++){eMin=Math.min(eMin,ele[i]);eMax=Math.max(eMax,ele[i]);}
@@ -4937,7 +4939,7 @@ function buildTunnels(tunnelWays,targetWorld){
 }
 
 /* v156 : vraies montagnes aux cols (mountain_pass) et sommets (natural=peak) OSM proches de la route */
-function buildMountainDecor(passes,peaksList,targetWorld){
+async function buildMountainDecor(passes,peaksList,targetWorld){
   if(!route||!targetWorld||route.n<2)return 0;
   /* v157 : massifs déformés (bruit fractal), forêts en pied, roche, névés et neige au sommet */
   const hash=(x,z)=>{const v=Math.sin(x*127.1+z*311.7)*43758.5453;return v-Math.floor(v);};
@@ -4946,32 +4948,51 @@ function buildMountainDecor(passes,peaksList,targetWorld){
   let minY=Infinity,maxY=-Infinity,sumY=0;for(let i=0;i<route.n;i++){const y=route.Y[i];minY=Math.min(minY,y);maxY=Math.max(maxY,y);sumY+=y;}
   const relief=maxY-minY,baseAlt=(window._routeBaseAlt||0)+sumY/route.n;let maxG=0;if(route.G)for(const g of route.G)maxG=Math.max(maxG,Math.abs(g)); /* v158 */
   const list=[...(passes||[]),...(peaksList||[])].map(p=>({...p}));
-  /* région montagneuse sans sommet cartographié : chaîne d'arrière-plan */
+  /* région montagneuse sans sommet cartographié : chaîne d'arrière-plan — v160 : plus loin (1,2–2,8 km), le recul exact dépend du rayon du massif */
   if(relief>50||baseAlt>450||maxG>.06||list.length){const cx=route.X[Math.floor(route.n/2)],cz=route.Z[Math.floor(route.n/2)];const nb=list.length?6:12;
-    for(let k=0;k<nb;k++){const ang=k/nb*Math.PI*2+hash(k,3)*.4,dist=1000+hash(k,7)*900;list.push({x:cx+Math.cos(ang)*dist,z:cz+Math.sin(ang)*dist,ele:0,bg:true});}}
+    for(let k=0;k<nb;k++){const ang=k/nb*Math.PI*2+hash(k,3)*.4,dist=1200+hash(k,7)*1600;list.push({x:cx+Math.cos(ang)*dist,z:cz+Math.sin(ang)*dist,ele:0,bg:true});}}
   if(!list.length)return 0;
   const cols={forest:new THREE.Color(0x3d5a34),meadow:new THREE.Color(0x7d8f55),rock:new THREE.Color(0x7a7266),darkRock:new THREE.Color(0x58534c),snow:new THREE.Color(0xf2f5f8)};
   const mat=new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true,fog:false});const haze=new THREE.Color(0xb9cfdc);
-  let count=0;const tmp=new THREE.Color();
+  const built=[];const tmp=new THREE.Color();
   for(const p of list.slice(0,24)){
-    let near=nearestOnRoute(p.x,p.z);if(!near||near.dist2>3200*3200)continue;
-    const h=Math.max(180,Math.min(1100,(p.ele>0?p.ele-baseAlt:260+relief*1.4+hash(p.x,p.z)*300)+120));
-    const rad=h*(1.5+hash(p.z,p.x)*.7);
-    /* jamais sur la chaussée : on repousse le massif loin de la route */
-    let dist=Math.sqrt(near.dist2),px=p.x,pz=p.z;const minD=rad*.75+60;
+    let near=nearestOnRoute(p.x,p.z);if(!near||near.dist2>8000*8000)continue; /* v160 : reliefs visibles jusqu'à 8 km (avant 3,2 km) */
+    const h=p.bg?Math.max(240,Math.min(1300,300+relief*1.5+hash(p.x,p.z)*350)):(p.ele>0?Math.max(200,Math.min(1200,(p.ele-baseAlt)*.9+150)):Math.max(180,Math.min(900,260+relief*1.2+hash(p.x,p.z)*250)));
+    const rad=h*(1.05+hash(p.z,p.x)*.5); /* v160 : massifs resserrés (avant ×1,5–2,2 : leurs disques recouvraient la route) */
+    /* v160 : jamais sur la chaussée — la demi-largeur du disque (rad*1,2) reste à 120 m minimum de la route */
+    let dist=Math.sqrt(near.dist2),px=p.x,pz=p.z;const minD=rad*1.35+120;
     if(dist<minD){let dx=p.x-near.x,dz=p.z-near.z,l=Math.hypot(dx,dz);if(l<1){dx=-near.tz;dz=near.tx;l=1;}px=near.x+dx/l*minD;pz=near.z+dz/l*minD;near=nearestOnRoute(px,pz)||near;}
-    const snowLine=(p.ele>0?(p.ele>2300?.62:p.ele>1700?.8:2):(baseAlt+h>1900?.7:.86));
+    built.push({p,px,pz,h,rad,near});
+  }
+  /* v160 : altitude réelle du sol sous chaque massif (une seule requête DEM) — les sommets ne flottent plus à l'altitude de la route */
+  let eles=null;
+  if(built.length&&proj){
+    try{
+      const la=built.map(c=>(proj.la-c.pz/proj.kz).toFixed(5)).join(','),lo=built.map(c=>(proj.lo+c.px/proj.kx).toFixed(5)).join(',');
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),8000);
+      let resp;try{resp=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+la+'&longitude='+lo,{mode:'cors',credentials:'omit',cache:'force-cache',signal:ctrl.signal});}finally{clearTimeout(timer);}
+      if(resp.ok){const j=await resp.json();if(Array.isArray(j.elevation)&&j.elevation.length>=built.length)eles=j.elevation.map(x=>Number(x));}
+    }catch(_){}
+  }
+  let count=0;
+  built.forEach((c,ci)=>{
+    const {p,px,pz,h,rad,near}=c;
+    const ground=(eles&&Number.isFinite(eles[ci]))?eles[ci]:near.y; /* v160 : altitude réelle du secteur */
+    const summitTarget=p.ele>0?p.ele:ground+h*.85; /* sommet OSM = altitude réelle du pic ; sinon prominance h au-dessus du sol */
     const seg=56,geo=new THREE.PlaneGeometry(rad*2.4,rad*2.4,seg,seg);geo.rotateX(-Math.PI/2);
     const pos=geo.attributes.position,colors=new Float32Array(pos.count*3),seed=hash(px,pz)*100;
+    let yMax=-Infinity;
     for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i),r=Math.hypot(x,z)/rad;
       const fall=Math.max(0,1-r*r*.92);const ridge=fbm(x/rad*2.2+seed,z/rad*2.2-seed);
-      let y=h*Math.pow(fall,1.35)*(.55+.75*ridge);if(r>1.15)y=-4;pos.setY(i,y);
+      let y=h*Math.pow(fall,1.35)*(.55+.75*ridge);if(r>1.05)y=-6; /* v160 : bords du disque enfouis plus tôt */
+      if(y>yMax)yMax=y;pos.setY(i,y);
       const t=y/h;const n=hash(x*.3,z*.3)*.08;
+      const snowLine=summitTarget>2300?.6:(summitTarget>1700?.75:2); /* v160 : neige selon l'altitude réelle du sommet */
       if(t>snowLine+n)tmp.copy(cols.snow);else if(t>.5+n)tmp.copy(cols.rock).lerp(cols.darkRock,ridge*.6);else if(t>.28+n)tmp.copy(cols.meadow).lerp(cols.rock,(t-.28)/.22);else tmp.copy(cols.forest).lerp(cols.meadow,t*2);
       colors[i*3]=tmp.r;colors[i*3+1]=tmp.g;colors[i*3+2]=tmp.b;}
-    {const hz=Math.min(.55,Math.sqrt(near.dist2)/3200);for(let i=0;i<pos.count;i++){tmp.setRGB(colors[i*3],colors[i*3+1],colors[i*3+2]).lerp(haze,hz);colors[i*3]=tmp.r;colors[i*3+1]=tmp.g;colors[i*3+2]=tmp.b;}}geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
-    const m=new THREE.Mesh(geo,mat);m.position.set(px,near.y-6,pz);m.rotation.y=hash(pz,px)*Math.PI*2;m.receiveShadow=false;m.castShadow=false;targetWorld.add(m);count++;
-  }
+    {const hz=Math.min(.55,Math.sqrt(near.dist2)/8000);for(let i=0;i<pos.count;i++){tmp.setRGB(colors[i*3],colors[i*3+1],colors[i*3+2]).lerp(haze,hz);colors[i*3]=tmp.r;colors[i*3+1]=tmp.g;colors[i*3+2]=tmp.b;}}geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
+    const m=new THREE.Mesh(geo,mat);m.position.set(px,summitTarget-yMax,pz);m.rotation.y=hash(pz,px)*Math.PI*2;m.receiveShadow=false;m.castShadow=false;targetWorld.add(m);count++; /* v160 : ancré sur l'altitude réelle, sommet pile à target */
+  });
   return count;
 }
 
