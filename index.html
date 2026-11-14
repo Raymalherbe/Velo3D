@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v157 – routes complètes, Tour Eiffel, ponts, montagnes, W moy</title>
+<title>Vélo 3D v158 – routes complètes, Tour Eiffel, ponts, montagnes, W moy</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -95,7 +95,7 @@ input[type=range]{accent-color:var(--ac);min-height:36px;min-width:0;cursor:poin
 #startDirections .startCity{font-size:10px;color:var(--ac);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 #startDirections .startArrow{font-size:22px;line-height:1}
 #routeArrows{position:fixed;z-index:9;left:50%;top:calc(54px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;gap:7px;align-items:flex-start;width:min(94vw,620px);max-width:620px;padding:0;border:0;background:transparent;box-shadow:none;flex-wrap:wrap;justify-content:center}
-#routeArrows.hide{display:none!important}.routeArrow{display:flex;flex:1 1 0;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;min-width:0;max-width:205px;min-height:64px;padding:5px 7px;border:2px solid #f3f5e9;border-radius:4px;background:linear-gradient(155deg,#28724f,#145238);color:#fff;box-shadow:0 2px 8px #0008}
+#routeArrows.hide{display:none!important}.routeArrow.deadEndArrow{background:linear-gradient(155deg,#2f5fa8,#1d3f7a)}.routeArrow{display:flex;flex:1 1 0;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;min-width:0;max-width:205px;min-height:64px;padding:5px 7px;border:2px solid #f3f5e9;border-radius:4px;background:linear-gradient(155deg,#28724f,#145238);color:#fff;box-shadow:0 2px 8px #0008}
 .routeArrow .routeCity{display:block;max-width:100%;min-height:13px;font-size:11px;font-weight:800;color:#fff;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px #10251d}
 .routeArrow .arrowGlyph{font-size:29px;line-height:1;color:#fff;text-shadow:0 1px 2px #10251d}.routeArrow.selected{background:linear-gradient(155deg,#398a5f,#1b6442);outline:3px solid #f6d36b;outline-offset:1px}.routeArrow .routeDistance{color:#ffe28a;text-shadow:0 1px 2px #10251d}.routeArrow.selected .routeCity,.routeArrow.selected .routeDistance{color:#fff}
 @media(max-width:700px){#routeArrows{top:calc(48px + env(safe-area-inset-top,0px));gap:4px;width:min(96vw,560px)}.routeArrow{min-height:56px;padding:4px 5px}.routeArrow .routeCity{font-size:9px;min-height:11px}.routeArrow .arrowGlyph{font-size:24px}#startDirections button{min-height:48px}}
@@ -2707,6 +2707,7 @@ function freeSetTownHint(option,nav){
   option.towns=freeTownsAheadList(option.points,heading.x,heading.z,nav,3);
   if(!option.towns.length&&next)option.towns=[next];
   if(option.townsNode)freeFillTownRoll(option);
+  if(option.deadEnd&&option.townsNode)option.townsNode.textContent='Impasse'; /* v158 */
   if(option.buttonNode){
     const km=Number.isFinite(option.cityDistanceKm)?option.cityDistanceKm.toFixed(1).replace('.',',')+' km':'';
     option.buttonNode.setAttribute('aria-label',option.city?option.arrow+' vers '+option.city+(km?' à environ '+km:''):option.arrow+' continuer sur '+(option.way.name||'route'));
@@ -2869,7 +2870,7 @@ function freeExtendPathFromOption(option,nav,maxLength=nav.radius*1.8){
     let nextOptions,next=null;
     if(ringIncident&&!junctionNode.incidents.some(incident=>freeRingish(incident.way,nav)&&incident.way.pts.some(p=>freeNodeKey(p)===freeNodeKey(before)))){
       nextOptions=(freeRoundaboutOptions(junctionNode,b.x-a.x,b.z-a.z,nav)||[]).concat(freeBuildOptionsAt(key,b.x-a.x,b.z-a.z,nav).filter(arm=>!freeRingish(arm.way,nav)));
-      if(nextOptions.length)next=nextOptions.reduce((best,item)=>!best||Math.abs(item.angle)<Math.abs(best.angle)?item:best,null);
+      if(nextOptions.length)next=nextOptions.filter(o=>!o.deadEnd).reduce((best,item)=>!best||Math.abs(item.angle)<Math.abs(best.angle)?item:best,null);
     }else{
       nextOptions=freeBuildOptionsAt(key,b.x-a.x,b.z-a.z,nav);
       next=freeChooseStraight(nextOptions);
@@ -3019,7 +3020,7 @@ function freeRenderRouteArrows(event,nav){
     const towns=document.createElement('span');towns.className='routeTowns';
     btn.append(arrow,dist,towns);
     option.buttonNode=btn;option.metersNode=dist;option.townsNode=towns;option.cityNode=null;option.cityDistanceNode=null;
-    freeSetTownHint(option,nav);
+    freeSetTownHint(option,nav);if(option.deadEnd){towns.textContent='Impasse';btn.classList.add('deadEndArrow');}
     btn.onclick=()=>{
       event.selected=option;
       for(const button of el.querySelectorAll('button'))button.classList.toggle('selected',button===btn);
@@ -3072,7 +3073,7 @@ function freeRouteEvents(points,way,nav){
         const sideArms=freeBuildOptionsAt(key,incoming.x,incoming.z,nav).filter(arm=>!freeRingish(arm.way,nav));
         const options=sideArms.concat(exits);
         let planned=null;
-        for(const option of options)if(!planned||Math.abs(option.angle)<Math.abs(planned.angle))planned=option;
+        for(const option of options)if(!option.deadEnd&&(!planned||Math.abs(option.angle)<Math.abs(planned.angle)))planned=option;
         events.push({key,distance,options,selected:null,planned,shown:false,roundabout:true,ringId:ringIncident.way.id});
         activeRing=true;
         continue;
@@ -3086,7 +3087,7 @@ function freeRouteEvents(points,way,nav){
       const outgoing=freeHeading(points.slice(i),nav);
       const dx=outgoing.x,dz=outgoing.z,len=Math.hypot(dx,dz)||1;
       let best=null;
-      for(const option of options){
+      for(const option of options){if(option.deadEnd)continue; /* v158 */
         const heading=freeHeading(option.points,nav);
         const score=heading.x*dx/len+heading.z*dz/len;
         if(!best||score>best.score)best={option,score};
@@ -3118,7 +3119,7 @@ function freeCarryLocalities(previous,nextNav){
     nextNav.localities.push({...town,x:projected.x,z:projected.z});known.add(key(town));
   }
 }
-function freeChooseStraight(options){const best=(options||[]).reduce((candidate,item)=>!candidate||Math.abs(item.angle)<Math.abs(candidate.angle)?item:candidate,null);return best&&Math.abs(best.angle)<=.48?best:null;}
+function freeChooseStraight(options){const best=(options||[]).filter(o=>o&&!o.deadEnd).reduce((candidate,item)=>!candidate||Math.abs(item.angle)<Math.abs(candidate.angle)?item:candidate,null);return best&&Math.abs(best.angle)<=.48?best:null;}
 /* ---------- v81 : panneau STOP / cédez-le-passage aux carrefours à choix, avec marquage au sol ---------- */
 function freeClearJunctionSigns(){
   if(!window._junctionGroup)return;
@@ -3160,7 +3161,7 @@ function freeAddJunctionSign(kind){
 function freeGuidedBest(options,nav){
   if(!nav||!nav.destination||!Array.isArray(options)||!options.length)return null;
   const target=freeProject(nav.destination,nav.center);let best=null,bestD=Infinity;
-  for(const option of options){if(!option||!Array.isArray(option.points)||!option.points.length)continue;
+  for(const option of options){if(!option||option.deadEnd||!Array.isArray(option.points)||!option.points.length)continue;
     const far=freeProject(option.points[option.points.length-1],nav.center),d=Math.hypot(target.x-far.x,target.z-far.z);
     if(d<bestD){bestD=d;best=option;}}
   return best;
@@ -3386,7 +3387,7 @@ function freeAdvanceNavigation(){
     if(chosen){nav.currentWay=chosen.way;nav.currentDir=chosen.direction;window._freeCurrentWay=chosen.way;}
     nav.prompt=null;nav.eventIndex++;
   }
-  if(s>=route.len-.25){const lastOptions=nav.events.length?nav.events[nav.events.length-1].options:null;const endP=nav.path&&nav.path[nav.path.length-1];if(endP&&!nav.junctions.has(freeNodeKey(endP))&&freeInsideRadius(endP,nav)){toast('Impasse : demi-tour.');doTurnAround();return;} /* v157 */let chosen=lastOptions?(freeChooseStraight(lastOptions)||lastOptions.filter(o=>!o.openEnd).reduce((c,o)=>!c||Math.abs(o.angle)<Math.abs(c.angle)?o:c,null)):null;if(nav.destination&&lastOptions)chosen=freeGuidedBest(lastOptions,nav)||chosen;if(chosen&&!chosen.openEnd){freeBuildLeg(chosen.way,chosen.points,nav,true,chosen.direction);return;}if(nav.reloading)return;if(Date.now()-(nav.lastReloadAttempt||0)>12000){freeReloadSectorAtCurrent(nav);return;}running=false;v=0;toast('Aucune continuation OpenStreetMap disponible à ce carrefour.');}
+  if(s>=route.len-.25){const lastOptions=nav.events.length?nav.events[nav.events.length-1].options:null;const endP=nav.path&&nav.path[nav.path.length-1];if(endP&&!nav.junctions.has(freeNodeKey(endP))&&freeInsideRadius(endP,nav)){toast('Impasse : demi-tour.');doTurnAround();return;} /* v157 */let chosen=lastOptions?(freeChooseStraight(lastOptions)||lastOptions.filter(o=>!o.openEnd&&!o.deadEnd).reduce((c,o)=>!c||Math.abs(o.angle)<Math.abs(c.angle)?o:c,null)):null;if(nav.destination&&lastOptions)chosen=freeGuidedBest(lastOptions,nav)||chosen;if(chosen&&!chosen.openEnd){freeBuildLeg(chosen.way,chosen.points,nav,true,chosen.direction);return;}if(nav.reloading)return;if(Date.now()-(nav.lastReloadAttempt||0)>12000){freeReloadSectorAtCurrent(nav);return;}running=false;v=0;toast('Aucune continuation OpenStreetMap disponible à ce carrefour.');}
 }
 async function freeFetchSector(center,radius,onProgress=()=>{}){
   const servers=['https://overpass.openstreetmap.fr/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass-api.de/api/interpreter'];
@@ -4930,10 +4931,10 @@ function buildMountainDecor(passes,peaksList,targetWorld){
   const vnoise=(x,z)=>{const xi=Math.floor(x),zi=Math.floor(z),xf=x-xi,zf=z-zi,u=xf*xf*(3-2*xf),w=zf*zf*(3-2*zf);const a=hash(xi,zi),b=hash(xi+1,zi),c=hash(xi,zi+1),d=hash(xi+1,zi+1);return a+(b-a)*u+(c-a)*w+(a-b-c+d)*u*w;};
   const fbm=(x,z)=>{let v=0,amp=.5,f=1;for(let o=0;o<5;o++){v+=amp*(1-Math.abs(vnoise(x*f,z*f)*2-1));f*=2.03;amp*=.5;}return v;};
   let minY=Infinity,maxY=-Infinity,sumY=0;for(let i=0;i<route.n;i++){const y=route.Y[i];minY=Math.min(minY,y);maxY=Math.max(maxY,y);sumY+=y;}
-  const relief=maxY-minY,baseAlt=(window._routeBaseAlt||0)+sumY/route.n;
+  const relief=maxY-minY,baseAlt=(window._routeBaseAlt||0)+sumY/route.n;let maxG=0;if(route.G)for(const g of route.G)maxG=Math.max(maxG,Math.abs(g)); /* v158 */
   const list=[...(passes||[]),...(peaksList||[])].map(p=>({...p}));
   /* région montagneuse sans sommet cartographié : chaîne d'arrière-plan */
-  if(relief>120||list.length){const cx=route.X[Math.floor(route.n/2)],cz=route.Z[Math.floor(route.n/2)];const nb=list.length?6:12;
+  if(relief>50||baseAlt>450||maxG>.06||list.length){const cx=route.X[Math.floor(route.n/2)],cz=route.Z[Math.floor(route.n/2)];const nb=list.length?6:12;
     for(let k=0;k<nb;k++){const ang=k/nb*Math.PI*2+hash(k,3)*.4,dist=1000+hash(k,7)*900;list.push({x:cx+Math.cos(ang)*dist,z:cz+Math.sin(ang)*dist,ele:0,bg:true});}}
   if(!list.length)return 0;
   const cols={forest:new THREE.Color(0x3d5a34),meadow:new THREE.Color(0x7d8f55),rock:new THREE.Color(0x7a7266),darkRock:new THREE.Color(0x58534c),snow:new THREE.Color(0xf2f5f8)};
@@ -4961,6 +4962,8 @@ function buildMountainDecor(passes,peaksList,targetWorld){
   return count;
 }
 
+/* v158 : l'altitude arrive souvent après le décor — on revérifie régulièrement et on pose les montagnes dès que le relief est connu */
+setInterval(()=>{try{if(route&&world&&world.parent&&!world.userData.mtn&&buildMountainDecor(window._osmPasses||[],window._osmPeaks||[],world))world.userData.mtn=true;}catch(e){}},2500);
 function applyOSM(elements,targetWorld){
   const target=targetWorld||world;
   if(!target||!route)return{b:0,w:0,t:0,h:0,r:0,c:0};
@@ -5075,7 +5078,7 @@ function applyOSM(elements,targetWorld){
   buildSmoke(target); /* v134 : fumée des cheminées */
   buildFlow(waterways,target); /* v135 : écume animée des rivières */
   const bridgeCount=buildBridges(mergedSpans,bridgeOverpasses,target);
-  buildMountainDecor(mountainPasses,peaks,target); /* v156 : décor de vraie montagne aux cols/sommets */
+  window._osmPasses=mountainPasses;window._osmPeaks=peaks;if(buildMountainDecor(mountainPasses,peaks,target))target.userData.mtn=true; /* v158 */ /* v156 : décor de vraie montagne aux cols/sommets */
 
   /* v133 : passages à niveau animés (barrières + feux + train occasionnel) et tunnels (voûte sombre) */
   window._levelCrossings=[];
