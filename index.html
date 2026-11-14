@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v158 – routes complètes, Tour Eiffel, ponts, montagnes, W moy</title>
+<title>Vélo 3D v159 – rues complètes en ville, sens uniques signalés, Tour Eiffel, montagnes, W moy</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -57,6 +57,11 @@ input[type=range]{accent-color:var(--ac);min-height:36px;min-width:0;cursor:poin
 /* v78 : destination « Aller à… » */
 #destChip{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:10px;z-index:39;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:var(--card);color:var(--fg);font-size:12px;box-shadow:0 3px 14px rgba(0,0,0,.35);max-width:46vw}
 #destChip b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* v159 : panneau « sens unique » — indique pourquoi certaines directions ne sont pas proposées */
+#onewayChip{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--bar-height,150px) + 10px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:12px;background:var(--card);border:1px solid var(--bd);color:var(--fg);font-size:12px;backdrop-filter:blur(12px);box-shadow:0 3px 14px rgba(0,0,0,.35);max-width:60vw}
+#onewayChip b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#onewayChip.hide{display:none!important}
+@media(orientation:landscape) and (max-height:620px){#onewayChip{bottom:calc(var(--bar-height,120px) + 6px + env(safe-area-inset-bottom,0px));font-size:10px;padding:5px 9px}}
 #destChip button{border:0;background:#e57373;color:#fff;border-radius:8px;min-width:26px;min-height:26px;font-size:13px;cursor:pointer}
 #destDialog{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(4,20,24,.55)}
 #destDialog.hide{display:none}
@@ -453,6 +458,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
   </div>
 </div>
 <div id="destChip" class="hide"><span>🎯</span><b id="destChipName"></b><span id="destChipDist"></span><button id="destChipCancel" title="Annuler la destination">✖</button></div>
+<div id="onewayChip" class="hide" title="Rue à sens unique : les carrefours ne proposent que la direction autorisée"><span>⛔</span><b id="onewayChipText">Sens unique</b></div>
   <div id="routeArrows" class="hide" role="group" aria-label="Choisir une direction au prochain carrefour"><span class="junctionDistancePlaceholder">Carrefour dans — m</span></div>
 <aside id="cameraPanel" aria-label="Réglages de la caméra">
   <p class="panelTitle">Point de vue · glisser pour pivoter</p>
@@ -476,7 +482,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v156</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v159</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -2432,7 +2438,7 @@ $('locateMe')?.addEventListener('click',()=>{if(!navigator.geolocation){toast('L
 /* v121 : adresse de départ recherchée sur la carte (Nominatim) */
 if($('freeAddrGo'))$('freeAddrGo').onclick=async()=>{const q=(($('freeAddr')&&$('freeAddr').value)||'').trim();if(!q)return;try{$('freeAddrGo').disabled=true;const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q));const j=await r.json();if(!j||!j.length){toast('Adresse introuvable.');return;}const lat=parseFloat(j[0].lat),lon=parseFloat(j[0].lon);if(!Number.isFinite(lat)||!Number.isFinite(lon))return;freeCenter={lat,lon};fetchWeatherAt(lat,lon,String(j[0].display_name||q).slice(0,40)); /* v138 */if(freeMap)freeMap.setView([lat,lon],15);if(freeMarker)freeMarker.setLatLng([lat,lon]);freeUpdateStartArrow();if(window._freeCircle)window._freeCircle.setLatLng([lat,lon]);freeClearStartChoices();$('freeInfo').textContent='Point de départ : '+String(j[0].display_name||q).slice(0,80)+' · touche « Rouler ici » pour charger les routes';}catch(e){toast('Recherche d’adresse indisponible (connexion ?).')}finally{if($('freeAddrGo'))$('freeAddrGo').disabled=false;}};
 if($('freeAddr'))$('freeAddr').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if($('freeAddrGo'))$('freeAddrGo').click();}});
-function freeClearStartChoices(){window._freeStartDir=1;freeNavigation=null;freeGraph=null;freeJunctions=null;window._freeNavigation=null;window._freeSectorCache=null;window._freeGraph=null;window._freeCurrentWay=null;if($('turnAround'))$('turnAround').disabled=true;if($('freeStartDialog'))$('freeStartDialog').classList.add('hide');const box=$('startDirections');if(box){box.classList.remove('show');box.replaceChildren();}const arrows=$('routeArrows');if(arrows)arrows.classList.add('hide');if(typeof freeMarker!=='undefined'&&freeMarker)freeUpdateStartArrow();}
+function freeClearStartChoices(){window._freeStartDir=1;freeNavigation=null;freeGraph=null;freeJunctions=null;window._freeNavigation=null;window._freeSectorCache=null;window._freeGraph=null;window._freeCurrentWay=null;if($('onewayChip'))$('onewayChip').classList.add('hide'); /* v159 */if($('turnAround'))$('turnAround').disabled=true;if($('freeStartDialog'))$('freeStartDialog').classList.add('hide');const box=$('startDirections');if(box){box.classList.remove('show');box.replaceChildren();}const arrows=$('routeArrows');if(arrows)arrows.classList.add('hide');if(typeof freeMarker!=='undefined'&&freeMarker)freeUpdateStartArrow();}
 function freeProject(point,center){const kx=111320*Math.cos(center.lat*Math.PI/180),kz=110540;return{x:(point.lon-center.lon)*kx,z:-(point.lat-center.lat)*kz};}
 function freeMakeGraph(elements,center){
   const graph=[];
@@ -2453,6 +2459,9 @@ function freeMakeGraph(elements,center){
 function freeDistance(a,b,nav){return Math.hypot((b.lon-a.lon)*nav.kx,(b.lat-a.lat)*nav.kz)}
 function freeInsideRadius(point,nav){return Math.hypot((point.lon-nav.center.lon)*nav.kx,(point.lat-nav.center.lat)*nav.kz)<=nav.radius;}
 function freeCanTravel(way,dir){const tags=way.tags||{};const cyc=[tags.cycleway,tags['cycleway:left'],tags['cycleway:right'],tags['cycleway:both']].map(v=>String(v||'').toLowerCase()).join(' ');if(/opposite/.test(cyc)||String(tags['cycleway:left:oneway']||tags['cycleway:right:oneway']||'')==='-1'||['living_street','pedestrian','footway','path','track'].includes(String(tags.highway)))if(tags.junction!=='roundabout')return true; /* v157 : contresens cyclables et zones apaisées */const value=String(tags['oneway:bicycle']||tags.oneway||((tags.junction==='roundabout')?'yes':'')).toLowerCase();if(value==='no'||value==='false'||value==='0')return true;if(value==='-1'||value==='reverse')return dir<0;if(value==='yes'||value==='true'||value==='1')return dir>0;return true;}
+/* v159 : panneau « sens unique » — même logique que freeCanTravel, affiché tant que la voie courante est réellement à sens unique */
+function freeWayOneway(way){const tags=(way&&way.tags)||{};const cyc=[tags.cycleway,tags['cycleway:left'],tags['cycleway:right'],tags['cycleway:both']].map(v=>String(v||'').toLowerCase()).join(' ');if(/opposite/.test(cyc)||String(tags['cycleway:left:oneway']||tags['cycleway:right:oneway']||'')==='-1'||['living_street','pedestrian','footway','path','track'].includes(String(tags.highway)))if(tags.junction!=='roundabout')return 0;const value=String(tags['oneway:bicycle']||tags.oneway||((tags.junction==='roundabout')?'yes':'')).toLowerCase();if(value==='no'||value==='false'||value==='0')return 0;if(value==='-1'||value==='reverse')return -1;if(value==='yes'||value==='true'||value==='1')return 1;return 0;}
+function freeUpdateOnewayChip(nav){const chip=$('onewayChip');if(!chip)return;const way=nav&&nav.currentWay,o=way?freeWayOneway(way):0;if(!o){chip.classList.add('hide');return;}const txt=$('onewayChipText');if(txt)txt.textContent='Sens unique · '+(o>0?'dans le sens de la marche →':'en sens inverse ←');chip.classList.remove('hide');}
 function freeArm(incident,dir,startKey,nav){
   const {way,index}=incident,points=[];let destination=null,endIndex=null;if(!freeCanTravel(way,dir))return null;
   for(let i=index;i>=0&&i<way.pts.length;i+=dir){const p=way.pts[i];points.push(p);const key=freeNodeKey(p);if(i!==index&&nav.junctions.has(key)){if(freeInsideRadius(p,nav)){destination=key;endIndex=i;}break;}}
@@ -3353,6 +3362,7 @@ function freeShowStartDirectionDialog(nav){
 function freeAdvanceNavigation(){
   const nav=freeNavigation;if(!nav||!nav.active||!running||!route)return;
   const current=at(s),radial=Math.hypot(current[0],current[2]),reloadThreshold=Math.max(550,nav.radius*.42);
+  freeUpdateOnewayChip(nav); /* v159 : panneau sens unique de la voie courante */
   nav.currentGeo={lat:nav.center.lat-current[2]/nav.kz,lon:nav.center.lon+current[0]/nav.kx};
   if(nav.radius-radial<=reloadThreshold&&!nav.reloading&&Date.now()-(nav.lastReloadAttempt||0)>30000)freeReloadSectorAtCurrent(nav);
   while(nav.eventIndex<nav.events.length){const event=nav.events[nav.eventIndex],remaining=event.distance-s;
@@ -3395,8 +3405,12 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
   for(let attempt=0;attempt<servers.length+areas.length-1;attempt++){ /* v155 : plus de tentatives */
     const server=servers[attempt%servers.length],r=areas[Math.min(attempt,areas.length-1)],localityRadius=Math.max(r,25000),host=new URL(server).hostname;
     onProgress(Math.min(.12+attempt*.10,.42),'Téléchargement des routes et du décor · serveur '+(attempt+1)+'/'+(servers.length+1)+'…');
-    const q=`[out:json][timeout:40];way[ /* v155 : timeout Overpass plus long */\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});(way[\"highway\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon}); /* v156 : cols et sommets */node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 12000;node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
-    try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000); /* v155 : 45 s par serveur */let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const elements=data.elements.filter(e=>e&&(['way','node'].includes(e.type)));onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
+    /* v159 : deux out séparés — les routes ne sont plus écrémées par les arbres/bâtiments (le quota de 12000 objets tronquait les rues en ville) ;
+       les voies eau/rail/tunnel passent dans l'union du décor (avant, écrites hors union, leur résultat était perdu) ;
+       quota de routes progressif selon le rayon pour éviter les réponses géantes en zone rurale élargie */
+    const roadCap=r<=5000?30000:(r<=10000?20000:12000);
+    const q=`[out:json][timeout:60];(way[\"highway\"](around:${r},${center.lat},${center.lon}););out body geom ${roadCap};(way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 9000;node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
+    try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000); /* v155 : 45 s par serveur */let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const seenEls=new Set();const elements=data.elements.filter(e=>{if(!e||!['way','node'].includes(e.type))return false;const k=e.type+'/'+e.id;if(seenEls.has(k))return false;seenEls.add(k);return true;}); /* v159 : dédoublonnage (tunnelways présents dans les deux out) */onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
     catch(error){last=error&&error.name==='AbortError'?host+' délai dépassé':(error.message||String(error));onProgress(Math.min(.12+attempt*.10,.42),'Serveur OSM indisponible · nouvel essai…');}
   }
   throw new Error(last||'serveurs OpenStreetMap indisponibles');
@@ -4280,7 +4294,7 @@ async function loadOSM(){
         line.push((proj.la-p[2]/proj.kz).toFixed(5),(proj.lo+p[0]/proj.kx).toFixed(5));
       }
       const corridor=line.join(',');
-      const query=`[out:json][timeout:25];(
+      const query=`[out:json][timeout:25];(way["highway"](around:90,${corridor}););out body geom 12000;( /* v159 : routes d'abord avec leur propre quota */
         way["building"](around:120,${corridor});
         node["natural"="tree"](around:90,${corridor});
         way["natural"~"^(water|wood)$"](around:150,${corridor});
@@ -4289,7 +4303,6 @@ async function loadOSM(){
         way["tunnel"="yes"]["highway"](around:170,${corridor});
         way["landuse"="forest"](around:150,${corridor});
         way[\"landuse\"~\"^(farmland|meadow|orchard|grass)$\"](around:150,${corridor});
-        way["highway"](around:90,${corridor});
         way["barrier"="hedge"](around:90,${corridor});
         way["landuse"="hedge"](around:90,${corridor});
         way["natural"="hedge"](around:90,${corridor});
@@ -4312,7 +4325,7 @@ async function loadOSM(){
         node["place"~"^(city|town|village|hamlet|suburb)$"]["name"](around:2000,${corridor});
         way["landuse"="residential"](around:120,${corridor});
         way["place"~"^(city|town|village)$"](around:120,${corridor});
-      );out body geom 6000;`;
+      );out body geom 9000;`;
       let json;
       try{json=await osmAsk(query,probe.live);}catch(error){
         if(osmStopIfStale(token,targetWorld))return; // Never update UI/state from an obsolete route load.
