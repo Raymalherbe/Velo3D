@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v160 – montagnes à l'échelle, horizon 8 km, rues complètes, sens uniques signalés</title>
+<title>Vélo 3D v161 – flèches multicolores tracées sur la carte, anti-toboggans, stades agrandis</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -24,6 +24,7 @@ input[type=range]{accent-color:var(--ac);min-height:36px;min-width:0;cursor:poin
 .m{padding:9px 12px;background:rgba(255,255,255,.025)}
 .m b{display:block;font-size:30px;font-weight:650;line-height:1.12;font-variant-numeric:tabular-nums;letter-spacing:-1px}
 .m i{font-style:normal;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+#poMoy{display:block;font-size:9px;letter-spacing:.3px;text-transform:none;margin-top:1px} /* v161 : puissance moyenne grisée sous les watts */
 .m:first-child b{color:var(--ac)}
 #bar{position:fixed;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:760px;margin:auto;padding:10px 14px;border:1px solid var(--bd);border-radius:16px;background:var(--card);backdrop-filter:blur(12px)}
 #bar.barHidden{display:none} /* v114 : bandeau du bas repliable */
@@ -433,7 +434,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="topTools" aria-label="Affichage de la séance"><button id="hudToggle" aria-label="Masquer les données de la sortie" aria-expanded="true" title="Afficher ou masquer les données">📊</button></div>
 <div id="hud" aria-label="Données de la sortie">
   <div class="m"><b id="sp">0</b><i>km/h</i></div>
-  <div class="m"><b id="po">0</b><i id="poLabel">watts</i></div>
+  <div class="m"><b id="po">0</b><i id="poLabel">watts</i><i id="poMoy">moy – W</i></div> <!-- v161 : puissance moyenne sous la donnée puissance -->
   <div class="m"><b id="gr">0</b><i>pente %</i></div>
   <div class="m"><b id="di">0.0</b><i>km parcourus</i></div><div class="m"><b id="du">00:00</b><i>durée</i></div><div class="m"><b id="avgSpeed">0.0</b><i>km/h moyenne</i></div>
   <div class="m"><b id="hr">–</b><i>bpm</i></div>
@@ -482,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v160</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v161</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -2411,13 +2412,38 @@ const freeRouteableHighways=new Set(['trunk','trunk_link','primary','primary_lin
 function freeNodeKey(point){return point&&point.nodeId!=null?'n:'+point.nodeId:point?'p:'+Number(point.lat).toFixed(6)+','+Number(point.lon).toFixed(6):''}
 function freeValidCoord(point){return point&&Number.isFinite(Number(point.lat))&&Number.isFinite(Number(point.lon))&&Math.abs(Number(point.lat))<=90&&Math.abs(Number(point.lon))<=180}
 function freeMapRadius(){const radius=Math.max(750,Number($('freeRadius')&&$('freeRadius').value)||2000);if(window._freeCircle){window._freeCircle.setRadius(radius);if(freeCenter)window._freeCircle.setLatLng([freeCenter.lat,freeCenter.lon]);}return radius;}
-function freeArrowIcon(bearing){return L.divIcon({className:'freeArrowIcon',html:'<div class="freeArrowGlyph" style="transform:rotate('+bearing+'deg)">➤</div>',iconSize:[34,34],iconAnchor:[17,17]});}
+function freeArrowIcon(bearing){return L.divIcon({className:'freeArrowIcon',html:'<div class="freeArrowGlyph" style="transform:rotate('+(bearing-90)+'deg)">➤</div>',iconSize:[34,34],iconAnchor:[17,17]});} /* v161 : le glyphe ➤ pointe vers l'est à 0° — on aligne sur le cap réel de la route (fini la flèche de travers) */
+let _freeArrowAlignTok=0;
+async function freeAlignStartArrowToRoad(){ /* v161 : avant le chargement du secteur, la flèche s'aligne sur la route la plus proche (mini-requête Overpass) */
+  if(!freeMarker||!freeCenter||freeNavigation)return;
+  const tok=++_freeArrowAlignTok,lat=freeCenter.lat,lon=freeCenter.lon;
+  try{
+    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent('[out:json][timeout:25];way["highway"](around:90,'+lat+','+lon+');out geom 200;'),{mode:'cors',credentials:'omit'});
+    const j=await r.json();
+    if(tok!==_freeArrowAlignTok||freeNavigation)return;
+    const kx=111320*Math.cos(lat*Math.PI/180),kz=110540;
+    let best=null,bd=Infinity;
+    for(const el of j.elements||[]){
+      const geo=Array.isArray(el.geometry)?el.geometry:[];
+      for(let i=1;i<geo.length;i++){
+        const a=geo[i-1],b=geo[i];if(!a||!b||a.lat==null||b.lat==null)continue;
+        const ax=(a.lon-lon)*kx,az=-(a.lat-lat)*kz,dx=(b.lon-a.lon)*kx,dz=-((b.lat-a.lat)*kz);
+        const L2=dx*dx+dz*dz;if(L2<1e-6)continue;
+        let t=-((ax*dx+az*dz)/L2);t=Math.max(0,Math.min(1,t));
+        const px=ax+dx*t,pz=az+dz*t,d2=px*px+pz*pz;
+        if(d2<bd){bd=d2;best=Math.atan2(dx,-dz)*180/Math.PI;} /* cap au nord = 0°, sens horaire */
+      }
+    }
+    if(best!=null&&freeMarker){window._freeRoadBearing=best;freeUpdateStartArrow();}
+  }catch(_){}
+}
 function freeUpdateStartArrow(){ /* v121 : la flèche montre le vrai sens de départ sur la route la plus proche */
   let bearing=window._freeStartDir>=0?0:180;
   try{
     const nav=freeNavigation,dir=window._freeStartDir>=0?1:-1;
     const opt=nav&&nav.startOptions&&(nav.startOptions.find(o=>o.direction===dir)||nav.startOptions[0]);
     if(opt&&opt.points&&opt.points.length>1){const p0=opt.points[0],p1=opt.points[1],kx=(nav&&nav.kx)||111320,dlat=(p1.lat-p0.lat)*((nav&&nav.kz)||110540);bearing=Math.atan2((p1.lon-p0.lon)*kx,dlat)*180/Math.PI;}
+    else if(Number.isFinite(window._freeRoadBearing))bearing=window._freeRoadBearing+(window._freeStartDir>=0?0:180); /* v161 : cap de la route la plus proche, mémorisé au clic carte */
   }catch(_){}
   if(freeMarker)freeMarker.setIcon(freeArrowIcon(bearing));
 }
@@ -2429,18 +2455,18 @@ function initFreeMap(){
   freeMarker=L.marker([freeCenter.lat,freeCenter.lon],{icon:freeArrowIcon(0)}).addTo(freeMap); /* v121 : flèche à la place du point */
   freeMarker.on('click',e=>{try{L.DomEvent.stopPropagation(e.originalEvent)}catch(_){};window._freeStartDir*=-1;freeUpdateStartArrow();toast(window._freeStartDir>0?'Départ dans le sens de la flèche.':'Départ dans le sens inverse de la flèche.');}); /* v121 : un appui sur la flèche inverse le sens de départ */
   window._freeCircle=L.circle([freeCenter.lat,freeCenter.lon],{radius:freeMapRadius(),color:'#34d399',fillOpacity:.12,weight:2}).addTo(freeMap);
-  freeMap.on('click',e=>{const ll=e&&e.latlng;if(!ll||!Number.isFinite(ll.lat)||!Number.isFinite(ll.lng)){toast('Point de carte invalide.');return;}freeCenter={lat:ll.lat,lon:ll.lng};fetchWeatherAt(ll.lat,ll.lng); /* v138 : météo du point choisi */freeMarker.setLatLng(ll);freeUpdateStartArrow();window._freeCircle.setLatLng(ll);freeClearStartChoices();$('freeInfo').textContent='Point de départ choisi · rayon '+(freeMapRadius()/1000).toFixed(1)+' km · touche « Rouler ici » pour charger les routes';});
+  freeMap.on('click',e=>{const ll=e&&e.latlng;if(!ll||!Number.isFinite(ll.lat)||!Number.isFinite(ll.lng)){toast('Point de carte invalide.');return;}freeCenter={lat:ll.lat,lon:ll.lng};fetchWeatherAt(ll.lat,ll.lng); /* v138 : météo du point choisi */freeMarker.setLatLng(ll);freeUpdateStartArrow();freeAlignStartArrowToRoad();window._freeCircle.setLatLng(ll);freeClearStartChoices();$('freeInfo').textContent='Point de départ choisi · rayon '+(freeMapRadius()/1000).toFixed(1)+' km · touche « Rouler ici » pour charger les routes';});
 }
 function freeMapRefresh(){if(freeMap)setTimeout(()=>freeMap.invalidateSize({pan:false}),120);}
 setTimeout(initFreeMap,400);
 const freeRideDetails=$('freeRide');if(freeRideDetails)freeRideDetails.addEventListener('toggle',()=>{if(freeRideDetails.open){initFreeMap();freeMapRefresh();}});
 $('freeRadius')?.addEventListener('change',()=>{freeMapRadius();freeClearStartChoices();$('freeInfo').textContent='Rayon sélectionné : '+(freeMapRadius()/1000).toFixed(1)+' km';});
 $('enlargeMap')?.addEventListener('click',()=>{const mapEl=$('freeMap'),large=mapEl.style.height==='420px';mapEl.style.height=large?'220px':'420px';$('enlargeMap').textContent=large?'Agrandir la carte':'Réduire la carte';freeMapRefresh();});
-$('locateMe')?.addEventListener('click',()=>{if(!navigator.geolocation){toast('La géolocalisation n’est pas disponible.');return;}navigator.geolocation.getCurrentPosition(pos=>{freeCenter={lat:pos.coords.latitude,lon:pos.coords.longitude};fetchWeatherAt(pos.coords.latitude,pos.coords.longitude,'ta position'); /* v138 */if(freeMap)freeMap.setView([freeCenter.lat,freeCenter.lon],14);if(freeMarker)freeMarker.setLatLng([freeCenter.lat,freeCenter.lon]);freeUpdateStartArrow();if(window._freeCircle)window._freeCircle.setLatLng([freeCenter.lat,freeCenter.lon]).setRadius(freeMapRadius());freeClearStartChoices();$('freeInfo').textContent='Point de départ : ta position · choisis « Rouler ici » pour charger le secteur';},()=>toast('Position indisponible. Vérifie l’autorisation de localisation du navigateur.'),{enableHighAccuracy:true,timeout:12000});});
+$('locateMe')?.addEventListener('click',()=>{if(!navigator.geolocation){toast('La géolocalisation n’est pas disponible.');return;}navigator.geolocation.getCurrentPosition(pos=>{freeCenter={lat:pos.coords.latitude,lon:pos.coords.longitude};fetchWeatherAt(pos.coords.latitude,pos.coords.longitude,'ta position'); /* v138 */if(freeMap)freeMap.setView([freeCenter.lat,freeCenter.lon],14);if(freeMarker)freeMarker.setLatLng([freeCenter.lat,freeCenter.lon]);freeUpdateStartArrow();freeAlignStartArrowToRoad();if(window._freeCircle)window._freeCircle.setLatLng([freeCenter.lat,freeCenter.lon]).setRadius(freeMapRadius());freeClearStartChoices();$('freeInfo').textContent='Point de départ : ta position · choisis « Rouler ici » pour charger le secteur';},()=>toast('Position indisponible. Vérifie l’autorisation de localisation du navigateur.'),{enableHighAccuracy:true,timeout:12000});});
 /* v121 : adresse de départ recherchée sur la carte (Nominatim) */
-if($('freeAddrGo'))$('freeAddrGo').onclick=async()=>{const q=(($('freeAddr')&&$('freeAddr').value)||'').trim();if(!q)return;try{$('freeAddrGo').disabled=true;const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q));const j=await r.json();if(!j||!j.length){toast('Adresse introuvable.');return;}const lat=parseFloat(j[0].lat),lon=parseFloat(j[0].lon);if(!Number.isFinite(lat)||!Number.isFinite(lon))return;freeCenter={lat,lon};fetchWeatherAt(lat,lon,String(j[0].display_name||q).slice(0,40)); /* v138 */if(freeMap)freeMap.setView([lat,lon],15);if(freeMarker)freeMarker.setLatLng([lat,lon]);freeUpdateStartArrow();if(window._freeCircle)window._freeCircle.setLatLng([lat,lon]);freeClearStartChoices();$('freeInfo').textContent='Point de départ : '+String(j[0].display_name||q).slice(0,80)+' · touche « Rouler ici » pour charger les routes';}catch(e){toast('Recherche d’adresse indisponible (connexion ?).')}finally{if($('freeAddrGo'))$('freeAddrGo').disabled=false;}};
+if($('freeAddrGo'))$('freeAddrGo').onclick=async()=>{const q=(($('freeAddr')&&$('freeAddr').value)||'').trim();if(!q)return;try{$('freeAddrGo').disabled=true;const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q));const j=await r.json();if(!j||!j.length){toast('Adresse introuvable.');return;}const lat=parseFloat(j[0].lat),lon=parseFloat(j[0].lon);if(!Number.isFinite(lat)||!Number.isFinite(lon))return;freeCenter={lat,lon};fetchWeatherAt(lat,lon,String(j[0].display_name||q).slice(0,40)); /* v138 */if(freeMap)freeMap.setView([lat,lon],15);if(freeMarker)freeMarker.setLatLng([lat,lon]);freeUpdateStartArrow();freeAlignStartArrowToRoad();if(window._freeCircle)window._freeCircle.setLatLng([lat,lon]);freeClearStartChoices();$('freeInfo').textContent='Point de départ : '+String(j[0].display_name||q).slice(0,80)+' · touche « Rouler ici » pour charger les routes';}catch(e){toast('Recherche d’adresse indisponible (connexion ?).')}finally{if($('freeAddrGo'))$('freeAddrGo').disabled=false;}};
 if($('freeAddr'))$('freeAddr').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if($('freeAddrGo'))$('freeAddrGo').click();}});
-function freeClearStartChoices(){window._freeStartDir=1;freeNavigation=null;freeGraph=null;freeJunctions=null;window._freeNavigation=null;window._freeSectorCache=null;window._freeGraph=null;window._freeCurrentWay=null;if($('onewayChip'))$('onewayChip').classList.add('hide'); /* v159 */if($('turnAround'))$('turnAround').disabled=true;if($('freeStartDialog'))$('freeStartDialog').classList.add('hide');const box=$('startDirections');if(box){box.classList.remove('show');box.replaceChildren();}const arrows=$('routeArrows');if(arrows)arrows.classList.add('hide');if(typeof freeMarker!=='undefined'&&freeMarker)freeUpdateStartArrow();}
+function freeClearStartChoices(){window._freeStartDir=1;freeNavigation=null;freeGraph=null;freeJunctions=null;window._freeNavigation=null;window._freeSectorCache=null;window._freeGraph=null;window._freeCurrentWay=null;if($('onewayChip'))$('onewayChip').classList.add('hide'); /* v159 */if($('turnAround'))$('turnAround').disabled=true;if($('freeStartDialog'))$('freeStartDialog').classList.add('hide');const box=$('startDirections');if(box){box.classList.remove('show');box.replaceChildren();}const arrows=$('routeArrows');if(arrows)arrows.classList.add('hide');freeClearOptionTraces(); /* v161 */if(typeof freeMarker!=='undefined'&&freeMarker)freeUpdateStartArrow();}
 function freeProject(point,center){const kx=111320*Math.cos(center.lat*Math.PI/180),kz=110540;return{x:(point.lon-center.lon)*kx,z:-(point.lat-center.lat)*kz};}
 function freeMakeGraph(elements,center){
   const graph=[];
@@ -2776,6 +2802,9 @@ function freeBuildSceneryIndex(elements,center){
       minLon=Math.min(minLon,lon);maxLon=Math.max(maxLon,lon);
     };
     for(const point of geometry)include(point);
+    if(minLat===Infinity&&Array.isArray(element.members)){ /* v161 : relations multipolygon dans l'index de décor */
+      for(const member of element.members){if(member&&Array.isArray(member.geometry))for(const g of member.geometry)include(g);}
+    }
     if(minLat===Infinity)include(element);
     if(minLat===Infinity)continue;
     const x0=(minLon-center.lon)*kx,x1=(maxLon-center.lon)*kx;
@@ -2964,7 +2993,7 @@ function freeSeedElevation(points,nav,routeDistance){
   return filled;
 }
 function freeRoundJunctionMeters(remaining){return Math.ceil(Math.max(0,remaining)/10)*10;}
-function freeHideRouteArrows(){const el=$('routeArrows');if(el)el.classList.add('hide');}
+function freeHideRouteArrows(){const el=$('routeArrows');if(el)el.classList.add('hide');freeClearOptionTraces(); /* v161 */}
 
 function freeApplyChoiceImmediately(event,option,nav){
   if(!route||!nav) return;
@@ -2986,8 +3015,8 @@ function freeApplyChoiceImmediately(event,option,nav){
   const L=[0]; for(let i=1;i<filtered.length;i++) L[i]=L[i-1]+Math.hypot(filtered[i].x-filtered[i-1].x,filtered[i].z-filtered[i-1].z);
   const tot=L[L.length-1]; const n=Math.max(2,Math.ceil(tot/ST)), step=tot/n, X=[],Y=[],Z=[]; let j=0;
   for(let i=0;i<=n;i++){ const d=i*step; while(j<filtered.length-2&&L[j+1]<d) j++; const a=filtered[j],b=filtered[j+1],f=(d-L[j])/((L[j+1]-L[j])||1); X.push(a.x+(b.x-a.x)*f); Y.push(a.y+(b.y-a.y)*f); Z.push(a.z+(b.z-a.z)*f); }
-  sm(Y,3,true); sm(Y,3,true); sm(X,2,true); sm(Z,2,true);
-  const G=Y.map((_,i)=>{ const a=Math.max(0,i-1), b=Math.min(n,i+1); return Math.max(-.2,Math.min(.2,(Y[b]-Y[a])/((b-a)*step))); }); sm(G,2);
+  sm(Y,3,true); sm(Y,3,true); sm(X,2,true); sm(Z,2,true); limitGrades(Y,step); /* v161 : plus de toboggans à 20 % */
+  const G=Y.map((_,i)=>{ const a=Math.max(0,i-1), b=Math.min(n,i+1); return Math.max(-.14,Math.min(.14,(Y[b]-Y[a])/((b-a)*step))); }); sm(G,2);
   // On remplace la route sans toucher à s, v, running, ni à la caméra
   route={X,Y,Z,G,n,step,len:tot};let _gain=0;for(let i=1;i<Y.length;i++)_gain+=Math.max(0,Y[i]-Y[i-1]);window._routeGain=_gain; s=oldS; totalDistance=oldTotal; v=oldV; running=oldRunning||resumeAtJunction;
   /* v73 : la route fusionnée doit aussi exister en 3D — on reconstruit la chaussée
@@ -3013,6 +3042,31 @@ function freeApplyChoiceImmediately(event,option,nav){
   nav.preparedFor=option;
   if(resumeAtJunction){nav.awaitingChoice=false;$('pause').textContent='Pause';last=performance.now();requestWakeLock();toast('Direction choisie · la sortie reprend.');buzz(25);}
 }
+/* v161 : chaque panneau de direction a sa couleur, retracée sur la carte ; la direction tout droit (par défaut) garde toujours le vert d'origine */
+const FREE_OPTION_COLORS=[{a:'#28724f',b:'#145238'},{a:'#2f6fb5',b:'#1d4f8a'},{a:'#c26a10',b:'#8f4d08'},{a:'#7a4bc9',b:'#5a35a0'},{a:'#c04a44',b:'#8f312c'},{a:'#0e7490',b:'#0a5568'}];
+let freeOptionTraces=[];
+function freeClearOptionTraces(){
+  for(const t of freeOptionTraces){try{if(t.layer2d&&rideMap2D)rideMap2D.removeLayer(t.layer2d);}catch(_){}}
+  freeOptionTraces=[];
+  if(rideMap3D&&rideMap3DReady){try{rideMap3D.getSource('velo-options').setData({type:'FeatureCollection',features:[]});}catch(_){}}
+}
+function freeDrawOptionTraces(event){
+  freeClearOptionTraces();
+  if(!event||!event.options||!event.options.length)return;
+  const straight=event.options.find(o=>o.arrow==='↑')||event.options[0];
+  let extra=0;const features=[];
+  for(const option of event.options){
+    const col=option===straight?FREE_OPTION_COLORS[0]:FREE_OPTION_COLORS[1+((extra++)%(FREE_OPTION_COLORS.length-1))];
+    option.panelColor=col;
+    const plan=event.continuations&&event.continuations.find(item=>item.option===option);
+    const pts=((plan&&plan.points)||option.points||[]).filter(freeValidCoord).map(p=>[Number(p.lat),Number(p.lon)]);
+    if(pts.length>1){
+      if(window.L&&rideMap2D){try{freeOptionTraces.push({layer2d:L.polyline(pts,{color:col.a,weight:5,opacity:.9,dashArray:'2 8',lineCap:'round'}).addTo(rideMap2D)});}catch(_){}}
+      features.push({type:'Feature',properties:{color:col.a},geometry:{type:'LineString',coordinates:pts.map(p=>[p[1],p[0]])}});
+    }
+  }
+  if(features.length&&rideMap3D&&rideMap3DReady){try{rideMap3D.getSource('velo-options').setData({type:'FeatureCollection',features});}catch(_){}}
+}
 function freeRenderRouteArrows(event,nav){
   const el=$('routeArrows');
   if(!el)return;
@@ -3021,11 +3075,19 @@ function freeRenderRouteArrows(event,nav){
   distance.id='junctionDistance';
   el.appendChild(distance);
   const meters=freeRoundJunctionMeters(event.distance-s);
+  { /* v161 : attribution des couleurs AVANT la création des boutons — vert réservé à la direction tout droit */
+    const straightOpt=event.options.find(o=>o.arrow==='↑')||event.options[0];
+    let _extra=0;
+    for(const option of event.options)option.panelColor=option===straightOpt?FREE_OPTION_COLORS[0]:FREE_OPTION_COLORS[1+((_extra++)%(FREE_OPTION_COLORS.length-1))];
+  }
   /* v75 : l'étiquette annonce un rond-point pour ne pas le confondre avec un carrefour simple */
   distance.textContent=event.roundabout?'Rond-point dans '+meters+' m':'';
   for(const option of event.options){
     const btn=document.createElement('button');
     btn.type='button';btn.className='routeArrow';
+    const col=option.panelColor||FREE_OPTION_COLORS[0];
+    if(option!==((event.options.find(o=>o.arrow==='↑'))||event.options[0]))btn.style.background='linear-gradient(155deg,'+col.a+','+col.b+')'; /* v161 : couleur propre à chaque destination, vert réservé à la direction par défaut */
+    btn.style.borderColor='rgba(243,245,233,.85)';
     const arrow=document.createElement('span');arrow.className='arrowGlyph';arrow.textContent=option.arrow;
     const dist=document.createElement('span');dist.className='routeMeters';dist.textContent=meters+' m';dist._m=meters;
     const towns=document.createElement('span');towns.className='routeTowns';
@@ -3034,6 +3096,7 @@ function freeRenderRouteArrows(event,nav){
     freeSetTownHint(option,nav);if(option.deadEnd){towns.textContent='Impasse';btn.classList.add('deadEndArrow');}
     btn.onclick=()=>{
       event.selected=option;
+      freeClearOptionTraces(); /* v161 : le tracé choisi devient la route rouge suivie */
       for(const button of el.querySelectorAll('button'))button.classList.toggle('selected',button===btn);
       const plan=event.continuations&&event.continuations.find(item=>item.option===option);
       if(plan&&!plan.elevationPromise){
@@ -3053,6 +3116,7 @@ function freeRenderRouteArrows(event,nav){
     el.appendChild(btn);
   }
   el.classList.toggle('hide',!event.options.length);
+  freeDrawOptionTraces(event); /* v161 : chaque option tracée sur la carte dans sa couleur */
 }
 function freePrepareJunctionPlans(event,nav){
   if(event.continuations)return event.continuations;
@@ -3411,7 +3475,7 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
        les voies eau/rail/tunnel passent dans l'union du décor (avant, écrites hors union, leur résultat était perdu) ;
        quota de routes progressif selon le rayon pour éviter les réponses géantes en zone rurale élargie */
     const roadCap=r<=5000?30000:(r<=10000?20000:12000);
-    const q=`[out:json][timeout:60];(way[\"highway\"](around:${r},${center.lat},${center.lon}););out body geom ${roadCap};(way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 9000;node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
+    const q=`[out:json][timeout:60];(way[\"highway\"](around:${r},${center.lat},${center.lon}););out body geom ${roadCap};(way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});relation["leisure"="stadium"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 9000;node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
     try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000); /* v155 : 45 s par serveur */let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const seenEls=new Set();const elements=data.elements.filter(e=>{if(!e||!['way','node'].includes(e.type))return false;const k=e.type+'/'+e.id;if(seenEls.has(k))return false;seenEls.add(k);return true;}); /* v159 : dédoublonnage (tunnelways présents dans les deux out) */onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
     catch(error){last=error&&error.name==='AbortError'?host+' délai dépassé':(error.message||String(error));onProgress(Math.min(.12+attempt*.10,.42),'Serveur OSM indisponible · nouvel essai…');}
   }
@@ -3526,6 +3590,19 @@ $('resetStyle').onclick=()=>{for(const key of Object.keys(defaultRiderStyle))upd
 /* ---------- Parcours ---------- */
 let route=null,world=null,proj=null,s=0,v=0,running=false,totalDistance=0;
 function sm(values,width,preserveEnds=false){const source=values.slice();for(let i=0;i<values.length;i++){if(preserveEnds&&(i===0||i===values.length-1))continue;let sum=0,count=0;for(let offset=-width;offset<=width;offset++){const k=i+offset;if(k>=0&&k<values.length){sum+=source[k];count++}}values[i]=sum/count}}
+function limitGrades(values,step,maxG=.13){ /* v161 : anti-toboggan — le DEM invente des rampes à 20 % ; on écrête la pente du profil à 13 % max */
+  if(!(step>0)||values.length<2)return;
+  for(let pass=0;pass<8;pass++){
+    let changed=false;
+    for(let i=1;i<values.length;i++){
+      const g=(values[i]-values[i-1])/step;
+      if(g>maxG){values[i]-=(g-maxG)*step;changed=true;}
+      else if(g<-maxG){values[i]+=(-maxG-g)*step;changed=true;}
+    }
+    if(!changed)break;
+  }
+  sm(values,2,true);
+}
 function build(raw){
   if(raw.length<2)throw new Error('La trace doit contenir au moins deux points.');
   const filtered=[];for(const p of raw){if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||!Number.isFinite(p.z))continue;const prev=filtered[filtered.length-1];if(!prev||Math.hypot(p.x-prev.x,p.z-prev.z)>.05)filtered.push(p)}
@@ -3534,8 +3611,8 @@ function build(raw){
   const tot=L[L.length-1];if(tot<1)throw new Error('Le parcours est trop court (moins d’un mètre).');if(tot>600000)throw new Error('Cette version accepte les traces jusqu’à 600 km.');
   const n=Math.max(2,Math.ceil(tot/ST)),step=tot/n,X=[],Y=[],Z=[];let j=0;
   for(let i=0;i<=n;i++){const d=i*step;while(j<filtered.length-2&&L[j+1]<d)j++;const a=filtered[j],b=filtered[j+1],f=(d-L[j])/((L[j+1]-L[j])||1);X.push(a.x+(b.x-a.x)*f);Y.push(a.y+(b.y-a.y)*f);Z.push(a.z+(b.z-a.z)*f)}
-  sm(Y,3,true);sm(Y,3,true);sm(X,2,true);sm(Z,2,true);
-  const G=Y.map((_,i)=>{const a=Math.max(0,i-1),b=Math.min(n,i+1);return Math.max(-.2,Math.min(.2,(Y[b]-Y[a])/((b-a)*step)))});sm(G,2);
+  sm(Y,3,true);sm(Y,3,true);sm(X,2,true);sm(Z,2,true);limitGrades(Y,step); /* v161 : plus de toboggans à 20 % */
+  const G=Y.map((_,i)=>{const a=Math.max(0,i-1),b=Math.min(n,i+1);return Math.max(-.14,Math.min(.14,(Y[b]-Y[a])/((b-a)*step)))});sm(G,2);
   const generation=++osmTok,keepSettlement=!!(window._freeNavigation&&window._freeNavigation.active&&window._freeNavigation.preserveSettlement);resetSceneryData();resetMapState(keepSettlement);cameraState.ready=false;
   route={X,Y,Z,G,n,step,len:tot};let _gain=0;for(let i=1;i<Y.length;i++)_gain+=Math.max(0,Y[i]-Y[i-1]);window._routeGain=_gain;s=0;v=0;totalDistance=0;running=false;makeWorld();place(true);drawMiniMap(performance.now(),true);
   $('pause').textContent='Pause';
@@ -3879,7 +3956,10 @@ function osmXY(point){
 }
 function osmElementPoints(element){
   if(!element)return[];
-  const geometry=Array.isArray(element.geometry)?element.geometry:[];
+  let geometry=Array.isArray(element.geometry)?element.geometry:[];
+  if(!geometry.length&&Array.isArray(element.members)){ /* v161 : relations multipolygon — les grands stades sont souvent cartographiés en relation */
+    for(const member of element.members){if(member&&Array.isArray(member.geometry))for(const g of member.geometry)if(g&&g.lat!=null&&g.lon!=null)geometry.push(g);}
+  }
   const points=geometry.map(osmXY).filter(Boolean);
   if(points.length)return points;
   const one=osmXY(element);
@@ -4312,7 +4392,7 @@ async function loadOSM(){
         way["amenity"="place_of_worship"](around:300,${corridor});node["amenity"="place_of_worship"](around:300,${corridor});
         way["historic"](around:300,${corridor});node["historic"](around:300,${corridor});
         way["tourism"~"^(museum|artwork|attraction|viewpoint)$"](around:300,${corridor});node["tourism"~"^(museum|artwork|attraction|viewpoint)$"](around:300,${corridor});
-        way["leisure"="stadium"](around:300,${corridor});node["leisure"="stadium"](around:300,${corridor});
+        way["leisure"="stadium"](around:300,${corridor});node["leisure"="stadium"](around:300,${corridor});relation["leisure"="stadium"](around:300,${corridor}); /* v161 */
         way["man_made"="tower"](around:300,${corridor});node["man_made"="tower"](around:300,${corridor});
         way["building"="tower"](around:300,${corridor});
         node["traffic_sign"](around:70,${corridor});
@@ -4504,6 +4584,12 @@ function buildings(buildingParts,targetWorld){
 /* v134 : champs, prairies et vergers — polygones colorés + rangs de culture pour les terres labourées. */
 function buildFarmland(farmlandList,targetWorld){
   if(!farmlandList||!farmlandList.length)return 0;
+  /* v161 : dans les cols (haute altitude ou très grand relief), plus de champs plats flottants — le terrain réel laisse voir le contrebas */
+  try{
+    let meanAlt=0,mn=Infinity,mx=-Infinity;
+    if(route){for(let i=0;i<route.n;i++){const y=route.Y[i];meanAlt+=y;mn=Math.min(mn,y);mx=Math.max(mx,y);}meanAlt/=route.n;}
+    if(meanAlt>900||mx-mn>420)return 0;
+  }catch(_){}
   const fills={farmland:[],meadow:[],orchard:[],grass:[]},rows=[];
   const fillColour={farmland:0xc2a852,meadow:0x6f9e4f,orchard:0x5d8f3e,grass:0x7fae57};
   let count=0;
@@ -4677,11 +4763,13 @@ function hedgesLegacy(hedgeParts,targetWorld){
 }
 
 function osmLandmarkKind(tags={}){const worship=String(tags.amenity||'')==='place_of_worship'||/^(church|chapel|cathedral|mosque|temple|synagogue)$/i.test(String(tags.building||''));if(worship)return'church';const h=String(tags.historic||'').toLowerCase(),t=String(tags.tourism||'').toLowerCase(),name=String(tags.name||'').toLowerCase();if(String(tags.leisure||'').toLowerCase()==='stadium')return'stadium'; /* v140 : stades */if(/eiffel/.test(name)||String(tags.man_made||'').toLowerCase()==='tower')return'tower'; /* v140 : tours (Tour Eiffel) */if(/arc de triomphe/.test(name))return'arch'; /* v140 : Arc de Triomphe */return/^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$/.test(h)||/^(museum|artwork|attraction|viewpoint)$/.test(t)?'monument':null;}
-function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const near=nearestOnRoute(x,z);if(!near||near.dist2>350*350)continue;const g=new THREE.Group();g.position.set(x,near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=7.5+seed*3.5,d=12+seed*5,h=7.5+seed*2.5; /* v155 : églises beaucoup plus grandes */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,4+seed*1.2,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.8,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(2.6,9,2.6),matChurch);tower.position.set(0,4.5,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.8,4.6,8),matRoof);spire.position.set(0,11,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,.12),matDark);crossV.position.set(0,13.55,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.78,.14,.12),matDark);crossH.position.set(0,13.68,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.12),matDark);door.position.set(0,1.3,d/2+.05);g.add(door);}
-else if(item.kind==='stadium'){ /* v140 : stade — pelouse + tribunes en bol */
-  const field=new THREE.Mesh(new THREE.CircleGeometry(17,28),new THREE.MeshStandardMaterial({color:0x4e8f3a,roughness:1}));field.rotation.x=-Math.PI/2;field.position.y=.12;g.add(field);
-  const bowl=new THREE.Mesh(new THREE.CylinderGeometry(26,26,9,28,1,true),new THREE.MeshStandardMaterial({color:0xb9b2a4,roughness:.9,side:THREE.DoubleSide}));bowl.position.y=4.5;g.add(bowl);
-  const rim=new THREE.Mesh(new THREE.TorusGeometry(26,1.1,8,28),new THREE.MeshStandardMaterial({color:0x8f887a,roughness:.8}));rim.rotation.x=Math.PI/2;rim.position.y=9;g.add(rim);
+function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:350; /* v161 : stades visibles de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();g.position.set(x,near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=7.5+seed*3.5,d=12+seed*5,h=7.5+seed*2.5; /* v155 : églises beaucoup plus grandes */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,4+seed*1.2,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.8,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(2.6,9,2.6),matChurch);tower.position.set(0,4.5,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.8,4.6,8),matRoof);spire.position.set(0,11,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,.12),matDark);crossV.position.set(0,13.55,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.78,.14,.12),matDark);crossH.position.set(0,13.68,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.12),matDark);door.position.set(0,1.3,d/2+.05);g.add(door);}
+else if(item.kind==='stadium'){ /* v140+v161 : stade dimensionné d'après la façon OSM (avant : bol fixe de 26 m, invisible pour les vrais stades) */
+  let rr=0;for(const p of pts){const d=Math.hypot(p[0]-x,p[1]-z);if(d>rr)rr=d;}
+  const R=Math.max(20,Math.min(150,rr||30)),bh=Math.max(9,Math.min(22,R*.34));
+  const field=new THREE.Mesh(new THREE.CircleGeometry(R*.62,28),new THREE.MeshStandardMaterial({color:0x4e8f3a,roughness:1}));field.rotation.x=-Math.PI/2;field.position.y=.12;g.add(field);
+  const bowl=new THREE.Mesh(new THREE.CylinderGeometry(R,R*.94,bh,28,1,true),new THREE.MeshStandardMaterial({color:0xb9b2a4,roughness:.9,side:THREE.DoubleSide}));bowl.position.y=bh/2;g.add(bowl);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(R,Math.max(.9,R*.045),8,28),new THREE.MeshStandardMaterial({color:0x8f887a,roughness:.8}));rim.rotation.x=Math.PI/2;rim.position.y=bh;g.add(rim);
 }else if(item.kind==='tower'){ /* v156 : Tour Eiffel — 4 pieds écartés, 3 plateformes, fût rétréci, grande hauteur */
   const th=Math.min(320,Math.max(60,osmMetres(item.tags&&item.tags.height,NaN,60,330)||330));
   for(const lp of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.5,1.6,th*.6,6),matStone);leg.position.set(lp[0]*4.4,th*.3,lp[1]*4.4);leg.rotation.z=lp[0]*-.17;leg.rotation.x=lp[1]*.17;g.add(leg);}
@@ -4948,16 +5036,18 @@ async function buildMountainDecor(passes,peaksList,targetWorld){
   let minY=Infinity,maxY=-Infinity,sumY=0;for(let i=0;i<route.n;i++){const y=route.Y[i];minY=Math.min(minY,y);maxY=Math.max(maxY,y);sumY+=y;}
   const relief=maxY-minY,baseAlt=(window._routeBaseAlt||0)+sumY/route.n;let maxG=0;if(route.G)for(const g of route.G)maxG=Math.max(maxG,Math.abs(g)); /* v158 */
   const list=[...(passes||[]),...(peaksList||[])].map(p=>({...p}));
-  /* région montagneuse sans sommet cartographié : chaîne d'arrière-plan — v160 : plus loin (1,2–2,8 km), le recul exact dépend du rayon du massif */
-  if(relief>50||baseAlt>450||maxG>.06||list.length){const cx=route.X[Math.floor(route.n/2)],cz=route.Z[Math.floor(route.n/2)];const nb=list.length?6:12;
-    for(let k=0;k<nb;k++){const ang=k/nb*Math.PI*2+hash(k,3)*.4,dist=1200+hash(k,7)*1600;list.push({x:cx+Math.cos(ang)*dist,z:cz+Math.sin(ang)*dist,ele:0,bg:true});}}
+  /* région montagneuse sans sommet cartographié : chaîne d'arrière-plan — v161 : plus de fausses montagnes en plaine (Caen) ; massifs seulement si sommets/cols OSM, ou vrai relief d'altitude (plateau > 320 m et relief marqué, ou pente de col) */
+  if(list.length||(relief>140&&baseAlt>320)||(maxG>.08&&baseAlt>320)){const cx=route.X[Math.floor(route.n/2)],cz=route.Z[Math.floor(route.n/2)];const nb=list.length?6:12;
+    for(let k=0;k<nb;k++){const ang=k/nb*Math.PI*2+hash(k,3)*.4,dist=1200+hash(k,7)*1600;list.push({x:cx+Math.cos(ang)*dist,z:cz+Math.sin(ang)*dist,ele:0,bg:true});}
+    /* v161 : collines de pied de massif plus proches, pour combler le « vide bleu » entre les sommets */
+    for(let k=0;k<8;k++){const ang=k/8*Math.PI*2+hash(k,11)*.55,dist=620+hash(k,13)*520;list.push({x:cx+Math.cos(ang)*dist,z:cz+Math.sin(ang)*dist,ele:0,fg:true});}}
   if(!list.length)return 0;
   const cols={forest:new THREE.Color(0x3d5a34),meadow:new THREE.Color(0x7d8f55),rock:new THREE.Color(0x7a7266),darkRock:new THREE.Color(0x58534c),snow:new THREE.Color(0xf2f5f8)};
   const mat=new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true,fog:false});const haze=new THREE.Color(0xb9cfdc);
   const built=[];const tmp=new THREE.Color();
   for(const p of list.slice(0,24)){
     let near=nearestOnRoute(p.x,p.z);if(!near||near.dist2>8000*8000)continue; /* v160 : reliefs visibles jusqu'à 8 km (avant 3,2 km) */
-    const h=p.bg?Math.max(240,Math.min(1300,300+relief*1.5+hash(p.x,p.z)*350)):(p.ele>0?Math.max(200,Math.min(1200,(p.ele-baseAlt)*.9+150)):Math.max(180,Math.min(900,260+relief*1.2+hash(p.x,p.z)*250)));
+    const h=p.fg?Math.max(110,Math.min(340,140+relief*.35+hash(p.x,p.z)*170)):(p.bg?Math.max(240,Math.min(1300,300+relief*1.5+hash(p.x,p.z)*350)):(p.ele>0?Math.max(200,Math.min(1200,(p.ele-baseAlt)*.9+150)):Math.max(180,Math.min(900,260+relief*1.2+hash(p.x,p.z)*250)))); /* v161 : collines de pied de massif plus basses */
     const rad=h*(1.05+hash(p.z,p.x)*.5); /* v160 : massifs resserrés (avant ×1,5–2,2 : leurs disques recouvraient la route) */
     /* v160 : jamais sur la chaussée — la demi-largeur du disque (rad*1,2) reste à 120 m minimum de la route */
     let dist=Math.sqrt(near.dist2),px=p.x,pz=p.z;const minD=rad*1.35+120;
@@ -5415,7 +5505,7 @@ function updateMapLabel(){const label=$('mapScale');if(label)label.textContent=m
 function rideGeoAt(distance){if(!route||!proj||![proj.la,proj.lo,proj.kx,proj.kz].every(Number.isFinite)||!proj.kx||!proj.kz)return null;const p=at(distance);return[proj.lo+p[0]/proj.kx,proj.la-p[2]/proj.kz];}
 function rideGeoLine(endDistance=route?route.len:0,maxPoints=1400){if(!route||!proj)return[];const end=Math.max(0,Math.min(route.len,endDistance)),count=Math.max(1,Math.min(maxPoints,Math.ceil(route.n*end/Math.max(route.len,1)))),coords=[];for(let i=0;i<=count;i++){const coord=rideGeoAt(end*i/count);if(coord)coords.push(coord);}return coords;}
 function geoFeature(type,coordinates){return{type:'Feature',properties:{},geometry:{type,coordinates}};}
-function installRideMap3DLayers(){if(!rideMap3D||rideMap3DReady)return;const style=rideMap3D.getStyle(),before=style.layers.find(layer=>layer.type==='symbol')?.id;const empty={type:'FeatureCollection',features:[]};rideMap3D.addSource('velo-route',{type:'geojson',data:empty});rideMap3D.addSource('velo-ridden',{type:'geojson',data:empty});rideMap3D.addSource('velo-rider',{type:'geojson',data:empty});rideMap3D.addLayer({id:'velo-route-outline',type:'line',source:'velo-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':8,'line-opacity':.9}},before);rideMap3D.addLayer({id:'velo-route-line',type:'line',source:'velo-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#d94135','line-width':5}},before);rideMap3D.addLayer({id:'velo-ridden-line',type:'line',source:'velo-ridden',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#8d241f','line-width':5}},before);rideMap3D.addLayer({id:'velo-rider-dot',type:'circle',source:'velo-rider',paint:{'circle-radius':8,'circle-color':'#d74436','circle-stroke-color':'#fff','circle-stroke-width':2}},before);rideMap3DReady=true;}
+function installRideMap3DLayers(){if(!rideMap3D||rideMap3DReady)return;const style=rideMap3D.getStyle(),before=style.layers.find(layer=>layer.type==='symbol')?.id;const empty={type:'FeatureCollection',features:[]};rideMap3D.addSource('velo-options',{type:'geojson',data:empty}); /* v161 : tracés colorés des options au carrefour */rideMap3D.addLayer({id:'velo-options-line',type:'line',source:'velo-options',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':5,'line-opacity':.85,'line-dasharray':[2,3]}},before);rideMap3D.addSource('velo-route',{type:'geojson',data:empty});rideMap3D.addSource('velo-ridden',{type:'geojson',data:empty});rideMap3D.addSource('velo-rider',{type:'geojson',data:empty});rideMap3D.addLayer({id:'velo-route-outline',type:'line',source:'velo-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':8,'line-opacity':.9}},before);rideMap3D.addLayer({id:'velo-route-line',type:'line',source:'velo-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#d94135','line-width':5}},before);rideMap3D.addLayer({id:'velo-ridden-line',type:'line',source:'velo-ridden',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#8d241f','line-width':5}},before);rideMap3D.addLayer({id:'velo-rider-dot',type:'circle',source:'velo-rider',paint:{'circle-radius':8,'circle-color':'#d74436','circle-stroke-color':'#fff','circle-stroke-width':2}},before);rideMap3DReady=true;}
 function ensureMapLibre(){if(window.maplibregl)return Promise.resolve(window.maplibregl);if(mapLibrePromise)return mapLibrePromise;mapLibrePromise=new Promise((resolve,reject)=>{if(!document.querySelector('link[data-velo-maplibre]')){const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css';css.dataset.veloMaplibre='1';document.head.appendChild(css);}const script=document.createElement('script');script.src='https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js';script.async=true;script.onload=()=>window.maplibregl?resolve(window.maplibregl):reject(new Error('MapLibre indisponible'));script.onerror=()=>reject(new Error('Bibliothèque 3D non chargée'));document.head.appendChild(script);});return mapLibrePromise;}
 async function setRideMap3D(enabled){
   if(enabled){
@@ -6101,7 +6191,7 @@ function loop(t){
     if(window._icuPlan)updateIcuPlan(dt,power); /* v144 : déroulement de l'entraînement intervals.icu */
     if(window._icuPlan&&(window._icuPlan.phase==='run'||window._icuPlan.phase==='next')&&!ctl&&performance.now()-(window._pwManualAt||0)>8000){const _it=icuTargetAt(window._icuPlan); /* v153 : 8 s de grâce après une saisie manuelle */if(_it>0&&$('pw')){$('pw').value=Math.round(_it);if($('pv'))$('pv').textContent=Math.round(_it);}} /* v144 : mode manuel, la cible règle le curseur de puissance */
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);
-    if($('pwAvg')){const _ap=window._rideElapsed>0?(window._ridePwSum||0)/window._rideElapsed:0;const _ftp=Number(riderStyle.ftp)||0;$('pwAvg').textContent=_ap>0?('moy '+Math.round(_ap)+' W'+(_ftp>=50?' · '+Math.round(_ap/_ftp*100)+'% FTP':'')):'moy – W';} /* v156 : puissance moyenne sous le curseur de puissance */$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
+    if($('pwAvg')){const _ap=window._rideElapsed>0?(window._ridePwSum||0)/window._rideElapsed:0;const _ftp=Number(riderStyle.ftp)||0;$('pwAvg').textContent=_ap>0?('moy '+Math.round(_ap)+' W'+(_ftp>=50?' · '+Math.round(_ap/_ftp*100)+'% FTP':'')):'moy – W';if($('poMoy'))$('poMoy').textContent=_ap>0?('moy '+Math.round(_ap)+' W'):'moy – W';} /* v156+v161 : puissance moyenne sous le curseur et dans le HUD */$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
     {const _it=(window._icuPlan&&running)?icuTargetAt(window._icuPlan):0,_po=$('po');if(_po){if(!_it)_po.className='';else if(power>_it*1.05)_po.className='over';else if(power<_it*0.95)_po.className='under';else _po.className='ok';}} /* v144 : puissance colorée selon la cible de l'exercice en cours */
   }
   R.render(S,cam);
