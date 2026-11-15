@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v163 – stades avec tribunes et terrain coté, flèche SVG alignée, vallées en profondeur</title>
+<title>Vélo 3D v164 – relief façon Moveee : sol fondu à la route, collines latérales, low-poly saturé</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v163</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v164</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -874,124 +874,47 @@ async function buildTerrain(target){
   for(let j0=0;j0<jobs.length;j0+=6){try{await Promise.all(jobs.slice(j0,j0+6));}catch(_){}} /* v160 : requêtes parallèles par groupes de 6 (chargement ~6× plus rapide) */
   if(token!==window._worldToken)return; /* le monde a été reconstruit entre-temps */
   if(okCount<n*.5){const flat=(minY+maxY)/2;for(let i=0;i<n;i++)if(!Number.isFinite(ele[i]))ele[i]=flat;} /* repli : terrain plat */
-/* 1. Passe de lissage passe-bas sur le DEM brut (supprime le bruit et les marches) */
-for (let pass = 0; pass < 3; pass++) {
-  const tmp = new Float32Array(ele);
-  for (let j = 1; j < nz - 1; j++) {
-    for (let i = 1; i < nx - 1; i++) {
-      const idx = j * nx + i;
-      ele[idx] = (
-        tmp[idx] * 4 +
-        (tmp[idx - 1] + tmp[idx + 1] + tmp[idx - nx] + tmp[idx + nx]) * 2 +
-        (tmp[idx - nx - 1] + tmp[idx - nx + 1] + tmp[idx + nx - 1] + tmp[idx + nx + 1])
-      ) / 16;
+  { /* v164 : comble les trous résiduels du DEM (au-delà de 50 % d'échec, certains points restaient NaN) */
+    let sum=0,cnt=0;for(let i=0;i<n;i++)if(Number.isFinite(ele[i])){sum+=ele[i];cnt++;}
+    if(cnt){const mean=sum/cnt;for(let i=0;i<n;i++)if(!Number.isFinite(ele[i]))ele[i]=mean;}
+  }
+  /* v164 : lissage du DEM — 2 passes de moyenne croisée, on garde les grandes formes (style Moveee), le bruit disparaît */
+  for(let p=0;p<2;p++){const src=ele.slice(0);for(let j=1;j<nz-1;j++)for(let i=1;i<nx-1;i++){const k=j*nx+i;ele[k]=(src[k]*4+src[k-1]+src[k+1]+src[k-nx]+src[k+nx])/8;}}
+  /* v164 : fusion terrain↔route + collines latérales façon Moveee */
+  if(route&&route.n>1){
+    const rX=route.X,rY=route.Y,rZ=route.Z,rN=route.n,stride=rN>6000?2:1;
+    for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
+      const idx=j*nx+i,x=minX+i*(w/(nx-1)),z=minZ+j*(d/(nz-1));
+      let best=1e12,bi=0;
+      for(let k=0;k<rN;k+=stride){const dx=x-rX[k],dz2=z-rZ[k],dd=dx*dx+dz2*dz2;if(dd<best){best=dd;bi=k;}}
+      const dist=Math.sqrt(best),ry=rY[bi];
+      if(dist<45){ /* corridor : le sol épouse la chaussée — déblai si le terrain dépasse (tranchée), remblai léger sinon ; au-delà de 6 m sous la route = pont, on ne remblaye pas */
+        const diff=ry+.65-ele[idx];
+        if(diff<6){const u=dist<=15?1:1-(dist-15)/30,s=u*u*(3-2*u);ele[idx]+=diff*s;}
+      }
+      const hill=sideHillHeight(rG[bi],dist,x,z,bi); /* v164 : collines latérales — même formule que le décor, qui grimpe dessus */
+      if(hill>0){const target=ry+.65+hill;if(target>ele[idx])ele[idx]=target;} /* on ne fait que combler : jamais de trou artificiel */
     }
   }
-}
- 
- /* 2. DÉSACTIVÉ :
-     Le terrain ne doit pas être “collé” à la route.
-     Ce recalage artificiel soulève le décor près du parcours et crée l’effet
-     de relief déformé visible sur les captures.
-   */
-  // for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
-  //   const idx = j * nx + i;
-  //   const x = minX + i * (w / (nx - 1)), z = minZ + j * (d / (nz - 1));
-  //   const near = nearestOnRoute(x, z);
-  //   if (!near) continue;
-  //   const dist = Math.sqrt(near.dist2);
-  //   const blendR = 260;
-  //   if (dist < blendR) {
-  //     const u = dist / blendR;
-  //     const smooth = u * u * (3 - 2 * u);
-  //     const spurOffset = Math.min(dist, 35) * 0.04;
-  //     const roadAnchor = near.y + 0.45 - spurOffset;
-  //     ele[idx] = roadAnchor * (1 - smooth) + ele[idx] * smooth;
-  //   }
-  // }
-/* 3. Maillage continu low-poly, facettes visibles, terrain propre */
-const indexedGeo = new THREE.PlaneGeometry(w, d, nx - 1, nz - 1);
-indexedGeo.rotateX(-Math.PI / 2);
-const iPos = indexedGeo.attributes.position;
-
-for (let j = 0; j < nz; j++) {
-  for (let i = 0; i < nx; i++) {
-    const idx = j * nx + i;
-    iPos.setXYZ(
-      idx,
-      minX + i * (w / (nx - 1)),
-      ele[idx] - 0.65,
-      minZ + j * (d / (nz - 1))
-    );
+  let eMin=Infinity,eMax=-Infinity;for(let i=0;i<n;i++){eMin=Math.min(eMin,ele[i]);eMax=Math.max(eMax,ele[i]);}
+  const geo=new THREE.PlaneGeometry(w,d,nx-1,nz-1);geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position,colors=new Float32Array(pos.count*3),c=new THREE.Color(),rockC=new THREE.Color(0x9d927c); /* v164 : ocre-roche pour les fortes pentes */
+  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
+    const idx=j*nx+i,e=ele[idx],t=Math.max(0,Math.min(1,(e-eMin)/Math.max(1,eMax-eMin)));
+    pos.setXYZ(idx,minX+i*(w/(nx-1)),e-.65,minZ+j*(d/(nz-1)));
+    if(e>1600)c.set(0xf2f4f6);
+    else{
+      /* v164 : palette saturée façon Moveee — verts francs qui tirent vers l'ocre avec l'altitude */
+      c.setHSL(.30-t*.10,.50+t*.12,.33+t*.15);
+      const l=ele[j*nx+Math.max(0,i-1)],r=ele[j*nx+Math.min(nx-1,i+1)],u=ele[Math.max(0,j-1)*nx+i],dn=ele[Math.min(nz-1,j+1)*nx+i];
+      const slope=Math.hypot(r-l,dn-u)/(2*cell); /* pente locale (m/m) depuis les voisins de grille */
+      if(slope>.38)c.lerp(rockC,Math.min(1,(slope-.38)/.34)*.75); /* au-delà de ~21° : roche/ocre */
+    }
+    colors[idx*3]=c.r;colors[idx*3+1]=c.g;colors[idx*3+2]=c.b;
   }
-}
-
-const geo = indexedGeo.toNonIndexed();
-indexedGeo.dispose();
-geo.computeVertexNormals();
-
-/* 4. Coloration par pente / altitude : herbe douce, ocre sec, pierre, neige */
-const pos = geo.attributes.position;
-const norm = geo.attributes.normal;
-const colors = new Float32Array(pos.count * 3);
-
-const cGrass = new THREE.Color(0x76b255);
-const cOchre = new THREE.Color(0xc8a262);
-const cRock = new THREE.Color(0x8a857c);
-const cSnow = new THREE.Color(0xf3f7fb);
-const tmpCol = new THREE.Color();
-
-let eMin = Infinity;
-let eMax = -Infinity;
-for (let i = 0; i < ele.length; i++) {
-  eMin = Math.min(eMin, ele[i]);
-  eMax = Math.max(eMax, ele[i]);
-}
-
-for (let i = 0; i < pos.count; i++) {
-  const y = pos.getY(i) + 0.65;
-  const ny = Math.max(0, Math.min(1, Math.abs(norm.getY(i))));
-  const slope = 1 - ny;
-  const altT = Math.max(0, Math.min(1, (y - eMin) / Math.max(1, eMax - eMin)));
-
-  tmpCol.copy(cGrass);
-
-  if (slope > 0.08 || altT > 0.42) {
-    const dryMix = Math.min(1, Math.max((slope - 0.08) / 0.18, (altT - 0.42) / 0.35));
-    tmpCol.lerp(cOchre, dryMix);
-  }
-
-  if (slope > 0.22 || altT > 0.74) {
-    const rockMix = Math.min(1, Math.max((slope - 0.22) / 0.22, (altT - 0.74) / 0.22));
-    tmpCol.lerp(cRock, rockMix);
-  }
-
-  if (y > 1750 && slope < 0.35) {
-    tmpCol.lerp(cSnow, Math.min(1, (y - 1750) / 250));
-  }
-
-  colors[i * 3] = tmpCol.r;
-  colors[i * 3 + 1] = tmpCol.g;
-  colors[i * 3 + 2] = tmpCol.b;
-}
-
-geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-const mesh = new THREE.Mesh(
-  geo,
-  new THREE.MeshLambertMaterial({
-    vertexColors: true,
-    flatShading: true,
-    side: THREE.DoubleSide
-  })
-);
-
-mesh.receiveShadow = true;
-mesh.userData.ground = { minX, minZ, nx, nz, w, d };
-mesh.userData.eleGrid = ele;
-mesh.userData.elevColors = colors.slice(0);
-target.add(mesh);
-window._terrain = mesh;
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
+  const mesh=new THREE.Mesh(geo,new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,flatShading:cell<=140,shininess:0,specular:0x000000})); /* v164 : flat shading low-poly sur les zones détaillées (Phong car le Lambert r128 est éclairé par sommet) */
+  mesh.receiveShadow=true;mesh.userData.ground={minX:minX,minZ:minZ,nx:nx,nz:nz,w:w,d:d};mesh.userData.elevColors=colors.slice(0);target.add(mesh);window._terrain=mesh;
   /* v156 : silhouettes de crêtes en anneau si le relief du secteur est marqué */
   const relief=eMax-eMin;
   if(relief>120){
@@ -1018,11 +941,11 @@ function recolorTerrainByOSM(data){
   if(!pos||!col)return;
   const polys=[];
   const push=(ring,colour)=>{if(ring&&ring.length>2)polys.push({ring:ring,colour:colour})};
-  for(const w of data.waters||[])push(Array.isArray(w[0])?w[0]:w,new THREE.Color(0x3b87c7));
-  for(const f of data.forests||[])push(Array.isArray(f[0])?f[0]:f,new THREE.Color(0x2e5d33));
-  const farmCol={farmland:0xc2a852,meadow:0x6f9e4f,orchard:0x5d8f3e,grass:0x7fae57};
-  for(const item of data.farmland||[]){const ring=Array.isArray(item[0])?item[0]:item,tags=Array.isArray(item[0])?item[1]:{};push(ring,new THREE.Color(farmCol[String(tags.landuse||'').toLowerCase()]||0xc2a852))}
-  for(const r of data.residential||[])push(Array.isArray(r[0])?r[0]:r,new THREE.Color(0x9d9d95));
+  for(const w of data.waters||[])push(Array.isArray(w[0])?w[0]:w,new THREE.Color(0x3f96d8)); /* v164 : bleu plus franc */
+  for(const f of data.forests||[])push(Array.isArray(f[0])?f[0]:f,new THREE.Color(0x2f7d3c)); /* v164 : vert forêt saturé */
+  const farmCol={farmland:0xd2b258,meadow:0x5fae49,orchard:0x4f9a3a,grass:0x74b551}; /* v164 : prairies/champs plus vifs */
+  for(const item of data.farmland||[]){const ring=Array.isArray(item[0])?item[0]:item,tags=Array.isArray(item[0])?item[1]:{};push(ring,new THREE.Color(farmCol[String(tags.landuse||'').toLowerCase()]||0xd2b258))}
+  for(const r of data.residential||[])push(Array.isArray(r[0])?r[0]:r,new THREE.Color(0xa9a49a)); /* v164 */
   if(!polys.length)return;
   let changed=0;
   for(let i=0;i<pos.count;i++){
@@ -4152,7 +4075,7 @@ function nearestOnRoute(x,z){
     const px=ax+dx*t,pz=az+dz*t,dist2=(x-px)*(x-px)+(z-pz)*(z-pz);
     if(!best||dist2<best.dist2){
       const l=Math.sqrt(l2)||1;
-      best={x:px,y:Y[i]+(Y[i+1]-Y[i])*t,z:pz,distance:Math.min(route.len,(i+t)*(route.step||ST)),dist2,tx:dx/l,tz:dz/l};
+      best={i,x:px,y:Y[i]+(Y[i+1]-Y[i])*t,z:pz,distance:Math.min(route.len,(i+t)*(route.step||ST)),dist2,tx:dx/l,tz:dz/l}; /* v164 : i = index de segment, pour les collines latérales */
     }
   };
   const visited=new Set();
@@ -4171,6 +4094,22 @@ function nearestOnRoute(x,z){
     for(let i=0;i<n;i+=stride)visit(i);
   }
   return best;
+}
+
+/* v164 : collines latérales façon Moveee — une seule formule pour le terrain ET le décor.
+   En montée (g>0) le terrain s'élève en éperon de part et d'autre de la route ; en descente il se comble légèrement. */
+function sideHillHeight(g,dist,x,z,bi){
+  if(!(dist>25&&dist<520))return 0;
+  const amp=g>0?Math.min(1,g/.07)*260:Math.min(1,-g/.07)*85; /* plein régime dès 7 % de pente */
+  if(amp<=1)return 0;
+  const side=dist-25,fall=Math.exp(-(side*side)/57800); /* retombée douce sur ~170 m */
+  const ramp=dist<90?(dist-25)/65:1; /* le talus part de zéro au bord du corridor */
+  const nse=.45+.55*Math.abs(osmNoise(x*.006+(bi||0)*.13,z*.006-(bi||0)*.07)); /* variation le long du tracé */
+  return amp*fall*nse*ramp;
+}
+function sideHillElev(near){ /* pour le décor : near = résultat de nearestOnRoute (avec .i et .dist2) */
+  if(!near||!route||!proj)return 0;
+  return sideHillHeight(route.G[near.i]||0,Math.sqrt(near.dist2||0),near.x,near.z,near.i);
 }
 
 function osmMetres(value,fallback,minimum,maximum){
@@ -4630,7 +4569,7 @@ function buildings(buildingParts,targetWorld){
     const closed=osmClosed(raw),points=closed?raw.slice(0,-1):raw;
     if(points.length<3)continue;
     const near=nearestOnRoute(points[0][0],points[0][1]);
-    list.push({points,tags,y:(near?near.y:0)-.4,d:near?near.dist2:Infinity});
+    list.push({points,tags,y:(near?near.y+sideHillElev(near):0)-.4,d:near?near.dist2:Infinity}); /* v164 : les bâtiments grimpent sur les collines latérales */
   }
   list.sort((a,b)=>a.d-b.d);
   const wallPositions=[],wallUVs=[],wallColours=[],roofPositions=[],roofColours=[],doorPositions=[],doorColours=[];
@@ -4743,7 +4682,7 @@ function buildFarmland(farmlandList,targetWorld){
     if(!osmClosed(raw)||raw.length<4)continue;
     const ring=raw.slice(0,-1),kind=/^(farmland|meadow|orchard|grass)$/.test(String(tags.landuse||''))?tags.landuse:'farmland';
     const near=nearestOnRoute(ring[0][0],ring[0][1]);if(!near||near.dist2>260*260)continue;
-    const y=near.y-.42;
+    const y=near.y+sideHillElev(near)-.42; /* v164 : champs et prairies suivent les collines */
     try{
       const geometry=new THREE.BufferGeometry();
       const shape=new THREE.Shape(ring.map(p=>new THREE.Vector2(p[0],-p[1])));
@@ -4933,7 +4872,7 @@ function stadiumPitchTex(){ /* v163 : terrain de foot avec marquage réglementai
   _stadiumPitchTex=new THREE.CanvasTexture(c);_stadiumPitchTex.anisotropy=8;
   return _stadiumPitchTex;
 }
-function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:350; /* v161 : stades visibles de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();g.position.set(x,near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=7.5+seed*3.5,d=12+seed*5,h=7.5+seed*2.5; /* v155 : églises beaucoup plus grandes */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,4+seed*1.2,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.8,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(2.6,9,2.6),matChurch);tower.position.set(0,4.5,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.8,4.6,8),matRoof);spire.position.set(0,11,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,.12),matDark);crossV.position.set(0,13.55,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.78,.14,.12),matDark);crossH.position.set(0,13.68,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.12),matDark);door.position.set(0,1.3,d/2+.05);g.add(door);}
+function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:350; /* v161 : stades visibles de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();g.position.set(x,near.y+sideHillElev(near)-.03,z); /* v164 : repères sur les collines */const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=7.5+seed*3.5,d=12+seed*5,h=7.5+seed*2.5; /* v155 : églises beaucoup plus grandes */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,4+seed*1.2,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.8,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(2.6,9,2.6),matChurch);tower.position.set(0,4.5,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.8,4.6,8),matRoof);spire.position.set(0,11,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,.12),matDark);crossV.position.set(0,13.55,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.78,.14,.12),matDark);crossH.position.set(0,13.68,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.12),matDark);door.position.set(0,1.3,d/2+.05);g.add(door);}
 else if(item.kind==='stadium'){ /* v140+v163 : tribunes sur les 4 côtés + terrain de foot coté (avant : simple bol rond sans tribunes ni lignes) */
   let rr=0,sxx=0,szz=0,sxz=0;
   for(const p of pts){const d=Math.hypot(p[0]-x,p[1]-z);if(d>rr)rr=d;const dx=p[0]-x,dz=p[1]-z;sxx+=dx*dx;szz+=dz*dz;sxz+=dx*dz;}
@@ -5316,6 +5255,7 @@ function applyOSM(elements,targetWorld){
   }
   osmPublishSceneryData();
   const heightAt=(x,z)=>{const near=nearestOnRoute(x,z);return near?near.y:0;};
+  const heightAtHill=(x,z)=>{const near=nearestOnRoute(x,z);return near?near.y+sideHillElev(near):0;}; /* v164 : altitude terrain avec collines latérales (arbres) */
   const asShape=points=>new THREE.Shape(points.map(p=>new THREE.Vector2(p[0],-p[1])));
   const flatten=geometry=>{geometry.rotateX(-Math.PI/2);return geometry.index?geometry.toNonIndexed():geometry;};
   const addMerged=(parts,colour)=>{
@@ -5378,7 +5318,7 @@ function applyOSM(elements,targetWorld){
   }
   for(const [pts,tags] of railways.slice(0,120)){ /* v131 : ballast + deux rails, en tranchée sous les ponts */
     if(pts.length<2)continue;
-    const line=osmSampleLine(pts,4),yFn=near=>near.y-underSpan(near)-0.08;
+    const line=osmSampleLine(pts,4),yFn=near=>near.y+sideHillElev(near)-underSpan(near)-0.08; /* v164 : voie ferrée sur les collines */
     ribbon(line,1.9,0,yFn,railBallast);
     ribbon(line,0.07,0.72,near=>yFn(near)+0.05,railLine);
     ribbon(line,0.07,-0.72,near=>yFn(near)+0.05,railLine);
@@ -5431,7 +5371,7 @@ function applyOSM(elements,targetWorld){
     let coneIndex=0;
     trees.forEach((point,i)=>{
       const twist=Math.abs(osmNoise(point[0]*2.2,point[1]*3.3));
-      const s=Math.random()<.18?.75+Math.random()*.45:(coniferSet.has(point)?.9:1.4)+Math.random()*1.2, big=s>1.5, y=heightAt(point[0],point[1])-.4, conifer=coniferSet.has(point);
+      const s=Math.random()<.18?.75+Math.random()*.45:(coniferSet.has(point)?.9:1.4)+Math.random()*1.2, big=s>1.5, y=heightAtHill(point[0],point[1])-.4, conifer=coniferSet.has(point); /* v164 : arbres sur les collines */
       matrix.makeScale(big?s*1.35:s,big?s*1.15:s,big?s*1.35:s);matrix.setPosition(point[0],y,point[1]);trunkMesh.setMatrixAt(i,matrix);
       trunkMesh.setColorAt(i,trunkColour.setHSL(.07,.42,.16+twist*.14));
       if(conifer){
@@ -5499,7 +5439,7 @@ function hedges(hedgeParts,targetWorld){
   const groups={mapped:{base:[],leaves:[]},estimated:{base:[],leaves:[]}};let mapped=0,estimated=0;
   const tri=(out,a,b,c)=>out.push(...a,...b,...c);
   for(const item of sorted){const height=osmMetres(item.tags.height,2.6,.8,7.5),width=osmMetres(item.tags.width,1.6,.4,5.5),line=osmSampleLine(item.points,3);if(line.length<2)continue;const strip=[];
-    for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=near.y-.38;strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
+    for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=near.y+sideHillElev(near)-.38; /* v164 : haies sur les collines */strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
     const group=groups[item.estimated?'estimated':'mapped'];let used=false;
     for(let i=1;i<strip.length;i++){const a=strip[i-1],b=strip[i];if(!a||!b)continue;tri(group.base,a.l,b.l,b.lt);tri(group.base,a.l,b.lt,a.lt);tri(group.base,a.r,b.rt,b.r);tri(group.base,a.r,a.rt,b.rt);tri(group.base,a.lt,b.lt,b.rt);tri(group.base,a.lt,b.rt,a.rt);used=true}
     if(used){if(item.estimated)estimated++;else mapped++;for(const point of strip)if(point&&group.leaves.length<6500)group.leaves.push({point,height,width});for(let i=0;i<strip.length;i+=3){const point=strip[i];if(point&&hedgeTrees.length<1100&&osmNoise(point.x*3.1,point.z*2.7)>.28)hedgeTrees.push({x:point.x,y:point.y,z:point.z,v:Math.abs(osmNoise(point.x*1.7,point.z*9.3)),conifer:Math.abs(osmNoise(point.x*11.3,point.z*5.7))>.78})}}
