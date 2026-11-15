@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v164 – relief façon Moveee : sol fondu à la route, collines latérales, low-poly saturé</title>
+<title>Vélo 3D v165 – relief maquette + décor drapé sur le terrain, collines latérales, plus de « Tour Eiffel » parasite</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v164</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v165</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -846,90 +846,165 @@ function updatePrecip(dt,t){
 }
 
 /* v137 : vrai relief 3D — maillage de terrain échantillonné sur le DEM Copernicus (via Open-Meteo), repli sur terrain plat. */
-async function buildTerrain(target){
-  if(!route||!proj||!target)return;
-  const token=window._worldToken;
-  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity,minY=Infinity,maxY=-Infinity;
-  for(let i=0;i<route.n;i++){minX=Math.min(minX,route.X[i]);maxX=Math.max(maxX,route.X[i]);minZ=Math.min(minZ,route.Z[i]);maxZ=Math.max(maxZ,route.Z[i]);minY=Math.min(minY,route.Y[i]);maxY=Math.max(maxY,route.Y[i]);}
-  const M=1800;minX-=M;maxX+=M;minZ-=M;maxZ+=M; /* v163 : terrain élargi (avant 1000 m) — on voit le contrebas des vallées depuis les cols */
-  const w=maxX-minX,d=maxZ-minZ,cell=Math.max(20,Math.max(w,d)/110); /* v163 : maillage porté à 110 pour garder du détail malgré la marge */
-  const nx=Math.max(4,Math.min(110,Math.round(w/cell)+1)),nz=Math.max(4,Math.min(110,Math.round(d/cell)+1)); /* v163 */
-  const lats=[],lons=[];
-  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const x=minX+i*(w/(nx-1)),z=minZ+j*(d/(nz-1));lats.push(proj.la-z/proj.kz);lons.push(proj.lo+x/proj.kx);}
-  const n=nx*nz;let ele=new Float32Array(n).fill(NaN);let okCount=0;
-  const jobs=[];
-  for(let off=0;off<n;off+=100){
-    const la=lats.slice(off,off+100).map(q=>q.toFixed(6)).join(','),lo=lons.slice(off,off+100).map(q=>q.toFixed(6)).join(',');
-    jobs.push((async()=>{
-      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+/* Échantillonnage bilinéaire de l'altitude du terrain continu */
+function terrainHeightAt(x, z, fallbackY = 0) {
+  const mesh = window._terrain;
+  const g = mesh && mesh.userData && mesh.userData.ground;
+  const ele = mesh && mesh.userData && mesh.userData.eleGrid;
+  if (!g || !ele) return fallbackY;
+  const fx = (x - g.minX) / g.w * (g.nx - 1);
+  const fz = (z - g.minZ) / g.d * (g.nz - 1);
+  if (fx < 0 || fz < 0 || fx > g.nx - 1 || fz > g.nz - 1) return fallbackY;
+  const i0 = Math.floor(fx), j0 = Math.floor(fz);
+  const i1 = Math.min(g.nx - 1, i0 + 1), j1 = Math.min(g.nz - 1, j0 + 1);
+  const tx = fx - i0, tz = fz - j0;
+  const e00 = ele[j0 * g.nx + i0], e10 = ele[j0 * g.nx + i1];
+  const e01 = ele[j1 * g.nx + i0], e11 = ele[j1 * g.nx + i1];
+  return (e00 * (1 - tx) + e10 * tx) * (1 - tz) + (e01 * (1 - tx) + e11 * tx) * tz - 0.65;
+}
+async function buildTerrain(target) {
+  if (!route || !proj || !target) return;
+  const token = window._worldToken;
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (let i = 0; i < route.n; i++) {
+    minX = Math.min(minX, route.X[i]); maxX = Math.max(maxX, route.X[i]);
+    minZ = Math.min(minZ, route.Z[i]); maxZ = Math.max(maxZ, route.Z[i]);
+    minY = Math.min(minY, route.Y[i]); maxY = Math.max(maxY, route.Y[i]);
+  }
+  const M = 1800; minX -= M; maxX += M; minZ -= M; maxZ += M;
+  const w = maxX - minX, d = maxZ - minZ;
+  /* Grille low-poly nette (~45–65 m par facette pour un rendu maquette fluide) */
+  const cell = Math.max(42, Math.max(w, d) / 85);
+  const nx = Math.max(6, Math.min(90, Math.round(w / cell) + 1));
+  const nz = Math.max(6, Math.min(90, Math.round(d / cell) + 1));
+  const lats = [], lons = [];
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const x = minX + i * (w / (nx - 1)), z = minZ + j * (d / (nz - 1));
+    lats.push(proj.la - z / proj.kz); lons.push(proj.lo + x / proj.kx);
+  }
+  const n = nx * nz;
+  let ele = new Float32Array(n).fill(NaN), okCount = 0;
+  const jobs = [];
+  for (let off = 0; off < n; off += 100) {
+    const la = lats.slice(off, off + 100).map(q => q.toFixed(6)).join(',');
+    const lo = lons.slice(off, off + 100).map(q => q.toFixed(6)).join(',');
+    jobs.push((async () => {
+      const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 12000);
       let resp;
-      try{resp=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+la+'&longitude='+lo,{mode:'cors',credentials:'omit',cache:'force-cache',signal:ctrl.signal});}
-      finally{clearTimeout(timer);}
-      if(!resp.ok)throw new Error('HTTP '+resp.status);
-      const data=await resp.json();
-      if(!Array.isArray(data.elevation))throw new Error('réponse invalide');
-      for(let i=0;i<data.elevation.length;i++){const ve=Number(data.elevation[i]);if(Number.isFinite(ve)){ele[off+i]=ve;okCount++;}}
+      try {
+        resp = await fetch('https://api.open-meteo.com/v1/elevation?latitude=' + la + '&longitude=' + lo, {
+          mode: 'cors', credentials: 'omit', cache: 'force-cache', signal: ctrl.signal
+        });
+      } finally { clearTimeout(timer); }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      if (!Array.isArray(data.elevation)) throw new Error('réponse invalide');
+      for (let i = 0; i < data.elevation.length; i++) {
+        const ve = Number(data.elevation[i]);
+        if (Number.isFinite(ve)) { ele[off + i] = ve; okCount++; }
+      }
     })());
   }
-  for(let j0=0;j0<jobs.length;j0+=6){try{await Promise.all(jobs.slice(j0,j0+6));}catch(_){}} /* v160 : requêtes parallèles par groupes de 6 (chargement ~6× plus rapide) */
-  if(token!==window._worldToken)return; /* le monde a été reconstruit entre-temps */
-  if(okCount<n*.5){const flat=(minY+maxY)/2;for(let i=0;i<n;i++)if(!Number.isFinite(ele[i]))ele[i]=flat;} /* repli : terrain plat */
-  { /* v164 : comble les trous résiduels du DEM (au-delà de 50 % d'échec, certains points restaient NaN) */
-    let sum=0,cnt=0;for(let i=0;i<n;i++)if(Number.isFinite(ele[i])){sum+=ele[i];cnt++;}
-    if(cnt){const mean=sum/cnt;for(let i=0;i<n;i++)if(!Number.isFinite(ele[i]))ele[i]=mean;}
+  for (let j0 = 0; j0 < jobs.length; j0 += 6) { try { await Promise.all(jobs.slice(j0, j0 + 6)); } catch (_) {} }
+  if (token !== window._worldToken) return;
+  if (okCount < n * 0.5) {
+    const flat = (minY + maxY) / 2;
+    for (let i = 0; i < n; i++) if (!Number.isFinite(ele[i])) ele[i] = flat;
   }
-  /* v164 : lissage du DEM — 2 passes de moyenne croisée, on garde les grandes formes (style Moveee), le bruit disparaît */
-  for(let p=0;p<2;p++){const src=ele.slice(0);for(let j=1;j<nz-1;j++)for(let i=1;i<nx-1;i++){const k=j*nx+i;ele[k]=(src[k]*4+src[k-1]+src[k+1]+src[k-nx]+src[k+nx])/8;}}
-  /* v164 : fusion terrain↔route + collines latérales façon Moveee */
-  if(route&&route.n>1){
-    const rX=route.X,rY=route.Y,rZ=route.Z,rN=route.n,stride=rN>6000?2:1;
-    for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
-      const idx=j*nx+i,x=minX+i*(w/(nx-1)),z=minZ+j*(d/(nz-1));
-      let best=1e12,bi=0;
-      for(let k=0;k<rN;k+=stride){const dx=x-rX[k],dz2=z-rZ[k],dd=dx*dx+dz2*dz2;if(dd<best){best=dd;bi=k;}}
-      const dist=Math.sqrt(best),ry=rY[bi];
-      if(dist<45){ /* corridor : le sol épouse la chaussée — déblai si le terrain dépasse (tranchée), remblai léger sinon ; au-delà de 6 m sous la route = pont, on ne remblaye pas */
-        const diff=ry+.65-ele[idx];
-        if(diff<6){const u=dist<=15?1:1-(dist-15)/30,s=u*u*(3-2*u);ele[idx]+=diff*s;}
-      }
-      const hill=sideHillHeight(rG[bi],dist,x,z,bi); /* v164 : collines latérales — même formule que le décor, qui grimpe dessus */
-      if(hill>0){const target=ry+.65+hill;if(target>ele[idx])ele[idx]=target;} /* on ne fait que combler : jamais de trou artificiel */
+
+  /* 1. Passe de lissage passe-bas sur le DEM brut (supprime le bruit et les marches) */
+  for (let pass = 0; pass < 3; pass++) {
+    const tmp = new Float32Array(ele);
+    for (let j = 1; j < nz - 1; j++) for (let i = 1; i < nx - 1; i++) {
+      const idx = j * nx + i;
+      ele[idx] = (
+        tmp[idx] * 4 +
+        (tmp[idx - 1] + tmp[idx + 1] + tmp[idx - nx] + tmp[idx + nx]) * 2 +
+        (tmp[idx - nx - 1] + tmp[idx - nx + 1] + tmp[idx + nx - 1] + tmp[idx + nx + 1])
+      ) / 16;
     }
   }
-  let eMin=Infinity,eMax=-Infinity;for(let i=0;i<n;i++){eMin=Math.min(eMin,ele[i]);eMax=Math.max(eMax,ele[i]);}
-  const geo=new THREE.PlaneGeometry(w,d,nx-1,nz-1);geo.rotateX(-Math.PI/2);
-  const pos=geo.attributes.position,colors=new Float32Array(pos.count*3),c=new THREE.Color(),rockC=new THREE.Color(0x9d927c); /* v164 : ocre-roche pour les fortes pentes */
-  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
-    const idx=j*nx+i,e=ele[idx],t=Math.max(0,Math.min(1,(e-eMin)/Math.max(1,eMax-eMin)));
-    pos.setXYZ(idx,minX+i*(w/(nx-1)),e-.65,minZ+j*(d/(nz-1)));
-    if(e>1600)c.set(0xf2f4f6);
-    else{
-      /* v164 : palette saturée façon Moveee — verts francs qui tirent vers l'ocre avec l'altitude */
-      c.setHSL(.30-t*.10,.50+t*.12,.33+t*.15);
-      const l=ele[j*nx+Math.max(0,i-1)],r=ele[j*nx+Math.min(nx-1,i+1)],u=ele[Math.max(0,j-1)*nx+i],dn=ele[Math.min(nz-1,j+1)*nx+i];
-      const slope=Math.hypot(r-l,dn-u)/(2*cell); /* pente locale (m/m) depuis les voisins de grille */
-      if(slope>.38)c.lerp(rockC,Math.min(1,(slope-.38)/.34)*.75); /* au-delà de ~21° : roche/ocre */
+
+  /* 2. Le terrain épouse le profil altimétrique de la route (colonne vertébrale + éperons latéraux) */
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const idx = j * nx + i;
+    const x = minX + i * (w / (nx - 1)), z = minZ + j * (d / (nz - 1));
+    const near = nearestOnRoute(x, z);
+    if (!near) continue;
+    const dist = Math.sqrt(near.dist2);
+    const blendR = 260;
+    if (dist < blendR) {
+      const u = dist / blendR;
+      const smooth = u * u * (3 - 2 * u);
+      const spurOffset = Math.min(dist, 35) * 0.04;
+      const roadAnchor = near.y + 0.45 - spurOffset;
+      ele[idx] = roadAnchor * (1 - smooth) + ele[idx] * smooth;
     }
-    colors[idx*3]=c.r;colors[idx*3+1]=c.g;colors[idx*3+2]=c.b;
+    /* v165 : collines latérales façon Moveee — en montée, le terrain s'élève en éperon de part et d'autre (même formule pour le décor).
+       Profil plus doux que la v164 : ~140 m d'amplitude à 7 % de pente, crête vers 200-300 m du bord, pentes ~15-25°. */
+    const hill = sideHillHeight(route.G[near.i] || 0, dist, x, z, near.i);
+    if (hill > 0) { const target = near.y + 0.65 + hill; if (target > ele[idx]) ele[idx] = target; } /* on ne fait que combler, jamais creuser */
   }
-  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
-  const mesh=new THREE.Mesh(geo,new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,flatShading:cell<=140,shininess:0,specular:0x000000})); /* v164 : flat shading low-poly sur les zones détaillées (Phong car le Lambert r128 est éclairé par sommet) */
-  mesh.receiveShadow=true;mesh.userData.ground={minX:minX,minZ:minZ,nx:nx,nz:nz,w:w,d:d};mesh.userData.elevColors=colors.slice(0);target.add(mesh);window._terrain=mesh;
-  /* v156 : silhouettes de crêtes en anneau si le relief du secteur est marqué */
-  const relief=eMax-eMin;
-  if(relief>120){
-    const rockMat=new THREE.MeshLambertMaterial({color:0x6f6a60}),snowMat=new THREE.MeshLambertMaterial({color:0xeef1f4});
-    const cx0=(minX+maxX)/2,cz0=(minZ+maxZ)/2,R=Math.max(w,d)*.98,nRing=Math.max(12,Math.round(R/240));
-    for(let k=0;k<nRing;k++){
-      const a=k/nRing*Math.PI*2+osmNoise(k*7.3,1.7)*.4,rr=R*(.9+Math.abs(osmNoise(k*3.1,9.4))*.2);
-      const h=relief*(.5+Math.abs(osmNoise(k*5.7,3.3))*.9)+80,rad=110+Math.abs(osmNoise(k*2.9,4.4))*150;
-      const cone=new THREE.Mesh(new THREE.ConeGeometry(rad,h,7),rockMat);
-      cone.position.set(cx0+Math.cos(a)*rr,eMin-12+h/2,cz0+Math.sin(a)*rr);target.add(cone);
-      if(h>relief+60){const cap=new THREE.Mesh(new THREE.ConeGeometry(rad*.34,h*.2,7),snowMat);cap.position.set(cone.position.x,eMin-12+h-h*.1+.4,cone.position.z);target.add(cap);}
+
+  let eMin = Infinity, eMax = -Infinity;
+  for (let i = 0; i < n; i++) { eMin = Math.min(eMin, ele[i]); eMax = Math.max(eMax, ele[i]); }
+
+  /* 3. Maillage continu non-indexé pour un rendu low-poly à facettes franches (flatShading) */
+  const indexedGeo = new THREE.PlaneGeometry(w, d, nx - 1, nz - 1);
+  indexedGeo.rotateX(-Math.PI / 2);
+  const iPos = indexedGeo.attributes.position;
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const idx = j * nx + i;
+    iPos.setXYZ(idx, minX + i * (w / (nx - 1)), ele[idx] - 0.65, minZ + j * (d / (nz - 1)));
+  }
+  const geo = indexedGeo.toNonIndexed();
+  indexedGeo.dispose();
+  geo.computeVertexNormals();
+
+  /* 4. Coloration par pente et altitude (verts saturés, ocre sec, gris rocheux, neige) */
+  const pos = geo.attributes.position, norm = geo.attributes.normal;
+  const colors = new Float32Array(pos.count * 3);
+  const cGrass = new THREE.Color(0x4f9a3c);
+  const cOchre = new THREE.Color(0xb69354);
+  const cRock  = new THREE.Color(0x7c7872);
+  const cSnow  = new THREE.Color(0xf2f5f8);
+  const tmpCol = new THREE.Color();
+
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i) + 0.65;
+    const ny = Math.max(0, Math.min(1, Math.abs(norm.getY(i))));
+    const slope = 1 - ny;
+    const altT = Math.max(0, Math.min(1, (y - eMin) / Math.max(1, eMax - eMin)));
+
+    tmpCol.copy(cGrass);
+    if (slope > 0.08 || altT > 0.45) {
+      const dryMix = Math.min(1, Math.max((slope - 0.08) / 0.18, (altT - 0.45) / 0.35));
+      tmpCol.lerp(cOchre, dryMix);
     }
+    if (slope > 0.22 || altT > 0.72) {
+      const rockMix = Math.min(1, Math.max((slope - 0.22) / 0.22, (altT - 0.72) / 0.25));
+      tmpCol.lerp(cRock, rockMix);
+    }
+    if (y > 1750 && slope < 0.35) {
+      tmpCol.lerp(cSnow, Math.min(1, (y - 1750) / 250));
+    }
+    colors[i * 3] = tmpCol.r; colors[i * 3 + 1] = tmpCol.g; colors[i * 3 + 2] = tmpCol.b;
   }
-  if(window._osmGroundData)recolorTerrainByOSM(window._osmGroundData); /* v147 : recoloration si le décor OSM est arrivé avant le terrain */
-  if(groundStyle()==="satellite")setGroundStyle("satellite",true); /* v149 : réapplique la texture satellite si le terrain est reconstruit */
+
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({
+    vertexColors: true, flatShading: true, side: THREE.DoubleSide
+  }));
+  mesh.receiveShadow = true;
+  mesh.userData.ground = { minX, minZ, nx, nz, w, d };
+  mesh.userData.eleGrid = ele;
+  mesh.userData.elevColors = colors.slice(0);
+  target.add(mesh);
+  window._terrain = mesh;
+
+  if (S.fog) { S.fog.near = 450; S.fog.far = 5500; }
+  if (window._osmGroundData) recolorTerrainByOSM(window._osmGroundData);
+  if (groundStyle() === 'satellite') setGroundStyle('satellite', true);
 }
 /* v147 : sol colorié selon les données OSM (champs beige, forêts vert foncé, villages gris, eau bleue) */
 function osmPointInRing(x,z,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],zi=ring[i][1],xj=ring[j][0],zj=ring[j][1];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/((zj-zi)||1e-9)+xi))inside=!inside}return inside}
@@ -941,11 +1016,11 @@ function recolorTerrainByOSM(data){
   if(!pos||!col)return;
   const polys=[];
   const push=(ring,colour)=>{if(ring&&ring.length>2)polys.push({ring:ring,colour:colour})};
-  for(const w of data.waters||[])push(Array.isArray(w[0])?w[0]:w,new THREE.Color(0x3f96d8)); /* v164 : bleu plus franc */
-  for(const f of data.forests||[])push(Array.isArray(f[0])?f[0]:f,new THREE.Color(0x2f7d3c)); /* v164 : vert forêt saturé */
-  const farmCol={farmland:0xd2b258,meadow:0x5fae49,orchard:0x4f9a3a,grass:0x74b551}; /* v164 : prairies/champs plus vifs */
-  for(const item of data.farmland||[]){const ring=Array.isArray(item[0])?item[0]:item,tags=Array.isArray(item[0])?item[1]:{};push(ring,new THREE.Color(farmCol[String(tags.landuse||'').toLowerCase()]||0xd2b258))}
-  for(const r of data.residential||[])push(Array.isArray(r[0])?r[0]:r,new THREE.Color(0xa9a49a)); /* v164 */
+  for(const w of data.waters||[])push(Array.isArray(w[0])?w[0]:w,new THREE.Color(0x3b87c7));
+  for(const f of data.forests||[])push(Array.isArray(f[0])?f[0]:f,new THREE.Color(0x2e5d33));
+  const farmCol={farmland:0xc2a852,meadow:0x6f9e4f,orchard:0x5d8f3e,grass:0x7fae57};
+  for(const item of data.farmland||[]){const ring=Array.isArray(item[0])?item[0]:item,tags=Array.isArray(item[0])?item[1]:{};push(ring,new THREE.Color(farmCol[String(tags.landuse||'').toLowerCase()]||0xc2a852))}
+  for(const r of data.residential||[])push(Array.isArray(r[0])?r[0]:r,new THREE.Color(0x9d9d95));
   if(!polys.length)return;
   let changed=0;
   for(let i=0;i<pos.count;i++){
@@ -3700,7 +3775,7 @@ function makeWorld(){
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
     const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,map:texture||null,side:THREE.DoubleSide}));mesh.receiveShadow=true;return mesh;
   };
-  world.add(ribbon(145,-.43,0x769b52));world.add(ribbon(3.75,-.04,0xb9b199));world.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
+  world.add(ribbon(3.75,-.04,0xb9b199));world.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
   // Light painted edge lines; no automatic invented centre-line/speed restrictions.
   const edgePositions=[];
   for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);for(const side of[-1,1]){const pts=[
@@ -4075,7 +4150,7 @@ function nearestOnRoute(x,z){
     const px=ax+dx*t,pz=az+dz*t,dist2=(x-px)*(x-px)+(z-pz)*(z-pz);
     if(!best||dist2<best.dist2){
       const l=Math.sqrt(l2)||1;
-      best={i,x:px,y:Y[i]+(Y[i+1]-Y[i])*t,z:pz,distance:Math.min(route.len,(i+t)*(route.step||ST)),dist2,tx:dx/l,tz:dz/l}; /* v164 : i = index de segment, pour les collines latérales */
+      best={i,x:px,y:Y[i]+(Y[i+1]-Y[i])*t,z:pz,distance:Math.min(route.len,(i+t)*(route.step||ST)),dist2,tx:dx/l,tz:dz/l}; /* v165 : i = index de segment, pour les collines latérales */
     }
   };
   const visited=new Set();
@@ -4096,18 +4171,18 @@ function nearestOnRoute(x,z){
   return best;
 }
 
-/* v164 : collines latérales façon Moveee — une seule formule pour le terrain ET le décor.
+/* v165 : collines latérales façon Moveee — une seule formule pour le terrain ET le décor.
    En montée (g>0) le terrain s'élève en éperon de part et d'autre de la route ; en descente il se comble légèrement. */
 function sideHillHeight(g,dist,x,z,bi){
-  if(!(dist>25&&dist<520))return 0;
-  const amp=g>0?Math.min(1,g/.07)*260:Math.min(1,-g/.07)*85; /* plein régime dès 7 % de pente */
+  if(!(dist>40&&dist<600))return 0;
+  const amp=g>0?Math.min(1,g/.07)*140:Math.min(1,-g/.07)*55; /* plein régime dès 7 % de pente */
   if(amp<=1)return 0;
-  const side=dist-25,fall=Math.exp(-(side*side)/57800); /* retombée douce sur ~170 m */
-  const ramp=dist<90?(dist-25)/65:1; /* le talus part de zéro au bord du corridor */
+  const side=dist-40,fall=Math.exp(-(side*side)/72200); /* retombée douce sur ~190 m */
+  const ramp=dist<120?(dist-40)/80:1; /* le talus part de zéro au bord du corridor */
   const nse=.45+.55*Math.abs(osmNoise(x*.006+(bi||0)*.13,z*.006-(bi||0)*.07)); /* variation le long du tracé */
   return amp*fall*nse*ramp;
 }
-function sideHillElev(near){ /* pour le décor : near = résultat de nearestOnRoute (avec .i et .dist2) */
+function sideHillElev(near){ /* pour le décor : near = résultat de nearestOnRoute (avec .i et .dist2) — sert d'estimation quand la grille du terrain n'est pas encore prête */
   if(!near||!route||!proj)return 0;
   return sideHillHeight(route.G[near.i]||0,Math.sqrt(near.dist2||0),near.x,near.z,near.i);
 }
@@ -4569,7 +4644,8 @@ function buildings(buildingParts,targetWorld){
     const closed=osmClosed(raw),points=closed?raw.slice(0,-1):raw;
     if(points.length<3)continue;
     const near=nearestOnRoute(points[0][0],points[0][1]);
-    list.push({points,tags,y:(near?near.y+sideHillElev(near):0)-.4,d:near?near.dist2:Infinity}); /* v164 : les bâtiments grimpent sur les collines latérales */
+    const groundY=terrainHeightAt(points[0][0],points[0][1],near?near.y+sideHillElev(near):0); /* v165 : fallback estimation collines */
+    list.push({points,tags,y:groundY-.15,d:near?near.dist2:Infinity});
   }
   list.sort((a,b)=>a.d-b.d);
   const wallPositions=[],wallUVs=[],wallColours=[],roofPositions=[],roofColours=[],doorPositions=[],doorColours=[];
@@ -4668,7 +4744,7 @@ function buildings(buildingParts,targetWorld){
 
 /* v134 : champs, prairies et vergers — polygones colorés + rangs de culture pour les terres labourées. */
 function buildFarmland(farmlandList,targetWorld){
-  if(!farmlandList||!farmlandList.length)return 0;
+  if(!farmlandList||!farmlandList.length)return 0; /* v165 : champs réactivés (la maquette les coupait tout à fait) */
   /* v161 : dans les cols (haute altitude ou très grand relief), plus de champs plats flottants — le terrain réel laisse voir le contrebas */
   try{
     let meanAlt=0,mn=Infinity,mx=-Infinity;
@@ -4682,13 +4758,12 @@ function buildFarmland(farmlandList,targetWorld){
     if(!osmClosed(raw)||raw.length<4)continue;
     const ring=raw.slice(0,-1),kind=/^(farmland|meadow|orchard|grass)$/.test(String(tags.landuse||''))?tags.landuse:'farmland';
     const near=nearestOnRoute(ring[0][0],ring[0][1]);if(!near||near.dist2>260*260)continue;
-    const y=near.y+sideHillElev(near)-.42; /* v164 : champs et prairies suivent les collines */
     try{
       const geometry=new THREE.BufferGeometry();
       const shape=new THREE.Shape(ring.map(p=>new THREE.Vector2(p[0],-p[1])));
       const g=new THREE.ShapeGeometry(shape);g.rotateX(-Math.PI/2);
       const pos=g.attributes.position;
-      for(let i=0;i<pos.count;i++){pos.setXYZ(i,pos.getX(i),y,pos.getZ(i));}
+      for(let i=0;i<pos.count;i++){pos.setXYZ(i,pos.getX(i),terrainHeightAt(pos.getX(i),pos.getZ(i),near.y+sideHillElev(near))-.42,pos.getZ(i));} /* v165 : champs drapés sur le terrain */
       (fills[kind]||(fills[kind]=[])).push(g.attributes.position.array.slice());g.dispose();count++;
     }catch(_){}
     /* rangs de culture pour les champs labourés */
@@ -4872,7 +4947,7 @@ function stadiumPitchTex(){ /* v163 : terrain de foot avec marquage réglementai
   _stadiumPitchTex=new THREE.CanvasTexture(c);_stadiumPitchTex.anisotropy=8;
   return _stadiumPitchTex;
 }
-function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:350; /* v161 : stades visibles de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();g.position.set(x,near.y+sideHillElev(near)-.03,z); /* v164 : repères sur les collines */const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=7.5+seed*3.5,d=12+seed*5,h=7.5+seed*2.5; /* v155 : églises beaucoup plus grandes */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,4+seed*1.2,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.8,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(2.6,9,2.6),matChurch);tower.position.set(0,4.5,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.8,4.6,8),matRoof);spire.position.set(0,11,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,.12),matDark);crossV.position.set(0,13.55,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.78,.14,.12),matDark);crossH.position.set(0,13.68,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.12),matDark);door.position.set(0,1.3,d/2+.05);g.add(door);}
+function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:350; /* v161 : stades visibles de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();g.position.set(x,near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=7.5+seed*3.5,d=12+seed*5,h=7.5+seed*2.5; /* v155 : églises beaucoup plus grandes */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,4+seed*1.2,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.8,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(2.6,9,2.6),matChurch);tower.position.set(0,4.5,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.8,4.6,8),matRoof);spire.position.set(0,11,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,.12),matDark);crossV.position.set(0,13.55,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.78,.14,.12),matDark);crossH.position.set(0,13.68,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.12),matDark);door.position.set(0,1.3,d/2+.05);g.add(door);}
 else if(item.kind==='stadium'){ /* v140+v163 : tribunes sur les 4 côtés + terrain de foot coté (avant : simple bol rond sans tribunes ni lignes) */
   let rr=0,sxx=0,szz=0,sxz=0;
   for(const p of pts){const d=Math.hypot(p[0]-x,p[1]-z);if(d>rr)rr=d;const dx=p[0]-x,dz=p[1]-z;sxx+=dx*dx;szz+=dz*dz;sxz+=dx*dz;}
@@ -4894,14 +4969,21 @@ else if(item.kind==='stadium'){ /* v140+v163 : tribunes sur les 4 côtés + terr
     st.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
     bowlG.add(st);
   }
-}else if(item.kind==='tower'){ /* v156 : Tour Eiffel — 4 pieds écartés, 3 plateformes, fût rétréci, grande hauteur */
-  const th=Math.min(320,Math.max(60,osmMetres(item.tags&&item.tags.height,NaN,60,330)||330));
-  for(const lp of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.5,1.6,th*.6,6),matStone);leg.position.set(lp[0]*4.4,th*.3,lp[1]*4.4);leg.rotation.z=lp[0]*-.17;leg.rotation.x=lp[1]*.17;g.add(leg);}
-  const p1=new THREE.Mesh(new THREE.BoxGeometry(14,1.2,14),matStone);p1.position.y=th*.32;g.add(p1);
-  const p2=new THREE.Mesh(new THREE.BoxGeometry(8.5,1,8.5),matStone);p2.position.y=th*.64;g.add(p2);
-  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.8,3.2,th*.34,6),matStone);shaft.position.y=th*.83;g.add(shaft);
-  const p3=new THREE.Mesh(new THREE.BoxGeometry(4.2,.8,4.2),matStone);p3.position.y=th-1.4;g.add(p3);
-  const ant=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,th*.08,6),matDark);ant.position.y=th+th*.04;g.add(ant);
+}else if(item.kind==='tower'){ /* v165 : seul le vrai nom « Eiffel » donne le monument — avant, tout man_made=tower d'OSM (château d'eau, pylône, cheminée) devenait une Tour Eiffel de 330 m : le pilier géant */
+  const isEiffel=/eiffel/i.test(String(item.tags&&item.tags.name||''));
+  if(isEiffel){
+    const th=Math.min(320,Math.max(60,osmMetres(item.tags&&item.tags.height,NaN,60,330)||330));
+    for(const lp of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.5,1.6,th*.6,6),matStone);leg.position.set(lp[0]*4.4,th*.3,lp[1]*4.4);leg.rotation.z=lp[0]*-.17;leg.rotation.x=lp[1]*.17;g.add(leg);}
+    const p1=new THREE.Mesh(new THREE.BoxGeometry(14,1.2,14),matStone);p1.position.y=th*.32;g.add(p1);
+    const p2=new THREE.Mesh(new THREE.BoxGeometry(8.5,1,8.5),matStone);p2.position.y=th*.64;g.add(p2);
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.8,3.2,th*.34,6),matStone);shaft.position.y=th*.83;g.add(shaft);
+    const p3=new THREE.Mesh(new THREE.BoxGeometry(4.2,.8,4.2),matStone);p3.position.y=th-1.4;g.add(p3);
+    const ant=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,th*.08,6),matDark);ant.position.y=th+th*.04;g.add(ant);
+  }else{ /* v165 : pylône / château d'eau modeste à la hauteur OSM (défaut 18 m) */
+    const th=Math.min(60,Math.max(6,osmMetres(item.tags&&item.tags.height,18,5,60)));
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(.45,1.05,th,8),matStone);pole.position.y=th/2;g.add(pole);
+    const tank=new THREE.Mesh(new THREE.CylinderGeometry(2.1,2.5,3,10),matStone);tank.position.y=th-1.1;g.add(tank);
+  }
 }else if(item.kind==='arch'){ /* v140 : Arc de Triomphe — deux piliers, entablement, attique */
   const w=16,d=12,h=17;
   const pl=new THREE.Mesh(new THREE.BoxGeometry(4.5,h,d),matStone);pl.position.set(-(w/2-2.25),h/2,0);g.add(pl);
@@ -5170,7 +5252,7 @@ async function buildMountainDecor(passes,peaksList,targetWorld){
   const mat=new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true,fog:false});const haze=new THREE.Color(0xb9cfdc);
   const built=[];const tmp=new THREE.Color();
   for(const p of list.slice(0,24)){
-    let near=nearestOnRoute(p.x,p.z);if(!near||near.dist2>8000*8000)continue; /* v160 : reliefs visibles jusqu'à 8 km (avant 3,2 km) */
+    let near=nearestOnRoute(p.x,p.z);if(!near||near.dist2>8000*8000||near.dist2<2800*2800)continue; /* v160 : reliefs visibles jusqu'à 8 km (avant 3,2 km) */
     const h=p.fg?Math.max(110,Math.min(340,140+relief*.35+hash(p.x,p.z)*170)):(p.bg?Math.max(240,Math.min(1300,300+relief*1.5+hash(p.x,p.z)*350)):(p.ele>0?Math.max(200,Math.min(1200,(p.ele-baseAlt)*.9+150)):Math.max(180,Math.min(900,260+relief*1.2+hash(p.x,p.z)*250)))); /* v161 : collines de pied de massif plus basses */
     const rad=h*(1.05+hash(p.z,p.x)*.5); /* v160 : massifs resserrés (avant ×1,5–2,2 : leurs disques recouvraient la route) */
     /* v160 : jamais sur la chaussée — la demi-largeur du disque (rad*1,2) reste à 120 m minimum de la route */
@@ -5254,8 +5336,7 @@ function applyOSM(elements,targetWorld){
     }
   }
   osmPublishSceneryData();
-  const heightAt=(x,z)=>{const near=nearestOnRoute(x,z);return near?near.y:0;};
-  const heightAtHill=(x,z)=>{const near=nearestOnRoute(x,z);return near?near.y+sideHillElev(near):0;}; /* v164 : altitude terrain avec collines latérales (arbres) */
+  const heightAt=(x,z)=>{const near=nearestOnRoute(x,z);return terrainHeightAt(x,z,near?near.y+sideHillElev(near):0);}; /* v165 : fallback = estimation collines si le DEM n'est pas encore arrivé */
   const asShape=points=>new THREE.Shape(points.map(p=>new THREE.Vector2(p[0],-p[1])));
   const flatten=geometry=>{geometry.rotateX(-Math.PI/2);return geometry.index?geometry.toNonIndexed():geometry;};
   const addMerged=(parts,colour)=>{
@@ -5275,7 +5356,11 @@ function applyOSM(elements,targetWorld){
     if(!osmClosed(points))continue;
     if(farFromRoute(points))continue; /* v163 : plus de plans d'eau flottant dans les vallées */
     try{
-      const geometry=flatten(new THREE.ShapeGeometry(asShape(points)));geometry.translate(0,heightAt(points[0][0],points[0][1])-.15,0);
+      /* v165 : plan d'eau drapé sommet par sommet sur le terrain — avant, la plaque était posée à plat à l'altitude du premier point et flottait au-dessus des vallées */
+      const geometry=flatten(new THREE.ShapeGeometry(asShape(points)));
+      const wp=geometry.attributes.position;
+      for(let vi=0;vi<wp.count;vi++){wp.setY(vi,terrainHeightAt(wp.getX(vi),wp.getZ(vi),heightAt(points[0][0],points[0][1])+.15)-.15);}
+      geometry.computeVertexNormals();
       waterParts.push(geometry.attributes.position.array.slice());geometry.dispose();
     }catch(_){/* An invalid water ring is non-fatal. */}
   }
@@ -5318,7 +5403,7 @@ function applyOSM(elements,targetWorld){
   }
   for(const [pts,tags] of railways.slice(0,120)){ /* v131 : ballast + deux rails, en tranchée sous les ponts */
     if(pts.length<2)continue;
-    const line=osmSampleLine(pts,4),yFn=near=>near.y+sideHillElev(near)-underSpan(near)-0.08; /* v164 : voie ferrée sur les collines */
+    const line=osmSampleLine(pts,4),yFn=near=>terrainHeightAt(near.x,near.z,near.y+sideHillElev(near))-underSpan(near)-0.08; /* v165 : voie ferrée drapée sur le terrain */
     ribbon(line,1.9,0,yFn,railBallast);
     ribbon(line,0.07,0.72,near=>yFn(near)+0.05,railLine);
     ribbon(line,0.07,-0.72,near=>yFn(near)+0.05,railLine);
@@ -5371,7 +5456,7 @@ function applyOSM(elements,targetWorld){
     let coneIndex=0;
     trees.forEach((point,i)=>{
       const twist=Math.abs(osmNoise(point[0]*2.2,point[1]*3.3));
-      const s=Math.random()<.18?.75+Math.random()*.45:(coniferSet.has(point)?.9:1.4)+Math.random()*1.2, big=s>1.5, y=heightAtHill(point[0],point[1])-.4, conifer=coniferSet.has(point); /* v164 : arbres sur les collines */
+      const s=Math.random()<.18?.75+Math.random()*.45:(coniferSet.has(point)?.9:1.4)+Math.random()*1.2, big=s>1.5, y=heightAt(point[0],point[1])-.4, conifer=coniferSet.has(point);
       matrix.makeScale(big?s*1.35:s,big?s*1.15:s,big?s*1.35:s);matrix.setPosition(point[0],y,point[1]);trunkMesh.setMatrixAt(i,matrix);
       trunkMesh.setColorAt(i,trunkColour.setHSL(.07,.42,.16+twist*.14));
       if(conifer){
@@ -5439,7 +5524,7 @@ function hedges(hedgeParts,targetWorld){
   const groups={mapped:{base:[],leaves:[]},estimated:{base:[],leaves:[]}};let mapped=0,estimated=0;
   const tri=(out,a,b,c)=>out.push(...a,...b,...c);
   for(const item of sorted){const height=osmMetres(item.tags.height,2.6,.8,7.5),width=osmMetres(item.tags.width,1.6,.4,5.5),line=osmSampleLine(item.points,3);if(line.length<2)continue;const strip=[];
-    for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=near.y+sideHillElev(near)-.38; /* v164 : haies sur les collines */strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
+    for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=terrainHeightAt(line[i][0],line[i][1],near.y+sideHillElev(near))-.38; /* v165 : haies drapées sur le terrain */strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
     const group=groups[item.estimated?'estimated':'mapped'];let used=false;
     for(let i=1;i<strip.length;i++){const a=strip[i-1],b=strip[i];if(!a||!b)continue;tri(group.base,a.l,b.l,b.lt);tri(group.base,a.l,b.lt,a.lt);tri(group.base,a.r,b.rt,b.r);tri(group.base,a.r,a.rt,b.rt);tri(group.base,a.lt,b.lt,b.rt);tri(group.base,a.lt,b.rt,a.rt);used=true}
     if(used){if(item.estimated)estimated++;else mapped++;for(const point of strip)if(point&&group.leaves.length<6500)group.leaves.push({point,height,width});for(let i=0;i<strip.length;i+=3){const point=strip[i];if(point&&hedgeTrees.length<1100&&osmNoise(point.x*3.1,point.z*2.7)>.28)hedgeTrees.push({x:point.x,y:point.y,z:point.z,v:Math.abs(osmNoise(point.x*1.7,point.z*9.3)),conifer:Math.abs(osmNoise(point.x*11.3,point.z*5.7))>.78})}}
