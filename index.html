@@ -888,31 +888,27 @@ for (let pass = 0; pass < 3; pass++) {
     }
   }
 }
-/* 2. Le terrain épouse le profil altimétrique de la route
-   (colonne vertébrale + éperons latéraux lissés, sans décrochements) */
-for (let j = 0; j < nz; j++) {
-  for (let i = 0; i < nx; i++) {
-    const idx = j * nx + i;
-    const x = minX + i * (w / (nx - 1));
-    const z = minZ + j * (d / (nz - 1));
-    const near = nearestOnRoute(x, z);
-
-    if (!near) continue;
-
-    const dist = Math.sqrt(near.dist2);
-    const blendR = 260;
-    if (dist < blendR) {
-      const u = dist / blendR;
-      const smooth = u * u * (3 - 2 * u);
-
-      const spurOffset = Math.min(dist, 42) * 0.03;
-      const roadAnchor = near.y + 0.4 - spurOffset;
-
-      ele[idx] = roadAnchor * (1 - smooth) + ele[idx] * smooth;
-    }
-  }
-}
-
+ 
+ /* 2. DÉSACTIVÉ :
+     Le terrain ne doit pas être “collé” à la route.
+     Ce recalage artificiel soulève le décor près du parcours et crée l’effet
+     de relief déformé visible sur les captures.
+   */
+  // for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+  //   const idx = j * nx + i;
+  //   const x = minX + i * (w / (nx - 1)), z = minZ + j * (d / (nz - 1));
+  //   const near = nearestOnRoute(x, z);
+  //   if (!near) continue;
+  //   const dist = Math.sqrt(near.dist2);
+  //   const blendR = 260;
+  //   if (dist < blendR) {
+  //     const u = dist / blendR;
+  //     const smooth = u * u * (3 - 2 * u);
+  //     const spurOffset = Math.min(dist, 35) * 0.04;
+  //     const roadAnchor = near.y + 0.45 - spurOffset;
+  //     ele[idx] = roadAnchor * (1 - smooth) + ele[idx] * smooth;
+  //   }
+  // }
 /* 3. Maillage continu low-poly, facettes visibles, terrain propre */
 const indexedGeo = new THREE.PlaneGeometry(w, d, nx - 1, nz - 1);
 indexedGeo.rotateX(-Math.PI / 2);
