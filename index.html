@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v161 – flèches multicolores tracées sur la carte, anti-toboggans, stades agrandis</title>
+<title>Vélo 3D v162 – compteur avec données réelles, caméra jamais sous le décor, dézoom paysage 90 m</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v161</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v162</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -1421,9 +1421,12 @@ function makeCyclist() {
   // Pas de prolongateurs : cintre de course classique seulement
   addTube(g, new V3(0,0.982,0.505), new V3(0,0.968,0.588), 0.006, darkMetalMat);
   const compBody = new THREE.Mesh(new THREE.BoxGeometry(0.065,0.018,0.055), new THREE.MeshStandardMaterial({color:0x111111,roughness:0.3})); compBody.position.set(0,0.968,0.60); compBody.rotation.x=-0.28; g.add(compBody);
-  const compScreenMat = new THREE.MeshBasicMaterial({color:0xdfffe0});
+  /* v162 : écran du compteur — vraies données dessinées sur CanvasTexture (vitesse, puissance, pente, temps, distance) */
+  const compCanvas=document.createElement('canvas');compCanvas.width=256;compCanvas.height=192;
+  const compTex=new THREE.CanvasTexture(compCanvas);compTex.anisotropy=4;
+  const compScreenMat=new THREE.MeshBasicMaterial({map:compTex});
   const compScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.055,0.045), compScreenMat); compScreen.rotation.x=-Math.PI/2-0.28; compScreen.rotation.z=Math.PI; compScreen.position.set(0,0.9775,0.5965); g.add(compScreen);
-  g.userData.computerScreen = compScreen;
+  g.userData.computerScreen = compScreen;g.userData.computerCanvas=compCanvas;g.userData.computerTex=compTex;
   addTube(g, new V3(0.02,0.92,0.40), new V3(0.02,0.70,0.36), 0.004, darkMetalMat);
   addTube(g, new V3(-0.02,0.92,0.40), new V3(-0.02,0.70,0.36), 0.004, darkMetalMat);
   /* A small frame color panel makes the bicycle read as a modern performance bike. */
@@ -3705,19 +3708,20 @@ function decorateDemo(){
 
 
 /* ---------- Caméra orbitale, zoom tactile et adaptation à l'orientation ---------- */
+const CAM_ZMIN=1.8,CAM_ZMAX=90,CAM_PITCH_MAX=1.30; /* v162 : dézoom paysage jusqu'à 90 m, caméra plus haute */
 const cameraState={distance:6,view:'follow',yaw:0,pitch:.18,look:new THREE.Vector3(),ready:false};
-try{const saved=JSON.parse(localStorage.getItem('velo3d-camera')||'null');if(saved){cameraState.distance=Math.max(1.8,Math.min(36,Number(saved.distance)||6));if(['follow','wide','side','cockpit'].includes(saved.view))cameraState.view=saved.view;cameraState.yaw=Number(saved.yaw)||0;cameraState.pitch=Math.max(-.12,Math.min(1.12,Number(saved.pitch)||.18))}}catch(e){}
+try{const saved=JSON.parse(localStorage.getItem('velo3d-camera')||'null');if(saved){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,Number(saved.distance)||6));if(['follow','wide','side','cockpit'].includes(saved.view))cameraState.view=saved.view;cameraState.yaw=Number(saved.yaw)||0;cameraState.pitch=Math.max(-.12,Math.min(CAM_PITCH_MAX,Number(saved.pitch)||.18))}}catch(e){}
 function saveCamera(){try{localStorage.setItem('velo3d-camera',JSON.stringify({distance:cameraState.distance,view:cameraState.view,yaw:cameraState.yaw,pitch:cameraState.pitch}))}catch(e){}}
 function syncCockpitShifters(){const el=$('cockpitShifters');if(!el)return;const active=cameraState.view==='cockpit'&&$('home').classList.contains('hide')&&$('stopDialog').classList.contains('hide')&&$('freeStartDialog').classList.contains('hide');el.classList.toggle('hide',!active)}
 function refreshCameraControls(){
-  $('zoom').value=Math.round(((36-cameraState.distance)/3)+1); if(cameraState.view==='cockpit')cameraState.distance=1.8; /* v121 : vue cintre seulement très près du cycliste */
+  $('zoom').value=Math.round(1+(CAM_ZMAX-cameraState.distance)*11/(CAM_ZMAX-CAM_ZMIN)); if(cameraState.view==='cockpit')cameraState.distance=1.8; /* v121 : vue cintre seulement très près du cycliste */
   $('zoomValue').textContent=cameraState.view==='cockpit'?'🚴 Vue cintre — comme si tu étais sur le vélo':'Caméra à '+cameraState.distance.toFixed(1).replace('.0','')+' m · glisser pour pivoter';
   for(const [id,mode] of [['viewFollow','follow'],['viewWide','wide'],['viewSide','side'],['viewCockpit','cockpit']]){const active=cameraState.view===mode;$(id).classList.toggle('on',active);$(id).setAttribute('aria-pressed',String(active))}
   syncCockpitShifters();
 }
-function setZoom(distance){cameraState.distance=Math.max(1.8,Math.min(36,distance));if(cameraState.distance<=1.81)cameraState.view='cockpit';refreshCameraControls();saveCamera()} /* v121 : bascule en cintre seulement à moins de 1,8 m */
-function setView(view){cameraState.view=view;cameraState.yaw=0;if(view==='wide')cameraState.distance=23;else if(view==='side')cameraState.distance=10;else if(view==='cockpit')cameraState.distance=1.8;else cameraState.distance=6;refreshCameraControls();saveCamera()}
-$('zoom').oninput=e=>setZoom(36-(Number(e.target.value)-1)*3);$('zoomIn').onclick=()=>setZoom(cameraState.distance*.82);$('zoomOut').onclick=()=>setZoom(cameraState.distance/.82);
+function setZoom(distance){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,distance));if(cameraState.distance<=1.81)cameraState.view='cockpit';refreshCameraControls();saveCamera()} /* v121 : bascule en cintre seulement à moins de 1,8 m ; v162 : dézoom jusqu'à 90 m */
+function setView(view){cameraState.view=view;cameraState.yaw=0;if(view==='wide')cameraState.distance=45;else if(view==='side')cameraState.distance=10;else if(view==='cockpit')cameraState.distance=1.8;else cameraState.distance=6;refreshCameraControls();saveCamera()} /* v162 : vue paysage par défaut à 45 m */
+$('zoom').oninput=e=>setZoom(CAM_ZMAX-(Number(e.target.value)-1)*(CAM_ZMAX-CAM_ZMIN)/11);$('zoomIn').onclick=()=>setZoom(cameraState.distance*.82);$('zoomOut').onclick=()=>setZoom(cameraState.distance/.82);
 $('viewFollow').onclick=()=>setView('follow');$('viewWide').onclick=()=>setView('wide');$('viewSide').onclick=()=>setView('side');$('viewCockpit').onclick=()=>setView('cockpit');
 $('c').addEventListener('wheel',e=>{e.preventDefault();setZoom(cameraState.distance*Math.exp(Math.max(-120,Math.min(120,e.deltaY))*.002))},{passive:false});
 const cameraPointers=new Map();let previousPinch=0;
@@ -3738,7 +3742,7 @@ $('c').addEventListener('pointermove',e=>{
   const pointer=cameraPointers.get(e.pointerId);if(!pointer)return;
   const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;cameraPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});_tapMoved+=Math.abs(dx)+Math.abs(dy);
   if(cameraPointers.size===1&&(Math.abs(dx)+Math.abs(dy)>0)){
-    cameraState.yaw+=dx*.008;cameraState.pitch=Math.max(-.12,Math.min(1.12,cameraState.pitch+dy*.006));if(cameraState.distance>1.81)cameraState.view='follow';refreshCameraControls();saveCamera();
+    cameraState.yaw+=dx*.008;cameraState.pitch=Math.max(-.12,Math.min(CAM_PITCH_MAX,cameraState.pitch+dy*.006));if(cameraState.distance>1.81)cameraState.view='follow';refreshCameraControls();saveCamera();
   }else if(cameraPointers.size===2){
     const points=[...cameraPointers.values()],gap=Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);
     if(previousPinch>0&&gap>0){cameraState.view='follow';setZoom(cameraState.distance*previousPinch/gap);} /* v121 : zoom à deux doigts = retour en vue suivi */previousPinch=gap;
@@ -3756,6 +3760,28 @@ $('cameraToggle').onclick=()=>{const views=['follow','wide','side','cockpit'];co
 if(landscapeQuery.addEventListener)landscapeQuery.addEventListener('change',syncCompactHud);else if(landscapeQuery.addListener)landscapeQuery.addListener(syncCompactHud);
 $('mapMode').setAttribute('aria-label','Basculer entre vue globale et suivi du cycliste');syncCompactHud();syncCameraPanel();refreshCameraControls();
 addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||!$('home').classList.contains('hide'))return;if(e.key==='+'||e.key==='='){e.preventDefault();setZoom(cameraState.distance*.9)}if(e.key==='-'){e.preventDefault();setZoom(cameraState.distance/.9)}if(e.code==='Space'){e.preventDefault();$('pause').click()}});
+function updateBikeComputer(power,grade){ /* v162 : données réelles sur l'écran du compteur déporté (visible en vue cintre) */
+  const bike=rider&&rider.userData&&rider.userData.bike;
+  if(!bike||!bike.userData.computerCanvas)return;
+  const cv=bike.userData.computerCanvas,ctx=cv.getContext('2d');
+  ctx.fillStyle='#081008';ctx.fillRect(0,0,256,192);
+  ctx.strokeStyle='#1d3a1d';ctx.lineWidth=4;ctx.strokeRect(4,4,248,184);
+  const kmh=(running?v:0)*3.6;
+  ctx.textAlign='left';ctx.fillStyle='#9cf59c';
+  ctx.font='700 66px system-ui,sans-serif';ctx.fillText(kmh<10?kmh.toFixed(1):String(Math.round(kmh)),14,80);
+  ctx.font='600 22px system-ui,sans-serif';ctx.fillText('km/h',16,108);
+  ctx.font='700 40px system-ui,sans-serif';ctx.fillText(Math.round(power||0),14,164);
+  ctx.font='600 22px system-ui,sans-serif';ctx.fillText('W',80,164);
+  ctx.textAlign='right';
+  const gpc=(grade||0)*100;
+  ctx.fillStyle=gpc>.5?'#f5c49c':(gpc<-.5?'#9cd8f5':'#9cf59c');
+  ctx.font='700 40px system-ui,sans-serif';ctx.fillText(gpc.toFixed(1)+'%',242,164);
+  ctx.fillStyle='#9cf59c';
+  const mm=Math.floor((window._rideElapsed||0)/60),ss=Math.floor((window._rideElapsed||0)%60);
+  ctx.font='700 34px system-ui,sans-serif';ctx.fillText(mm+':'+String(ss).padStart(2,'0'),242,80);
+  ctx.font='600 22px system-ui,sans-serif';ctx.fillText((totalDistance/1000).toFixed(1)+' km',242,108);
+  if(bike.userData.computerTex)bike.userData.computerTex.needsUpdate=true;
+}
 function place(snap,dt=.016){
   if(!route)return;
   const p=at(s),before=at(s-2),after=at(s+2),dx=after[0]-before[0],dz=after[2]-before[2],l=Math.hypot(dx,dz)||1,tx=dx/l,tz=dz/l;
@@ -3818,8 +3844,14 @@ function place(snap,dt=.016){
   const ctx=Math.sin(effAngle),ctz=Math.cos(effAngle); /* v132 : la caméra reste derrière le cap RÉEL du cycliste — pendant le demi-tour elle pivote avec lui au lieu d'avoir déjà la vue de l'autre sens */
   const horizontal=distance*Math.cos(pitch),offsetX=-ctx*Math.cos(yaw)+ctz*Math.sin(yaw),offsetZ=-ctz*Math.cos(yaw)-ctx*Math.sin(yaw);
   const targetPosition=new THREE.Vector3(p[0]+offsetX*horizontal,p[1]+1+distance*Math.sin(pitch),p[2]+offsetZ*horizontal);
+  /* v162 : la caméra ne s'enfonce plus sous le sol/décor quand on regarde vers le bas ou en descente */
+  let floorY=p[1];
+  try{const gnd=nearestOnRoute(targetPosition.x,targetPosition.z);if(gnd&&Number.isFinite(gnd.y))floorY=gnd.y;}catch(_){}
+  floorY+=.55;
+  if(targetPosition.y<floorY)targetPosition.y=floorY;
   const lookAhead=cameraState.view==='side'?0:Math.min(3,distance*.10),look=new THREE.Vector3(p[0]+ctx*lookAhead,rider.position.y+1,p[2]+ctz*lookAhead),alpha=1-Math.exp(-dt*6);
   if(snap||!cameraState.ready){cam.position.copy(targetPosition);cameraState.look.copy(look);cameraState.ready=true}else{cam.position.lerp(targetPosition,alpha);cameraState.look.lerp(look,alpha)}
+  if(cam.position.y<floorY)cam.position.y=floorY; /* v162 : même la caméra lissée reste au-dessus du sol */
   cam.lookAt(cameraState.look);
   if(sun.shadow){sun.position.set(p[0]+35,p[1]+60,p[2]-25);sun.target.position.set(p[0],p[1],p[2]);sun.target.updateMatrixWorld()}
 }
@@ -6193,6 +6225,7 @@ function loop(t){
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);
     if($('pwAvg')){const _ap=window._rideElapsed>0?(window._ridePwSum||0)/window._rideElapsed:0;const _ftp=Number(riderStyle.ftp)||0;$('pwAvg').textContent=_ap>0?('moy '+Math.round(_ap)+' W'+(_ftp>=50?' · '+Math.round(_ap/_ftp*100)+'% FTP':'')):'moy – W';if($('poMoy'))$('poMoy').textContent=_ap>0?('moy '+Math.round(_ap)+' W'):'moy – W';} /* v156+v161 : puissance moyenne sous le curseur et dans le HUD */$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
     {const _it=(window._icuPlan&&running)?icuTargetAt(window._icuPlan):0,_po=$('po');if(_po){if(!_it)_po.className='';else if(power>_it*1.05)_po.className='over';else if(power<_it*0.95)_po.className='under';else _po.className='ok';}} /* v144 : puissance colorée selon la cible de l'exercice en cours */
+    if(t-(window._compTick||0)>400){window._compTick=t;updateBikeComputer(power,grade);} /* v162 : écran du compteur du vélo */
   }
   R.render(S,cam);
 }
