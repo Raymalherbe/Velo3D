@@ -888,27 +888,6 @@ for (let pass = 0; pass < 3; pass++) {
     }
   }
 }
-
-/* Recaler l'altitude DEM sur le niveau vertical de la route */
-const startFx = Math.max(0, Math.min(nx - 1, (route.X[0] - minX) / w * (nx - 1)));
-const startFz = Math.max(0, Math.min(nz - 1, (route.Z[0] - minZ) / d * (nz - 1)));
-const si = Math.floor(startFx), sj = Math.floor(startFz);
-const si1 = Math.min(nx - 1, si + 1), sj1 = Math.min(nz - 1, sj + 1);
-const stx = startFx - si, stz = startFz - sj;
-
-const a = ele[sj * nx + si], b = ele[sj * nx + si1];
-const c = ele[sj1 * nx + si], e = ele[sj1 * nx + si1];
-const demAtStart =
-  (a * (1 - stx) + b * stx) * (1 - stz) +
-  (c * (1 - stx) + e * stx) * stz;
-
-if (Number.isFinite(demAtStart) && Number.isFinite(route.Y[0])) {
-  const offset = demAtStart - route.Y[0];
-  for (let i = 0; i < ele.length; i++) {
-    if (Number.isFinite(ele[i])) ele[i] -= offset;
-  }
-}
-
 /* 2. Le terrain épouse le profil altimétrique de la route
    (colonne vertébrale + éperons latéraux lissés, sans décrochements) */
 for (let j = 0; j < nz; j++) {
