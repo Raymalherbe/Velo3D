@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v165 – relief maquette + décor drapé sur le terrain, collines latérales, plus de « Tour Eiffel » parasite</title>
+<title>Vélo 3D v166 – plus de trous dans le terrain (DEM retry + diffusion), corridor 60 m, éperons uniquement au-dessus du vide</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v165</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v166</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -884,11 +884,7 @@ async function buildTerrain(target) {
   }
   const n = nx * nz;
   let ele = new Float32Array(n).fill(NaN), okCount = 0;
-  const jobs = [];
-  for (let off = 0; off < n; off += 100) {
-    const la = lats.slice(off, off + 100).map(q => q.toFixed(6)).join(',');
-    const lo = lons.slice(off, off + 100).map(q => q.toFixed(6)).join(',');
-    jobs.push((async () => {
+  const fetchChunk = (off, la, lo) => (async () => {
       const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 12000);
       let resp;
       try {
@@ -901,15 +897,49 @@ async function buildTerrain(target) {
       if (!Array.isArray(data.elevation)) throw new Error('réponse invalide');
       for (let i = 0; i < data.elevation.length; i++) {
         const ve = Number(data.elevation[i]);
-        if (Number.isFinite(ve)) { ele[off + i] = ve; okCount++; }
+        if (Number.isFinite(ve) && !Number.isFinite(ele[off + i])) { ele[off + i] = ve; okCount++; }
       }
-    })());
+  });
+  const jobs = [];
+  for (let off = 0; off < n; off += 100) {
+    const la = lats.slice(off, off + 100).map(q => q.toFixed(6)).join(',');
+    const lo = lons.slice(off, off + 100).map(q => q.toFixed(6)).join(',');
+    jobs.push(fetchChunk(off, la, lo)());
   }
   for (let j0 = 0; j0 < jobs.length; j0 += 6) { try { await Promise.all(jobs.slice(j0, j0 + 6)); } catch (_) {} }
+  /* v166 : nouvelle tentative des paquets échoués (rate-limit open-meteo) — avant, ces points restaient à NaN :
+     le lissage agrandissait les trous à chaque passe, le terrain se perçait, et route/villages/haies semblaient flotter dans le vide */
+  {
+    const retry = [];
+    for (let off = 0; off < n; off += 100) {
+      let manque = false;
+      for (let i = off; i < Math.min(n, off + 100); i++) if (!Number.isFinite(ele[i])) { manque = true; break; }
+      if (manque) retry.push({ off, la: lats.slice(off, off + 100).map(q => q.toFixed(6)).join(','), lo: lons.slice(off, off + 100).map(q => q.toFixed(6)).join(',') });
+    }
+    for (let j0 = 0; j0 < retry.length; j0 += 6) {
+      await Promise.all(retry.slice(j0, j0 + 6).map(r => fetchChunk(r.off, r.la, r.lo)().catch(() => {})));
+    }
+  }
   if (token !== window._worldToken) return;
   if (okCount < n * 0.5) {
     const flat = (minY + maxY) / 2;
     for (let i = 0; i < n; i++) if (!Number.isFinite(ele[i])) ele[i] = flat;
+  }
+  /* v166 : comble les NaN restants par diffusion des voisins (40 itérations = trous jusqu'à 40 mailles) — plus aucun trou dans le maillage */
+  for (let iter = 0; iter < 40; iter++) {
+    let changed = 0;
+    const tmp = new Float32Array(ele);
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+      const k = j * nx + i;
+      if (Number.isFinite(tmp[k])) continue;
+      let sum = 0, cnt = 0;
+      if (i > 0 && Number.isFinite(tmp[k - 1])) { sum += tmp[k - 1]; cnt++; }
+      if (i < nx - 1 && Number.isFinite(tmp[k + 1])) { sum += tmp[k + 1]; cnt++; }
+      if (j > 0 && Number.isFinite(tmp[k - nx])) { sum += tmp[k - nx]; cnt++; }
+      if (j < nz - 1 && Number.isFinite(tmp[k + nx])) { sum += tmp[k + nx]; cnt++; }
+      if (cnt) { ele[k] = sum / cnt; changed++; }
+    }
+    if (!changed) break;
   }
 
   /* 1. Passe de lissage passe-bas sur le DEM brut (supprime le bruit et les marches) */
@@ -932,7 +962,7 @@ async function buildTerrain(target) {
     const near = nearestOnRoute(x, z);
     if (!near) continue;
     const dist = Math.sqrt(near.dist2);
-    const blendR = 260;
+    const blendR = 60; /* v166 : 260 → 60 m — dans les lacets, le blend 260 m tirait le flanc de coteau vers l'altitude du lacet le plus proche : escaliers, falaises chaotiques et vide entre les virages */
     if (dist < blendR) {
       const u = dist / blendR;
       const smooth = u * u * (3 - 2 * u);
@@ -941,9 +971,12 @@ async function buildTerrain(target) {
       ele[idx] = roadAnchor * (1 - smooth) + ele[idx] * smooth;
     }
     /* v165 : collines latérales façon Moveee — en montée, le terrain s'élève en éperon de part et d'autre (même formule pour le décor).
-       Profil plus doux que la v164 : ~140 m d'amplitude à 7 % de pente, crête vers 200-300 m du bord, pentes ~15-25°. */
-    const hill = sideHillHeight(route.G[near.i] || 0, dist, x, z, near.i);
-    if (hill > 0) { const target = near.y + 0.65 + hill; if (target > ele[idx]) ele[idx] = target; } /* on ne fait que combler, jamais creuser */
+       v166 : uniquement au-dessus du VIDE (terrain au niveau de la route ou en dessous) — sur un vrai flanc de coteau comme l'Aspin,
+       le relief réel suffit et on n'empile plus de colline par-dessus (c'est ce qui faisait des murs et des toboggans). */
+    if (ele[idx] < near.y + 6 && Number.isFinite(ele[idx])) {
+      const hill = sideHillHeight(route.G[near.i] || 0, dist, x, z, near.i);
+      if (hill > 0) { const target = near.y + 0.65 + hill; if (target > ele[idx]) ele[idx] = target; } /* on ne fait que combler, jamais creuser */
+    }
   }
 
   let eMin = Infinity, eMax = -Infinity;
@@ -4644,7 +4677,7 @@ function buildings(buildingParts,targetWorld){
     const closed=osmClosed(raw),points=closed?raw.slice(0,-1):raw;
     if(points.length<3)continue;
     const near=nearestOnRoute(points[0][0],points[0][1]);
-    const groundY=terrainHeightAt(points[0][0],points[0][1],near?near.y+sideHillElev(near):0); /* v165 : fallback estimation collines */
+    const groundY=terrainHeightAt(points[0][0],points[0][1],near?near.y:0); /* v166 : fallback altitude route */
     list.push({points,tags,y:groundY-.15,d:near?near.dist2:Infinity});
   }
   list.sort((a,b)=>a.d-b.d);
@@ -4763,7 +4796,7 @@ function buildFarmland(farmlandList,targetWorld){
       const shape=new THREE.Shape(ring.map(p=>new THREE.Vector2(p[0],-p[1])));
       const g=new THREE.ShapeGeometry(shape);g.rotateX(-Math.PI/2);
       const pos=g.attributes.position;
-      for(let i=0;i<pos.count;i++){pos.setXYZ(i,pos.getX(i),terrainHeightAt(pos.getX(i),pos.getZ(i),near.y+sideHillElev(near))-.42,pos.getZ(i));} /* v165 : champs drapés sur le terrain */
+      for(let i=0;i<pos.count;i++){pos.setXYZ(i,pos.getX(i),terrainHeightAt(pos.getX(i),pos.getZ(i),near.y)-.42,pos.getZ(i));} /* v165+v166 : champs drapés sur le terrain */
       (fills[kind]||(fills[kind]=[])).push(g.attributes.position.array.slice());g.dispose();count++;
     }catch(_){}
     /* rangs de culture pour les champs labourés */
@@ -5336,7 +5369,7 @@ function applyOSM(elements,targetWorld){
     }
   }
   osmPublishSceneryData();
-  const heightAt=(x,z)=>{const near=nearestOnRoute(x,z);return terrainHeightAt(x,z,near?near.y+sideHillElev(near):0);}; /* v165 : fallback = estimation collines si le DEM n'est pas encore arrivé */
+  const heightAt=(x,z)=>{const near=nearestOnRoute(x,z);return terrainHeightAt(x,z,near?near.y:0);}; /* v166 : fallback = altitude route — l'estimation « collines » faisait voler le décor au-dessus des vrais flancs */
   const asShape=points=>new THREE.Shape(points.map(p=>new THREE.Vector2(p[0],-p[1])));
   const flatten=geometry=>{geometry.rotateX(-Math.PI/2);return geometry.index?geometry.toNonIndexed():geometry;};
   const addMerged=(parts,colour)=>{
@@ -5403,7 +5436,7 @@ function applyOSM(elements,targetWorld){
   }
   for(const [pts,tags] of railways.slice(0,120)){ /* v131 : ballast + deux rails, en tranchée sous les ponts */
     if(pts.length<2)continue;
-    const line=osmSampleLine(pts,4),yFn=near=>terrainHeightAt(near.x,near.z,near.y+sideHillElev(near))-underSpan(near)-0.08; /* v165 : voie ferrée drapée sur le terrain */
+    const line=osmSampleLine(pts,4),yFn=near=>terrainHeightAt(near.x,near.z,near.y)-underSpan(near)-0.08; /* v165+v166 : voie ferrée drapée sur le terrain */
     ribbon(line,1.9,0,yFn,railBallast);
     ribbon(line,0.07,0.72,near=>yFn(near)+0.05,railLine);
     ribbon(line,0.07,-0.72,near=>yFn(near)+0.05,railLine);
@@ -5524,7 +5557,7 @@ function hedges(hedgeParts,targetWorld){
   const groups={mapped:{base:[],leaves:[]},estimated:{base:[],leaves:[]}};let mapped=0,estimated=0;
   const tri=(out,a,b,c)=>out.push(...a,...b,...c);
   for(const item of sorted){const height=osmMetres(item.tags.height,2.6,.8,7.5),width=osmMetres(item.tags.width,1.6,.4,5.5),line=osmSampleLine(item.points,3);if(line.length<2)continue;const strip=[];
-    for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=terrainHeightAt(line[i][0],line[i][1],near.y+sideHillElev(near))-.38; /* v165 : haies drapées sur le terrain */strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
+    for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=terrainHeightAt(line[i][0],line[i][1],near.y)-.38; /* v165+v166 : haies drapées sur le terrain */strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
     const group=groups[item.estimated?'estimated':'mapped'];let used=false;
     for(let i=1;i<strip.length;i++){const a=strip[i-1],b=strip[i];if(!a||!b)continue;tri(group.base,a.l,b.l,b.lt);tri(group.base,a.l,b.lt,a.lt);tri(group.base,a.r,b.rt,b.r);tri(group.base,a.r,a.rt,b.rt);tri(group.base,a.lt,b.lt,b.rt);tri(group.base,a.lt,b.rt,a.rt);used=true}
     if(used){if(item.estimated)estimated++;else mapped++;for(const point of strip)if(point&&group.leaves.length<6500)group.leaves.push({point,height,width});for(let i=0;i<strip.length;i+=3){const point=strip[i];if(point&&hedgeTrees.length<1100&&osmNoise(point.x*3.1,point.z*2.7)>.28)hedgeTrees.push({x:point.x,y:point.y,z:point.z,v:Math.abs(osmNoise(point.x*1.7,point.z*9.3)),conifer:Math.abs(osmNoise(point.x*11.3,point.z*5.7))>.78})}}
