@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v164 — relief continu, vallées et versants</title>
+<title>Vélo 3D v165 — relief continu, vallées et versants</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -3027,6 +3027,10 @@ function freeHideRouteArrows(){const el=$('routeArrows');if(el)el.classList.add(
 
 function freeApplyChoiceImmediately(event,option,nav){
   if(!route||!nav) return;
+  /* v165 : garde anti double-application — le clic lance déjà l’application ; la résolution
+     de l’altitude ne doit pas reconstruire le monde une deuxième fois (c’était le gros freeze) */
+  if(nav._appliedFor===option&&nav._appliedEvent===event)return;
+  nav._appliedFor=option;nav._appliedEvent=event;
   // On récupère le plan complet de la branche choisie (déjà préchargé)
   const plan=event.continuations&&event.continuations.find(item=>item.option===option);
   const chosenPoints=plan?plan.points:freeExtendPathFromOption(option,nav);
@@ -3053,7 +3057,10 @@ function freeApplyChoiceImmediately(event,option,nav){
      et on applique le décor préchargé du tracé complet (préfixe + branche choisie),
      sans toucher à la position, la vitesse ni la caméra : pas de saut d'image */
   try{
-    nav.preparedElements=freeWithJunctionArms(freePrepareScenery(combined,nav),combined,nav);nav.preparedFor=option.way;
+    /* v165 : on réutilise le décor préparé à l’avance pour la branche (freePrepareJunctionPlans)
+       au lieu de tout recalculer ici — c’était un des gros blocages au clic */
+    const _preBase=(plan&&Array.isArray(plan.preparedElements))?plan.preparedElements:freePrepareScenery(combined,nav);
+    nav.preparedElements=freeWithJunctionArms(_preBase,combined,nav);nav.preparedFor=option.way;
     makeWorld();
     applyOSM(nav.preparedElements,world);
   }catch(err){}
@@ -3125,23 +3132,30 @@ function freeRenderRouteArrows(event,nav){
     option.buttonNode=btn;option.metersNode=dist;option.townsNode=towns;option.cityNode=null;option.cityDistanceNode=null;
     freeSetTownHint(option,nav);if(option.deadEnd){towns.textContent='Impasse';btn.classList.add('deadEndArrow');}
     btn.onclick=()=>{
+      /* v165 : anti-freeze — la sélection et le message s’affichent d’abord (rendu immédiat),
+         puis le travail lourd (altitude, monde 3D, décor) démarre après deux frames. */
       event.selected=option;
       freeClearOptionTraces(); /* v161 : le tracé choisi devient la route rouge suivie */
       for(const button of el.querySelectorAll('button'))button.classList.toggle('selected',button===btn);
-      const plan=event.continuations&&event.continuations.find(item=>item.option===option);
-      if(plan&&!plan.elevationPromise){
-        freeSeedElevation(plan.points,nav,event.distance);
-        plan.elevationPromise=freeFetchElevations([plan.points],nav).then(ok=>{
-          if(!ok)toast('Altitude indisponible pour cette branche; vérifie la connexion.');
-          if(ok&&event.selected===option&&route)freeApplyChoiceImmediately(event,option,nav);
-          return ok;
-        });
-      }
-      nav.preparedElements=plan?plan.preparedElements:freePrepareScenery(option.points,nav);
-      nav.preparedFor=option;
-      freeApplyChoiceImmediately(event,option,nav);
-      if(nav.awaitingChoice){nav.awaitingChoice=false;event.waiting=false;running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();toast('Direction choisie · la sortie reprend.');buzz(25);}
-      else toast('Direction choisie · décor et altitude préchargés depuis le secteur.');
+      toast(nav.awaitingChoice?'Direction choisie · préparation en cours…':'Préparation de la direction…');
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        try{
+          const plan=event.continuations&&event.continuations.find(item=>item.option===option);
+          if(plan&&!plan.elevationPromise){
+            freeSeedElevation(plan.points,nav,event.distance);
+            plan.elevationPromise=freeFetchElevations([plan.points],nav).then(ok=>{
+              if(!ok)toast('Altitude indisponible pour cette branche; vérifie la connexion.');
+              if(ok&&event.selected===option&&route)freeApplyChoiceImmediately(event,option,nav);
+              return ok;
+            });
+          }
+          nav.preparedElements=plan?plan.preparedElements:freePrepareScenery(option.points,nav);
+          nav.preparedFor=option;
+          freeApplyChoiceImmediately(event,option,nav);
+          if(nav.awaitingChoice){nav.awaitingChoice=false;event.waiting=false;running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();toast('Direction choisie · la sortie reprend.');buzz(25);}
+          else toast('Direction choisie · décor et altitude préchargés depuis le secteur.');
+        }catch(error){event.selected=null;toast('Impossible de préparer cette direction : '+(error.message||error));}
+      }));
     };
     el.appendChild(btn);
   }
@@ -3417,7 +3431,7 @@ function freeReverseCurrent(nav=freeNavigation){
   freeSeedElevation(points,nav,s);
   const _ob=at(s-2),_oa=at(s+2);const _uFrom=Math.atan2(_oa[0]-_ob[0],_oa[2]-_ob[2]); /* v126 : angle actuel pour animer le demi-tour */
   nav.reloading=false;nav.prompt=null;nav.lastReloadAttempt=Date.now();freeBuildLeg(nav.currentWay,points,nav,true,direction);freeHideRouteArrows();
-  window._uTurn={t0:performance.now(),dur:2600,from:_uFrom}; /* v126 : le cycliste effectue visiblement son demi-tour avant de repartir */
+  window._uTurn={t0:performance.now(),dur:3000,from:_uFrom}; /* v165 : demi-tour plus visible (3 s), le cycliste fait le tour complet */
   toast('Demi-tour : retour sur la route OSM en sens inverse.');return true;
 }
 async function freeReloadSectorAtCurrent(nav){
@@ -3540,14 +3554,32 @@ if($('startFreeRide'))$('startFreeRide').onclick=async()=>{
 if($('startForward'))$('startForward').onclick=()=>freeSelectStart(1);
 if($('startReverse'))$('startReverse').onclick=()=>freeSelectStart(-1);
 
+function freeReverseAlongPath(nav){ /* v165 : roue de secours du demi-tour — la route OSM inverse n’est pas utilisable ici,
+  on renverse donc le tracé déjà suivi depuis la position actuelle : le coureur fait toujours son demi-tour visible */
+  if(!nav||!nav.active||!route||!Array.isArray(nav.path)||nav.path.length<2)return false;
+  const here=at(s);let best={d:Infinity,index:0};
+  for(let i=0;i<nav.path.length;i++){const p=freeProject(nav.path[i],nav.center),d=(p.x-here[0])**2+(p.z-here[2])**2;if(d<best.d)best={d,index:i};}
+  if(!Number.isFinite(best.d)||best.d>130*130)return false;
+  const points=nav.path.slice(0,best.index+1).reverse();
+  if(points.length<2)return false;
+  const _ob=at(s-2),_oa=at(s+2),_uFrom=Math.atan2(_oa[0]-_ob[0],_oa[2]-_ob[2]);
+  freeSeedElevation(points,nav,s);
+  try{nav.reloading=false;nav.prompt=null;nav.lastReloadAttempt=Date.now();freeBuildLeg(nav.currentWay,points,nav,true,-(nav.currentDir||1));}
+  catch(error){return false;}
+  freeHideRouteArrows();
+  window._uTurn={t0:performance.now(),dur:3000,from:_uFrom}; /* v165 : demi-tour animé sur 3 s */
+  toast('Demi-tour : retour sur le tracé déjà parcouru.');
+  return true;
+}
 function doTurnAround(){ /* v127+v128 : demi-tour — route OSM inversée si possible, sinon VRAI demi-tour en demi-cercle sur le parcours démo */
   if(freeReverseCurrent())return;
   const nav=window._freeNavigation;
-  if(nav&&nav.active){toast('Demi-tour indisponible : aucune route OSM adaptée à cet endroit.');return;}
+  if(nav&&nav.active){if(freeReverseAlongPath(nav))return; /* v165 : fallback — le demi-tour reste visible même sans route OSM inversée */
+    toast('Demi-tour indisponible : aucune route OSM adaptée à cet endroit.');return;}
   if(!route)return;
   const oldDir=window._rideDir||1;window._rideDir=oldDir*-1;
   const b=at(s-2),a=at(s+2),base=Math.atan2(a[0]-b[0],a[2]-b[2]);
-  window._uTurn={t0:performance.now(),dur:2600,from:base+(oldDir<0?Math.PI:0)}; /* le cycliste pivote visiblement sur lui-même */
+  window._uTurn={t0:performance.now(),dur:3000,from:base+(oldDir<0?Math.PI:0)}; /* le cycliste pivote visiblement sur lui-même */
   toast(window._rideDir<0?'Demi-tour : retour dans l’autre sens.':'Sens du parcours rétabli.');
 }
 if($('turnAround'))$('turnAround').onclick=()=>{doTurnAround()};
