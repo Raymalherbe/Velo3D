@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v171 — tracé prolongé en avance, sans interruption</title>
+<title>Vélo 3D v172 — transitions fluides : prolongement sans coupure, demi-tour sans fausse pente</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -3679,6 +3679,12 @@ function freeReverseCurrent(nav=freeNavigation){
     }
   }
   if(length<1)return false;
+  /* v172 : le demi-tour réutilise le VRAI profil de la route déjà chargée — plus de fausses pentes */
+  for(const bt of branch){
+    const pr=freeProject(bt,nav.center);
+    const near=nearestOnRoute(pr.x,pr.z);
+    if(near&&near.dist2<60*60&&Number.isFinite(near.y)){bt.ele=near.y;bt.eleSource='route';}
+  }
   const next=sampleRoute(freeRaw(branch,nav));
   const from=rideHeading();
   nav.prompt=null;nav.path=branch;nav.currentDir=direction;
@@ -3691,6 +3697,7 @@ function freeReverseCurrent(nav=freeNavigation){
 async function freeReloadSectorAtCurrent(nav){
   if(!nav||nav.reloading||freeNavigation!==nav)return;nav.reloading=true;nav.lastReloadAttempt=Date.now();
   const pathAtRequest=nav.path;
+  const sAtRequest=s; /* v172 : mémorise la position au moment de la demande pour éviter tout recul du cycliste */
   const p=at(s),q=at(Math.min(route.len,s+60)),hx=q[0]-p[0],hz=q[2]-p[2],hl=Math.hypot(hx,hz)||1,shift=nav.radius*.3,center={lat:nav.center.lat-(p[2]+hz/hl*shift)/nav.kz,lon:nav.center.lon+(p[0]+hx/hl*shift)/nav.kx};
   toast('Chargement du prochain secteur autour de ta position…');
   try{
@@ -3705,9 +3712,18 @@ async function freeReloadSectorAtCurrent(nav){
     if(!chosen)throw new Error('aucune route connectée n’a été trouvée pour continuer');
     const continued=freeExtendPathFromOption(chosen.item,nextNav);freeSeedElevation(continued,nextNav,s);await freeFetchElevations([continued],nextNav);nextNav.active=true;
     if(freeNavigation!==nav||nav.path!==pathAtRequest||nav.prompt)return;
+    /* v172 : poursuite SANS reconstruire le monde — plus de coupure d'image ni de décor retiré ;
+       on prolonge seulement la chaussée, on remet le cycliste exactement où il pédale et on
+       applique le décor du nouveau secteur (filtré pour éviter les doublons). */
+    nextNav.preparedElements=freeWithJunctionArms(freePrepareScenery(continued,nextNav),continued,nextNav);
+    nextNav.currentWay=chosen.item.way;nextNav.currentDir=chosen.item.direction;nextNav.path=continued;
+    nextNav.events=freeRouteEvents(continued,chosen.item.way,nextNav);nextNav.eventIndex=0;nextNav.prompt=null;
+    const nextRoute=sampleRoute(freeRaw(continued,nextNav));
     freeNavigation=nextNav;window._freeNavigation=nextNav;window._freeSectorCache=nextNav;window._freeGraph=nextNav.graph;window._freeCurrentWay=chosen.item.way;freeCenter=center;freeRadiusUsed=result.radius;proj={la:center.lat,lo:center.lon,kx:nextNav.kx,kz:nextNav.kz};
     if(window._freeCircle)window._freeCircle.setLatLng([center.lat,center.lon]).setRadius(result.radius);if(freeMarker)freeMarker.setLatLng([center.lat,center.lon]);
-    freeBuildLeg(chosen.item.way,continued,nextNav,true,chosen.item.direction);toast('Nouveau secteur OSM chargé · poursuite du parcours.');
+    freeInstallRoute(nextRoute,Math.max(0,Math.min(nextRoute.len-.5,s-sAtRequest)));
+    window.loadOSM&&window.loadOSM().catch(()=>{});
+    toast('Nouveau secteur OSM chargé · poursuite du parcours.');
   }catch(error){if(freeNavigation===nav&&nav.path===pathAtRequest)toast('Rechargement du secteur impossible : '+(error.message||error));}
   finally{nav.reloading=false;}
 }
@@ -3930,7 +3946,7 @@ function sampleRoute(raw){
 }
 function build(raw){
   const next=sampleRoute(raw),{Y}=next;
-  const generation=++osmTok,keepSettlement=!!(window._freeNavigation&&window._freeNavigation.active&&window._freeNavigation.preserveSettlement);resetSceneryData();resetMapState(keepSettlement);cameraState.ready=false;
+  const generation=++osmTok,keepSettlement=!!(window._freeNavigation&&window._freeNavigation.active&&window._freeNavigation.preserveSettlement);resetSceneryData();window._appliedOsmKeys=null; /* v172 : mémoire anti-doublons réinitialisée à chaque reconstruction complète */resetMapState(keepSettlement);cameraState.ready=false;
   route=next;window._rideDir=1;window._uTurn=null;let _gain=0;for(let i=1;i<Y.length;i++)_gain+=Math.max(0,Y[i]-Y[i-1]);window._routeGain=_gain;s=0;v=0;totalDistance=0;running=false;makeWorld();place(true);drawMiniMap(performance.now(),true);
   $('pause').textContent='Pause';
   if(proj){
@@ -4707,8 +4723,25 @@ async function loadOSM(){
       const ready=Array.isArray(freeCache.preparedElements)?freeCache.preparedElements:freePrepareScenery(freeCache.path,freeCache);
       freeCache.preparedElements=null;freeCache.preparedFor=null;
       if(osmStopIfStale(token,targetWorld))return;
-      osmProgress(.86,'Assemblage du décor préchargé · '+ready.length+' objets proches du parcours…');
-      const result=ready.length?applyOSM(ready,targetWorld):{b:0,w:0,t:0,h:0,hm:0,he:0,r:0,roundabouts:0,c:0};
+      /* v172 : filtre anti-doublons — ce qui a déjà été posé dans le monde n'est pas reposé ;
+         les voies pas encore tracables (trop loin du tracé) restent réessayables au prochain prolongement. */
+      const seen=window._appliedOsmKeys||(window._appliedOsmKeys=new Set());
+      const fresh=[];
+      for(const el of ready||[]){
+        const key=osmElementKey(el);
+        if(el.type==='way'){
+          let drawn=false;
+          const geo=Array.isArray(el.geometry)?el.geometry:[];
+          for(const pnt of geo){if(!pnt||pnt.lat==null)continue;const pr=osmXY(pnt);if(pr){const nr=nearestOnRoute(pr[0],pr[1]);if(nr&&nr.dist2<=(el.tags&&el.tags.highway?260*260:420*420)){drawn=true;break;}}}
+          if(drawn){seen.add(key);continue;}
+          fresh.push(el);
+        }else{
+          if(seen.has(key))continue;
+          seen.add(key);fresh.push(el);
+        }
+      }
+      osmProgress(.86,'Assemblage du décor préchargé · '+fresh.length+' objets proches du parcours…');
+      const result=fresh.length?applyOSM(fresh,targetWorld):{b:0,w:0,t:0,h:0,hm:0,he:0,r:0,roundabouts:0,c:0};
       if(osmStopIfStale(token,targetWorld))return;
       const note=freeCache.remark?' · la réponse du serveur était partielle':'';
       osmProgress(.96,'Décor local finalisé : '+result.b+' bâtiments, '+result.t+' arbres, '+result.hm+' haies OSM + '+result.he+' estimées, '+result.r+' routes annexes, '+result.roundabouts+' ronds-points'+note+'.');
