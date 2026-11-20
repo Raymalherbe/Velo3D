@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v169 — relief continu et vrais bâtiments OSM</title>
+<title>Vélo 3D v170 — le décor suit la direction choisie</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -3283,11 +3283,19 @@ function freeApplyChoiceImmediately(event,option,nav){
   freeSeedElevation(branch,nav,event.distance);
   const combined=[...nav.path.slice(0,event.pathIndex+1),...branch.slice(1)];
   const next=sampleRoute(freeRaw(combined,nav));
-  const later=freeRouteEvents(combined,option.way,nav).filter(ev=>ev.pathIndex>event.pathIndex);
+  const resumeAtJunction=!!nav.awaitingChoice;
   event.selected=option;event.merged=true;event.shown=true;
-  nav.path=combined;nav.events=[event,...later];nav.eventIndex=0;
-  // Conserver la voie d’approche jusqu’au franchissement effectif du carrefour.
-  freeInstallRoute(next);
+  nav.path=combined;
+  /* v170 : le décor suit la direction choisie — reconstruction propre de la chaussée, du décor
+     (bâtiments OSM, routes secondaires, arbres, haies) et des embranchements autour du nouveau tracé. */
+  try{
+    freeBuildLeg(option.way,combined,nav,true,option.direction);
+    s=Math.min(event.distance,route.len-.5);
+  }catch(_err){ freeInstallRoute(next); }
+  for(const ev of nav.events){ if(ev.distance<=event.distance+3){ ev.merged=true; ev.shown=true; ev.choicePending=false; } }
+  nav.prompt=null;
+  try{ drawMiniMap(performance.now(),true); }catch(_err){}
+  if(resumeAtJunction){nav.awaitingChoice=false;running=true;last=performance.now();requestWakeLock();$('pause').textContent='Pause';toast('Direction choisie · la sortie reprend.');buzz(25);}
   if(plan&&plan.elevationPromise&&!plan.elevationReady){
     plan.elevationPromise.then(ok=>{
       if(!ok||freeNavigation!==nav||nav.path!==combined||route!==next||s>=event.distance-25)return;
@@ -6611,3 +6619,4 @@ demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.
 </script>
 </body>
 </html>
+
