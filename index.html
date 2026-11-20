@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v170 — le décor suit la direction choisie</title>
+<title>Vélo 3D v171 — tracé prolongé en avance, sans interruption</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -3755,7 +3755,10 @@ function freeAdvanceNavigation(){
     if(chosen){nav.currentWay=chosen.way;nav.currentDir=chosen.direction;window._freeCurrentWay=chosen.way;}
     nav.prompt=null;nav.eventIndex++;
   }
-  if(!nav.prompt&&nav.radius-radial<=reloadThreshold&&!nav.reloading&&Date.now()-(nav.lastReloadAttempt||0)>30000)freeReloadSectorAtCurrent(nav);
+  /* v171 : le tracé rouge se recharge EN AVANCE — dès qu'il reste moins de 3 km de route chargée
+     (ou qu'on approche du bord du secteur), le prochain secteur est téléchargé, son altitude
+     récupérée et son décor préparé pendant qu'on pédale encore : plus de coupure en bout de tracé. */
+  if(!nav.prompt&&!nav.reloading&&(route.len-s<=3000||nav.radius-radial<=reloadThreshold)&&Date.now()-(nav.lastReloadAttempt||0)>12000)freeReloadSectorAtCurrent(nav);
   if(s>=route.len-.25){
     const endP=nav.path&&nav.path.at(-1);
     if(endP&&!nav.junctions.has(freeNodeKey(endP))&&freeInsideRadius(endP,nav)&&freeReverseCurrent(nav))return;
@@ -6619,4 +6622,3 @@ demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.
 </script>
 </body>
 </html>
-
