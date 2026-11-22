@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v172 — tracé rouge prolongé au-delà du secteur jusqu’au prochain carrefour à choix</title>
+<title>Vélo 3D v173 — choix de direction sans téléportation, flèche calée sur la route, mini-carte orientée</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -428,7 +428,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 @media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:space-between;gap:4px;padding:0 clamp(30px,21vw,320px)}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}}
 
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script></head>
 <body>
 <canvas id="c" aria-label="Simulation 3D du parcours à vélo" tabindex="0"></canvas>
 <div id="topTools" aria-label="Affichage de la séance"><button id="hudToggle" aria-label="Masquer les données de la sortie" aria-expanded="true" title="Afficher ou masquer les données">📊</button></div>
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v172</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v173</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -2675,8 +2675,19 @@ async function freeAlignStartArrowToRoad(){ /* v161 : avant le chargement du sec
   if(!freeMarker||!freeCenter||freeNavigation)return;
   const tok=++_freeArrowAlignTok,lat=freeCenter.lat,lon=freeCenter.lon;
   try{
-    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent('[out:json][timeout:25];way["highway"](around:90,'+lat+','+lon+');out geom 200;'),{mode:'cors',credentials:'omit'});
-    const j=await r.json();
+    /* v173 : deux serveurs avec délai — overpass-api.de reste souvent muet, ce qui laissait la flèche au nord */
+    const query='[out:json][timeout:25];way["highway"](around:90,'+lat+','+lon+');out geom 200;';
+    let j=null;
+    for(const server of['https://overpass.openstreetmap.fr/api/interpreter','https://overpass-api.de/api/interpreter']){
+      try{
+        const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),8000);let response;
+        try{response=await fetch(server+'?data='+encodeURIComponent(query),{mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}
+        if(!response.ok)continue;
+        const data=await response.json();
+        if(data&&Array.isArray(data.elements)){j=data;break;}
+      }catch(_){}
+    }
+    if(!j)return;
     if(tok!==_freeArrowAlignTok||freeNavigation)return;
     const kx=111320*Math.cos(lat*Math.PI/180),kz=110540;
     let best=null,bd=Infinity;
@@ -2704,19 +2715,23 @@ function freeUpdateStartArrow(){ /* v121 : la flèche montre le vrai sens de dé
   }catch(_){}
   if(freeMarker)freeMarker.setIcon(freeArrowIcon(bearing));
 }
-function initFreeMap(){
-  const el=$('freeMap');if(!el||freeMap||!window.L)return;
-  freeMap=L.map(el).setView([freeCenter.lat,freeCenter.lon],14);
+function initFreeMap(){try{
+  const el=$('freeMap');if(!el||!window.L)return;
+  /* v173 : si la carte a été créée sur un conteneur remplacé (ou avant que Leaflet soit prêt), on la refait */
+  if(freeMap&&(!freeMap.getContainer().isConnected)){try{freeMap.remove()}catch(_){}freeMap=null;freeMarker=null;window._freeCircle=null;}
+  if(freeMap)return;
+  freeMap=L.map(el,{rotate:false}).setView([freeCenter.lat,freeCenter.lon],14);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(freeMap);
   window._freeStartDir=1;
   freeMarker=L.marker([freeCenter.lat,freeCenter.lon],{icon:freeArrowIcon(0)}).addTo(freeMap); /* v121 : flèche à la place du point */
   freeMarker.on('click',e=>{try{L.DomEvent.stopPropagation(e.originalEvent)}catch(_){};window._freeStartDir*=-1;freeUpdateStartArrow();toast(window._freeStartDir>0?'Départ dans le sens de la flèche.':'Départ dans le sens inverse de la flèche.');}); /* v121 : un appui sur la flèche inverse le sens de départ */
   window._freeCircle=L.circle([freeCenter.lat,freeCenter.lon],{radius:freeMapRadius(),color:'#34d399',fillOpacity:.12,weight:2}).addTo(freeMap);
-  freeMap.on('click',e=>{const ll=e&&e.latlng;if(!ll||!Number.isFinite(ll.lat)||!Number.isFinite(ll.lng)){toast('Point de carte invalide.');return;}freeCenter={lat:ll.lat,lon:ll.lng};fetchWeatherAt(ll.lat,ll.lng); /* v138 : météo du point choisi */freeMarker.setLatLng(ll);freeUpdateStartArrow();freeAlignStartArrowToRoad();window._freeCircle.setLatLng(ll);freeClearStartChoices();$('freeInfo').textContent='Point de départ choisi · rayon '+(freeMapRadius()/1000).toFixed(1)+' km · touche « Rouler ici » pour charger les routes';});
-}
+  freeMap.on('click',e=>{const ll=e&&e.latlng;if(!ll||!Number.isFinite(ll.lat)||!Number.isFinite(ll.lng)){toast('Point de carte invalide.');return;}freeCenter={lat:ll.lat,lon:ll.lng};fetchWeatherAt(ll.lat,ll.lng); /* v138 : météo du point choisi */freeMarker.setLatLng(ll);freeUpdateStartArrow();freeAlignStartArrowToRoad();  window._freeCircle.setLatLng(ll);freeClearStartChoices();$('freeInfo').textContent='Point de départ choisi · rayon '+(freeMapRadius()/1000).toFixed(1)+' km · touche « Rouler ici » pour charger les routes';});
+  freeAlignStartArrowToRoad(); /* v173 : flèche calée sur la route dès l’ouverture de la carte */
+}catch(_){}}
 function freeMapRefresh(){if(freeMap)setTimeout(()=>freeMap.invalidateSize({pan:false}),120);}
-setTimeout(initFreeMap,400);
-const freeRideDetails=$('freeRide');if(freeRideDetails)freeRideDetails.addEventListener('toggle',()=>{if(freeRideDetails.open){initFreeMap();freeMapRefresh();}});
+setTimeout(()=>{initFreeMap();freeAlignStartArrowToRoad();},400); /* v173 : flèche d’accueil calée sur la route dès l’ouverture */
+const freeRideDetails=$('freeRide');if(freeRideDetails)freeRideDetails.addEventListener('toggle',()=>{if(freeRideDetails.open){initFreeMap();freeAlignStartArrowToRoad();freeMapRefresh();}});
 $('freeRadius')?.addEventListener('change',()=>{freeMapRadius();freeClearStartChoices();$('freeInfo').textContent='Rayon sélectionné : '+(freeMapRadius()/1000).toFixed(1)+' km';});
 $('enlargeMap')?.addEventListener('click',()=>{const mapEl=$('freeMap'),large=mapEl.style.height==='420px';mapEl.style.height=large?'220px':'420px';$('enlargeMap').textContent=large?'Agrandir la carte':'Réduire la carte';freeMapRefresh();});
 $('locateMe')?.addEventListener('click',()=>{if(!navigator.geolocation){toast('La géolocalisation n’est pas disponible.');return;}navigator.geolocation.getCurrentPosition(pos=>{freeCenter={lat:pos.coords.latitude,lon:pos.coords.longitude};fetchWeatherAt(pos.coords.latitude,pos.coords.longitude,'ta position'); /* v138 */if(freeMap)freeMap.setView([freeCenter.lat,freeCenter.lon],14);if(freeMarker)freeMarker.setLatLng([freeCenter.lat,freeCenter.lon]);freeUpdateStartArrow();freeAlignStartArrowToRoad();if(window._freeCircle)window._freeCircle.setLatLng([freeCenter.lat,freeCenter.lon]).setRadius(freeMapRadius());freeClearStartChoices();$('freeInfo').textContent='Point de départ : ta position · choisis « Rouler ici » pour charger le secteur';},()=>toast('Position indisponible. Vérifie l’autorisation de localisation du navigateur.'),{enableHighAccuracy:true,timeout:12000});});
@@ -3450,6 +3465,17 @@ function freeRenderRouteArrows(event,nav){
     freeSetTownHint(option,nav);if(option.deadEnd){towns.textContent='Impasse';btn.classList.add('deadEndArrow');}
     btn.onclick=()=>{
       if(freeNavigation!==nav||nav.prompt!==event||s>=event.distance||event.selected===option)return;
+      /* v173 : un appui avant le carrefour mémorise seulement la direction — le cycliste continue de
+         rouler normalement jusqu’au carrefour, où la nouvelle branche est construite sur place. */
+      if(event.distance-s>4){
+        event.selected=option;
+        for(const candidate of event.options){
+          candidate.buttonNode.classList.toggle('selected',candidate===option);
+          candidate.buttonNode.setAttribute('aria-pressed',String(candidate===option));
+        }
+        toast('Direction enregistrée · tu continues jusqu’au carrefour.');buzz(25);
+        return;
+      }
       if(freeApplyChoiceImmediately(event,option,nav)){
         for(const candidate of event.options){
           candidate.buttonNode.classList.toggle('selected',candidate===option);
@@ -5901,6 +5927,7 @@ function buildRoadNetwork(roadParts,targetWorld){
 /* ---------- Mini-carte vectorielle : mêmes données OSM que la scène ---------- */
 const mapState={overview:false,visible:true,last:0,lastTownS:0,noticed:new Set(),activeTown:null,threeD:false,signTimer:null,signToken:0,fitRoute:false,cameraSync:false,lastFollow:null};
 let rideMap2D=null,rideRoute2D=null,rideDone2D=null,rideRider2D=null,rideMap3D=null,rideMap3DReady=false,mapLibrePromise=null,rideFeatures=null;
+let rideRotateOk=false,rideRotateBanned=false,rideMapErrors=0; /* v173 : la rotation est optionnelle — une défaillance du greffon retombe sur une carte normale */
 function featureToLatLngs(points){if(!proj||!points)return[];const out=[];for(const p of points){const lat=proj.la-p[1]/proj.kz,lon=proj.lo+p[0]/proj.kx;if(Number.isFinite(lat)&&Number.isFinite(lon))out.push([lat,lon]);}return out;}
 function updateMapFeatures(){
   if(!rideFeatures||!rideMap2D||!proj||!window.osmMapFeatures)return;
@@ -5909,9 +5936,44 @@ function updateMapFeatures(){
   for(const k of Object.keys(byType)){const lines=byType[k].filter(l=>l&&l.length>1);if(k==='water'||k==='farmland'||k==='forest'){rideFeatures[k].setLatLngs(lines.map(l=>l.map(p=>[p[0],p[1]])));}else rideFeatures[k].setLatLngs(lines);}
 }
 function syncMapModeButton(){const button=$('mapMode');if(!button)return;button.textContent=mapState.overview?'Suivi':'Tout';button.title=mapState.overview?'Recentrer sur le cycliste':'Afficher tout le parcours';button.setAttribute('aria-label',button.title);}
+function rideDropMap2D(){try{if(rideMap2D)rideMap2D.remove();}catch(_){}rideMap2D=null;rideRoute2D=null;rideDone2D=null;rideRider2D=null;rideFeatures=null;}
+function rideFreshHost2D(){ /* conteneur vierge : un greffon qui échoue en cours de création laisse des panes et un identifiant Leaflet qui empêcheraient toute nouvelle carte */
+  const host=$('rideMap2D');if(!host)return null;const fresh=host.cloneNode(false);host.replaceWith(fresh);return fresh;
+}
+function rideMapFailed(error){
+  console.warn('Mini-carte 2D :',error&&error.message||String(error));
+  if(rideRotateOk&&++rideMapErrors>=2){ /* la rotation est la seule suspecte : on repart en carte simple, nord en haut */
+    rideRotateBanned=true;rideRotateOk=false;rideMapErrors=0;rideDropMap2D();rideFreshHost2D();mapState.fitRoute=true;mapState.lastFollow=null;
+    console.warn('Rotation de la mini-carte désactivée : carte remise au nord, le reste de l’application continue.');
+    try{drawMiniMap(performance.now(),true);}catch(_){}
+  }
+}
+function rideApplyBearing(bearing){
+  if(bearing==null||!Number.isFinite(bearing))return;
+  if(rideMap2D&&rideRotateOk&&typeof rideMap2D.setBearing==='function'){try{rideMap2D.setBearing(bearing);}catch(error){rideMapFailed(error);}}
+  if(rideMap3DReady&&rideMap3D){try{rideMap3D.setBearing(bearing);}catch(_){}}
+}
 function initRideMap2D(){
   if(rideMap2D||!window.L||!$('rideMap2D'))return;
-  rideMap2D=L.map('rideMap2D',{zoomControl:true,attributionControl:false,scrollWheelZoom:true,touchZoom:true}).setView([freeCenter.lat,freeCenter.lon],14);
+  /* v173 : rotation « sens du cycliste » — tentative isolée, repli systématique sur une carte 2D normale */
+  const rideMapOptions={zoomControl:true,attributionControl:false,scrollWheelZoom:true,touchZoom:true};
+  rideMapErrors=0;
+  const rotateAvailable=!rideRotateBanned&&window.L.Map&&L.Map.prototype&&typeof L.Map.prototype.setBearing==='function';
+  if(rotateAvailable){
+    let rotated=null;
+    try{
+      rotated=L.map('rideMap2D',{...rideMapOptions,rotate:true,bearing:0,touchRotate:false});
+      rideMap2D=rotated;
+      rotated.setBearing(6);rotated.setBearing(0); /* essai réel : un greffon cassé échoue ici, pas au milieu d’une sortie */
+      rideRotateOk=true;
+    }catch(error){rideRotateOk=false;rideDropMap2D();rideFreshHost2D();console.warn('Rotation de la mini-carte indisponible, carte remise au nord :',error&&error.message||error);}
+  }
+  if(!rideMap2D){
+    rideRotateOk=false;
+    try{rideMap2D=L.map($('rideMap2D'),rideMapOptions);}catch(error){console.warn('Mini-carte 2D indisponible :',error&&error.message||error);return;}
+  }
+  try{
+  rideMap2D.setView([freeCenter.lat,freeCenter.lon],14);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(rideMap2D);
   L.control.scale({imperial:false,metric:true,position:'bottomleft',maxWidth:82}).addTo(rideMap2D);
   rideRoute2D=L.polyline([],{color:'#d94135',weight:4,opacity:.92,lineCap:'round',lineJoin:'round'}).addTo(rideMap2D);
@@ -5926,11 +5988,20 @@ function initRideMap2D(){
     railway:L.polyline([],{color:'#333',weight:2,opacity:.75,dashArray:'6 4'}).addTo(rideMap2D)
   };
   rideMap2D.on('dragstart zoomstart',()=>{if(!mapState.cameraSync){mapState.overview=true;syncMapModeButton();}});
+  }catch(error){rideMapFailed(error);}
   updateMapLabel();
 }
 function updateMapLabel(){const label=$('mapScale');if(label)label.textContent=mapState.threeD?'Vue 3D inclinée':mapState.overview?'Parcours complet':'Suivi du cycliste';const title=$('map3D');if(title){title.textContent=mapState.threeD?'2D':'3D';title.setAttribute('aria-pressed',mapState.threeD?'true':'false');title.title=mapState.threeD?'Revenir à la carte 2D':'Afficher la carte inclinée avec bâtiments 3D';}const panel=$('mapPanel'),enlarge=$('mapEnlarge');if(enlarge&&panel){const expanded=panel.classList.contains('expanded');enlarge.textContent=expanded?'⤢':'⛶';enlarge.setAttribute('aria-label',expanded?'Réduire la carte':'Agrandir la carte');enlarge.title=enlarge.getAttribute('aria-label');}syncMapModeButton();}
 function rideGeoAt(distance){if(!route||!proj||![proj.la,proj.lo,proj.kx,proj.kz].every(Number.isFinite)||!proj.kx||!proj.kz)return null;const p=at(distance);return[proj.lo+p[0]/proj.kx,proj.la-p[2]/proj.kz];}
 function rideGeoLine(endDistance=route?route.len:0,maxPoints=1400){if(!route||!proj)return[];const end=Math.max(0,Math.min(route.len,endDistance)),count=Math.max(1,Math.min(maxPoints,Math.ceil(route.n*end/Math.max(route.len,1)))),coords=[];for(let i=0;i<=count;i++){const coord=rideGeoAt(end*i/count);if(coord)coords.push(coord);}return coords;}
+function rideBearingDeg(){ /* v173 : cap suivi par le cycliste (0° = nord, sens horaire) */
+  if(!route||!proj)return null;
+  const a=rideGeoAt(s),b=rideGeoAt(Math.min(route.len,s+12));
+  if(!a||!b)return null;
+  const dx=(b[0]-a[0])*proj.kx,dz=(b[1]-a[1])*proj.kz;
+  if(!Number.isFinite(dx)||!Number.isFinite(dz)||Math.hypot(dx,dz)<1)return null;
+  return Math.atan2(dx,dz)*180/Math.PI;
+}
 function geoFeature(type,coordinates){return{type:'Feature',properties:{},geometry:{type,coordinates}};}
 function installRideMap3DLayers(){if(!rideMap3D||rideMap3DReady)return;const style=rideMap3D.getStyle(),before=style.layers.find(layer=>layer.type==='symbol')?.id;const empty={type:'FeatureCollection',features:[]};rideMap3D.addSource('velo-options',{type:'geojson',data:empty}); /* v161 : tracés colorés des options au carrefour */rideMap3D.addLayer({id:'velo-options-line',type:'line',source:'velo-options',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':5,'line-opacity':.85,'line-dasharray':[2,3]}},before);rideMap3D.addSource('velo-route',{type:'geojson',data:empty});rideMap3D.addSource('velo-ridden',{type:'geojson',data:empty});rideMap3D.addSource('velo-rider',{type:'geojson',data:empty});rideMap3D.addLayer({id:'velo-route-outline',type:'line',source:'velo-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':8,'line-opacity':.9}},before);rideMap3D.addLayer({id:'velo-route-line',type:'line',source:'velo-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#d94135','line-width':5}},before);rideMap3D.addLayer({id:'velo-ridden-line',type:'line',source:'velo-ridden',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#8d241f','line-width':5}},before);rideMap3D.addLayer({id:'velo-rider-dot',type:'circle',source:'velo-rider',paint:{'circle-radius':8,'circle-color':'#d74436','circle-stroke-color':'#fff','circle-stroke-width':2}},before);rideMap3DReady=true;}
 function ensureMapLibre(){if(window.maplibregl)return Promise.resolve(window.maplibregl);if(mapLibrePromise)return mapLibrePromise;mapLibrePromise=new Promise((resolve,reject)=>{if(!document.querySelector('link[data-velo-maplibre]')){const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css';css.dataset.veloMaplibre='1';document.head.appendChild(css);}const script=document.createElement('script');script.src='https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js';script.async=true;script.onload=()=>window.maplibregl?resolve(window.maplibregl):reject(new Error('MapLibre indisponible'));script.onerror=()=>reject(new Error('Bibliothèque 3D non chargée'));document.head.appendChild(script);});return mapLibrePromise;}
@@ -5942,12 +6013,12 @@ async function setRideMap3D(enabled){
     try{const gl=await ensureMapLibre();if(!rideMap3D){rideMap3D=new gl.Map({container:'rideMap3D',style:'https://tiles.openfreemap.org/styles/liberty',center:[center.lng,center.lat],zoom,pitch:48,bearing:0,maxPitch:70,attributionControl:{compact:true},canvasContextAttributes:{antialias:false}});rideMap3D.addControl(new gl.NavigationControl({showCompass:true,visualizePitch:true}),'top-left');rideMap3D.on('load',()=>{installRideMap3DLayers();mapState.fitRoute=true;drawMiniMap(performance.now(),true);});rideMap3D.on('dragstart',()=>{if(!mapState.cameraSync){mapState.overview=true;syncMapModeButton();}});rideMap3D.on('zoomstart',()=>{if(!mapState.cameraSync){mapState.overview=true;syncMapModeButton();}});rideMap3D.on('error',error=>console.warn('Carte 3D :',error&&error.error||error));setTimeout(()=>{if(mapState.threeD&&rideMap3D&&!rideMap3DReady){mapState.threeD=false;view3.classList.add('hide');view.classList.remove('hide');updateMapLabel();toast('Carte 3D indisponible · la carte 2D reste utilisable.');}},15000);}else rideMap3D.resize();setTimeout(()=>rideMap3D&&rideMap3D.resize(),100);}
     catch(error){mapState.threeD=false;view3.classList.add('hide');view.classList.remove('hide');updateMapLabel();toast('Carte 3D indisponible : '+(error.message||error));}
   }else{
-    if(rideMap3D&&rideMap2D){const center=rideMap3D.getCenter();mapState.cameraSync=true;rideMap2D.setView([center.lat,center.lng],rideMap3D.getZoom(),{animate:false});setTimeout(()=>mapState.cameraSync=false,120);}
+    if(rideMap3D&&rideMap2D){const center=rideMap3D.getCenter();mapState.cameraSync=true;try{rideMap2D.setView([center.lat,center.lng],rideMap3D.getZoom(),{animate:false});}catch(error){rideMapFailed(error);}setTimeout(()=>mapState.cameraSync=false,120);}
     $('rideMap3D')?.classList.add('hide');$('rideMap2D')?.classList.remove('hide');mapState.threeD=false;mapRefresh();updateMapLabel();
   }
 }
 function mapFitRoute(){const coords=rideGeoLine(route?route.len:0,1800);if(coords.length<2)return false;mapState.cameraSync=true;if(mapState.threeD&&rideMap3D){const bounds=new maplibregl.LngLatBounds(coords[0],coords[0]);for(const point of coords)bounds.extend(point);rideMap3D.fitBounds(bounds,{padding:36,maxZoom:16,duration:0});}else if(rideMap2D){rideMap2D.fitBounds(coords.map(point=>[point[1],point[0]]),{padding:[22,22],maxZoom:16,animate:false});}setTimeout(()=>mapState.cameraSync=false,150);mapState.lastFollow=null;return true;}
-function mapRefresh(){setTimeout(()=>{if(rideMap2D)rideMap2D.invalidateSize({pan:false});if(rideMap3D)rideMap3D.resize();drawMiniMap(performance.now(),true);},120);}
+function mapRefresh(){setTimeout(()=>{try{if(rideMap2D)rideMap2D.invalidateSize({pan:false});}catch(error){rideMapFailed(error);}try{if(rideMap3D)rideMap3D.resize();}catch(_){}drawMiniMap(performance.now(),true);},120);}
 $('mapMode').onclick=()=>{if(!mapState.overview){mapState.overview=true;mapState.fitRoute=true;}else{mapState.overview=false;mapState.fitRoute=false;}updateMapLabel();drawMiniMap(performance.now(),true);};
 $('map3D').onclick=()=>setRideMap3D(!mapState.threeD);
 $('mapEnlarge').onclick=()=>{$('mapPanel').classList.toggle('expanded');$('mapPanel').classList.remove('wide');mapRefresh();updateMapLabel();};
@@ -5965,11 +6036,15 @@ function drawMiniMap(t,force=false){
   const noGps=!proj||!route,notice=$('mapNoGps');if(notice)notice.classList.toggle('hide',!noGps);if(noGps){updateMapLabel();return;}
   if(window._freeNavigation&&window._freeNavigation.active)freePreloadAhead(window._freeNavigation); /* v172 : tracé au-delà du secteur */
   const planned=rideGeoLine(route.len,1400).concat(freeAheadGeo(window._freeNavigation)),ridden=rideGeoLine(Math.min(s,route.len),700),here=rideGeoAt(s);
+  try{ /* v173 : toute défaillance de la carte reste ici — le rendu du vélo continue quoi qu’il arrive */
   if(rideRoute2D)rideRoute2D.setLatLngs(planned.map(point=>[point[1],point[0]]));if(rideDone2D)rideDone2D.setLatLngs(ridden.map(point=>[point[1],point[0]]));if(here&&rideRider2D)rideRider2D.setLatLng([here[1],here[0]]);
+  /* v173 : la mini-carte tourne avec le cycliste — la direction suivie pointe vers le haut */
+  rideApplyBearing(mapState.overview?0:rideBearingDeg());
   updateMapFeatures(); /* v135 : couches eau / voies ferrées / champs sur la minicarte */
   if(mapState.fitRoute){if(mapFitRoute())mapState.fitRoute=false;}
   if(!mapState.overview&&here){const prior=mapState.lastFollow,dx=prior?(here[0]-prior[0])*111320*Math.cos(here[1]*Math.PI/180):Infinity,dz=prior?(here[1]-prior[1])*110540:Infinity;if(!prior||Math.hypot(dx,dz)>7){mapState.cameraSync=true;if(mapState.threeD&&rideMap3D)rideMap3D.setCenter(here);else rideMap2D.panTo([here[1],here[0]],{animate:false});setTimeout(()=>mapState.cameraSync=false,80);mapState.lastFollow=here;}}
   if(rideMap3DReady&&rideMap3D){rideMap3D.getSource('velo-route')?.setData(geoFeature('LineString',planned));rideMap3D.getSource('velo-ridden')?.setData(geoFeature('LineString',ridden));rideMap3D.getSource('velo-rider')?.setData(here?geoFeature('Point',here):{type:'FeatureCollection',features:[]});}
+  }catch(error){rideMapFailed(error);}
   updateMapLabel();
 }
 setTimeout(initRideMap2D,450);
