@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v176 — tracé rouge continu d’un carrefour à l’autre, sans redémarrage</title>
+<title>Vélo 3D v172 — tracé rouge prolongé au-delà du secteur jusqu’au prochain carrefour à choix</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v176</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v164</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -3156,12 +3156,12 @@ function freeStartingDirections(way,segment,t,snap,nav){
   }
   return result;
 }
-function freeExtendPathFromOption(option,nav,maxLength=nav.radius*1.8){
+function freeExtendPathFromOption(option,nav,maxLength=nav.radius*3){
   const path=option.points.map(point=>({...point})),visited=new Set();
   let length=0;
   for(let i=1;i<path.length;i++)length+=freeDistance(path[i-1],path[i],nav);
   let current=option;
-  for(let hop=0;hop<120&&length<maxLength;hop++){
+  for(let hop=0;hop<240&&length<maxLength;hop++){
     const node=current.points.at(-1),key=freeNodeKey(node);
     if(!nav.junctions.has(key)||path.length<2)break;
     const before=path.at(-2),a=freeProject(before,nav.center),b=freeProject(node,nav.center);
@@ -3174,7 +3174,11 @@ function freeExtendPathFromOption(option,nav,maxLength=nav.radius*1.8){
       if(nextOptions.length)next=nextOptions.filter(o=>!o.deadEnd).reduce((best,item)=>!best||Math.abs(item.angle)<Math.abs(best.angle)?item:best,null);
     }else{
       nextOptions=freeBuildOptionsAt(key,b.x-a.x,b.z-a.z,nav);
-      next=freeChooseStraight(nextOptions);
+      /* v171 : on prolonge tant que la route continue tout droit (même seuil que la flèche ↑)
+         ou qu’il n’y a qu’une seule suite possible (virage). On s’arrête uniquement au carrefour
+         où il faut réellement choisir entre plusieurs directions sans tout droit. */
+      const viable=nextOptions.filter(option=>!option.deadEnd),straight=viable.filter(option=>option.arrow==='↑').reduce((best,item)=>!best||Math.abs(item.angle)<Math.abs(best.angle)?item:best,null);
+      next=straight||(viable.length===1?viable[0]:null);
     }
     if(!next)break;const token=String(next.way.id)+':'+next.direction+':'+key;
     if(visited.has(token))break;
@@ -3182,12 +3186,74 @@ function freeExtendPathFromOption(option,nav,maxLength=nav.radius*1.8){
     let added=false;
     for(const point of next.points.slice(1)){
       length+=freeDistance(path.at(-1),point,nav);path.push({...point});added=true;
-      if(length>=maxLength)break;
-    }
+    } /* v171 : on ajoute le tronçon entier (il finit à un carrefour) — jamais de coupure au milieu d’une ligne droite */
     if(!added)break;
     current=next;
   }
   return path;
+}
+/* v172 : préchargement du tracé au-delà du secteur — la ligne rouge rejoint le prochain carrefour à choix
+   au lieu de s’arrêter au bord du cercle de données. Requête « routes seules » (rapide) : le décor 3D,
+   lui, continue d’être chargé par le rechargement de secteur habituel. */
+let freeAhead=null,freeAheadBusy=false,freeAheadRetry=0,freeAheadError='';
+function freeAheadSame(nav){return !!freeAhead&&freeAhead.nav===nav&&freeAhead.pathRef===nav.path}
+function freeAheadGeo(nav){if(!nav||!freeAheadSame(nav))return[];return freeAhead.points.map(point=>[Number(point.lon),Number(point.lat)])}
+async function freeFetchRoadsAhead(center,radius){
+  const query='[out:json][timeout:25];way["highway"](around:'+radius+','+center.lat+','+center.lon+');out geom;';
+  for(const server of['https://overpass.openstreetmap.fr/api/interpreter','https://overpass-api.de/api/interpreter']){
+    try{
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);let response;
+      try{response=await fetch(server+'?data='+encodeURIComponent(query),{mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}
+      if(!response.ok)continue;
+      const data=await response.json();
+      if(data&&Array.isArray(data.elements))return data.elements;
+    }catch(_){}
+  }
+  return null;
+}
+async function freePreloadAhead(nav){
+  if(freeAheadBusy||!nav||!nav.active||!nav.path||nav.path.length<2||!route)return;
+  if(freeAheadSame(nav))return;
+  const end=nav.path.at(-1);
+  if(nav.junctions.has(freeNodeKey(end)))return; /* le tracé s’arrête déjà sur un carrefour : rien à faire */
+  if(freeDistance(nav.center,end,nav)<nav.radius*.72)return; /* bout de route à l’intérieur du secteur (impasse) */
+  if(Date.now()<(freeAheadRetry||0))return;
+  freeAheadBusy=true;
+  try{
+    let cursor=end,previous=nav.path[nav.path.length-2]||end,points=[],endsAtJunction=false,endsAtChoice=false;
+    for(let round=0;round<3;round++){ /* v172 : au plus trois tronçons pour rejoindre le prochain carrefour à choix */
+      const center={lat:cursor.lat,lon:cursor.lon},radius=Math.max(1200,Math.round(nav.radius*1.2));
+      const elements=await freeFetchRoadsAhead(center,radius);
+      if(!elements||!elements.length||!nav.path||nav.path.at(-1)!==end)break;
+      const built=freeMakeGraph(elements,center);
+      const aheadNav={center,kx:111320*Math.cos(center.lat*Math.PI/180),kz:110540,radius,graph:built.graph,junctions:built.junctions,localities:built.localities||[],sceneryIndex:built.sceneryIndex||[],elements};
+      const snap={lat:cursor.lat,lon:cursor.lon,ele:cursor.ele,nodeId:cursor.nodeId};
+      let best=null,bestD=Infinity,bestSegment=0,bestT=0;
+      for(const way of built.graph)for(let i=0;i<way.pts.length-1;i++){
+        const a=way.pts[i],b=way.pts[i+1],pa=freeProject(a,center),pb=freeProject(b,center),dx=pb.x-pa.x,dz=pb.z-pa.z,t=Math.max(0,Math.min(1,-(pa.x*dx+pa.z*dz)/(dx*dx+dz*dz||1))),x=pa.x+dx*t,z=pa.z+dz*t,d=x*x+z*z;
+        if(d<bestD){bestD=d;best=way;bestSegment=i;bestT=t}
+      }
+      if(!best||bestD>400)break;
+      const pa=freeProject(previous,center),pb=freeProject(snap,center),hl=Math.hypot(pb.x-pa.x,pb.z-pa.z)||1,inX=(pb.x-pa.x)/hl,inZ=(pb.z-pa.z)/hl;
+      const options=freeStartingDirections(best,bestSegment,bestT,snap,aheadNav);
+      let pick=null;
+      for(const option of options){const heading=freeHeading(option.points,aheadNav),score=heading.x*inX+heading.z*inZ;if(!pick||score>pick.score)pick={option,score}}
+      if(!pick||pick.score<.2)break;
+      const path=freeExtendPathFromOption(pick.option,aheadNav);
+      if(path.length<2)break;
+      points=points.concat(path.slice(1));
+      const tail=path.at(-1);previous=path[Math.max(0,path.length-2)];cursor=tail;
+      const tailKey=freeNodeKey(tail),ta=freeProject(previous,center),tb=freeProject(tail,center),thl=Math.hypot(tb.x-ta.x,tb.z-ta.z)||1;
+      endsAtJunction=aheadNav.junctions.has(tailKey);endsAtChoice=false;
+      if(endsAtJunction){const ends=freeBuildOptionsAt(tailKey,(tb.x-ta.x)/thl,(tb.z-ta.z)/thl,aheadNav).filter(o=>!o.deadEnd);endsAtChoice=ends.length>1&&!ends.some(o=>o.arrow==='↑')} /* v172 : le tracé préchargé finit-il sur un vrai carrefour à choix ? */
+      if(endsAtChoice)break; /* carrefour à choix atteint : le tracé peut s’arrêter là */
+    }
+    if(!points.length)return;
+    freeAhead={nav,pathRef:nav.path,points,endsAtJunction,endsAtChoice};
+    freeAheadRetry=0;
+    try{drawMiniMap(performance.now(),true)}catch(_){}
+  }catch(error){freeAheadError=String(error&&error.message||error);freeAheadRetry=Date.now()+15000}
+  finally{freeAheadBusy=false}
 }
 async function freeFetchElevations(paths,nav,onProgress=()=>{}){
   nav.elevationSource=null;
@@ -3705,21 +3771,9 @@ async function freeReloadSectorAtCurrent(nav){
     if(!chosen)throw new Error('aucune route connectée n’a été trouvée pour continuer');
     const continued=freeExtendPathFromOption(chosen.item,nextNav);freeSeedElevation(continued,nextNav,s);await freeFetchElevations([continued],nextNav);nextNav.active=true;
     if(freeNavigation!==nav||nav.path!==pathAtRequest||nav.prompt)return;
-    /* v176 : le tracé rouge devient un ruban continu — l'ancien tracé est conservé et la suite
-       est raccordée à la position exacte du cycliste (plus aucun redémarrage du tracé ni du décor) */
-    let cutD=0,cutI=nav.path.length-1;
-    for(let i=1;i<nav.path.length;i++){cutD+=freeDistance(nav.path[i-1],nav.path[i],nextNav);if(cutD>=s){cutI=i;break;}}
-    const combined=nav.path.slice(0,cutI+1).concat(continued.slice(1));
-    nextNav.path=combined;nextNav.currentWay=chosen.item.way;nextNav.currentDir=chosen.item.direction;
-    nextNav.events=freeRouteEvents(combined,chosen.item.way,nextNav);nextNav.eventIndex=0;nextNav.prompt=null;
-    for(const ev of nextNav.events){ if(ev.distance<=s-5){ ev.shown=true; ev.merged=true; ev.choicePending=false; } }
-    nextNav.preparedElements=freeWithJunctionArms(freePrepareScenery(combined,nextNav),combined,nextNav);
-    const nextRoute=sampleRoute(freeRaw(combined,nextNav));
     freeNavigation=nextNav;window._freeNavigation=nextNav;window._freeSectorCache=nextNav;window._freeGraph=nextNav.graph;window._freeCurrentWay=chosen.item.way;freeCenter=center;freeRadiusUsed=result.radius;proj={la:center.lat,lo:center.lon,kx:nextNav.kx,kz:nextNav.kz};
     if(window._freeCircle)window._freeCircle.setLatLng([center.lat,center.lon]).setRadius(result.radius);if(freeMarker)freeMarker.setLatLng([center.lat,center.lon]);
-    freeInstallRoute(nextRoute); /* s inchangé : le préfixe du tracé est identique, le cycliste ne bouge pas */
-    window.loadOSM&&window.loadOSM().catch(()=>{});
-    toast('Nouveau secteur OSM chargé · poursuite du parcours.');
+    freeBuildLeg(chosen.item.way,continued,nextNav,true,chosen.item.direction);toast('Nouveau secteur OSM chargé · poursuite du parcours.');
   }catch(error){if(freeNavigation===nav&&nav.path===pathAtRequest)toast('Rechargement du secteur impossible : '+(error.message||error));}
   finally{nav.reloading=false;}
 }
@@ -3843,7 +3897,7 @@ function doTurnAround(){
   toast(window._rideDir<0?'Demi-tour : retour dans l’autre sens.':'Sens du parcours rétabli.');
 }
 if($('turnAround'))$('turnAround').onclick=()=>{doTurnAround()};
-window._freeNavTest={freeMakeGraph,freeBuildOptionsAt,freeStartArms,freeStartingDirections,freeExtendPathFromOption,freeFetchElevations,freeRaw,freeRouteEvents,freeAdvanceNavigation,freeRenderRouteArrows,freeRoundJunctionMeters,freeSeedElevation,freeTownAhead,freeTownAheadInfo,freeSetTownHint,freeCarryLocalities,freeElementNearPath,freePrepareScenery,freeReverseCurrent,freeReloadSectorAtCurrent,freeSelectStart,freeChooseStraight,freeApplyChoiceImmediately,freeArmHasContinuation,freeOptionHasContinuation,freeHeading,freeArrivalHeading};
+window._freeNavTest={freeMakeGraph,freeBuildOptionsAt,freeStartArms,freeStartingDirections,freeExtendPathFromOption,freeFetchElevations,freeRaw,freeRouteEvents,freeAdvanceNavigation,freeRenderRouteArrows,freeRoundJunctionMeters,freeSeedElevation,freeTownAhead,freeTownAheadInfo,freeSetTownHint,freeCarryLocalities,freeElementNearPath,freePrepareScenery,freeReverseCurrent,freeReloadSectorAtCurrent,freeSelectStart,freeChooseStraight,freeApplyChoiceImmediately,freeArmHasContinuation,freeOptionHasContinuation,freeHeading,freeArrivalHeading,freePreloadAhead,freeAheadInfo:()=>({busy:freeAheadBusy,retry:freeAheadRetry,error:freeAheadError,current:!!freeAhead&&freeAhead.nav===window._freeNavigation,count:freeAhead?freeAhead.points.length:0,last:freeAhead?freeAhead.points[freeAhead.points.length-1]:null,endsAtJunction:freeAhead?freeAhead.endsAtJunction:null,endsAtChoice:freeAhead?freeAhead.endsAtChoice:null})};
 applyRiderStyleToInputs();r4ApplyCyclistStyle(rider.userData,riderStyle);r4SetBikeModel(rider.userData,riderStyle.bikeModel||'classic');if(riderStyle.riderWeight>=40&&riderStyle.riderWeight<=200)MASS=riderStyle.riderWeight; const cust=$('customize'); if(cust)cust.addEventListener('toggle',()=>{if(cust.open)setTimeout(drawPreview,50)});
 
 /* ---------- Aperçu 3D réel sur la page paramètres ---------- */
@@ -5909,7 +5963,8 @@ function showSettlementSign(name,state){const box=$('settlementSign');if(!box)re
 function drawMiniMap(t,force=false){
   if(!mapState.visible||(!force&&t-mapState.last<750))return;mapState.last=t;initRideMap2D();if(!rideMap2D)return;
   const noGps=!proj||!route,notice=$('mapNoGps');if(notice)notice.classList.toggle('hide',!noGps);if(noGps){updateMapLabel();return;}
-  const planned=rideGeoLine(route.len,1400),ridden=rideGeoLine(Math.min(s,route.len),700),here=rideGeoAt(s);
+  if(window._freeNavigation&&window._freeNavigation.active)freePreloadAhead(window._freeNavigation); /* v172 : tracé au-delà du secteur */
+  const planned=rideGeoLine(route.len,1400).concat(freeAheadGeo(window._freeNavigation)),ridden=rideGeoLine(Math.min(s,route.len),700),here=rideGeoAt(s);
   if(rideRoute2D)rideRoute2D.setLatLngs(planned.map(point=>[point[1],point[0]]));if(rideDone2D)rideDone2D.setLatLngs(ridden.map(point=>[point[1],point[0]]));if(here&&rideRider2D)rideRider2D.setLatLng([here[1],here[0]]);
   updateMapFeatures(); /* v135 : couches eau / voies ferrées / champs sur la minicarte */
   if(mapState.fitRoute){if(mapFitRoute())mapState.fitRoute=false;}
@@ -6619,8 +6674,6 @@ document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wak
   homeSync();
   setInterval(()=>{if(document.hidden)return;for(const box of document.querySelectorAll('#routeArrows .routeTowns')){const roll=box.firstElementChild,n=roll?roll.children.length:0;if(n<2)continue;box._i=((box._i||0)+1)%n;const h=box.getBoundingClientRect().height||13;roll.style.transition=box._i===0?'none':'transform .45s ease';roll.style.transform='translateY(-'+box._i*h+'px)'}},2600);
 })();
-/* v176 : le badge de version de l'écran d'accueil suit automatiquement le titre de la page */
-(function(){try{const m=document.title.match(/v(\d+)/),eb=document.getElementById('appEyebrow');if(m&&eb)eb.textContent=eb.textContent.replace(/v\d+$/,'v'+m[1]);}catch(e){}})();
 demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.lat,freeCenter.lon); /* v138 : météo du secteur par défaut */requestAnimationFrame(loop);
 
 /* TEST_HOOK */
