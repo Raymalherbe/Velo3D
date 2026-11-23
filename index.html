@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v174 — virage au carrefour sans coupure et heure réelle au fuseau du parcours</title>
+<title>Vélo 3D v175 — marquage interrompu aux carrefours et heure réelle au fuseau du parcours</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v174</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v175</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -4152,12 +4152,24 @@ function routeJunctionZones(){
       const width=osmRoadWidth(way.tags||{});
       if(Number.isFinite(width)&&width>half)half=width;
     }
-    zones.push({x:xy.x,z:xy.z,r:Math.min(12,Math.max(6,half+3))});
+    /* v175 : la zone doit couvrir toute l’ouverture de la branche (le nœud OSM est souvent décalé de
+       quelques mètres par rapport à l’axe de la chaussée) — sinon la ligne blanche barre l’entrée. */
+    zones.push({x:xy.x,z:xy.z,r:Math.min(22,Math.max(12,half+9))});
   }
   return zones;
 }
 function nearJunctionMark(x,z,zones){
   for(const zone of zones||[])if(Math.hypot(x-zone.x,z-zone.z)<zone.r)return true;
+  return false;
+}
+/* v175 : un segment de marquage qui traverse la zone d’un carrefour est supprimé en entier —
+   sinon la ligne blanche de la route suivie referme l’entrée de la route latérale. */
+function junctionMarkCrosses(ax,az,bx,bz,zones){
+  for(const zone of zones||[]){
+    const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;
+    const t=l2>0?Math.max(0,Math.min(1,((zone.x-ax)*dx+(zone.z-az)*dz)/l2)):0;
+    if(Math.hypot(zone.x-(ax+dx*t),zone.z-(az+dz*t))<zone.r)return true;
+  }
   return false;
 }
 function makeRouteRoad(target){
@@ -4175,14 +4187,14 @@ function makeRouteRoad(target){
   road.add(ribbon(3.75,-.04,0xb9b199));road.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
   // Light painted edge lines; no automatic invented centre-line/speed restrictions.
   const edgePositions=[];
-  for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(nearJunctionMark(X[i],Z[i],junctionZones)||nearJunctionMark(X[i+1],Z[i+1],junctionZones))continue;for(const side of[-1,1]){const pts=[
+  for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(junctionMarkCrosses(X[i],Z[i],X[i+1],Z[i+1],junctionZones))continue;for(const side of[-1,1]){const pts=[
     [X[i]+nx*2.93*side,Y[i]+.014,Z[i]+nz*2.93*side],[X[i]+nx*3.01*side,Y[i]+.014,Z[i]+nz*3.01*side],
     [X[i+1]+bx*3.01*side,Y[i+1]+.014,Z[i+1]+bz*3.01*side],[X[i+1]+bx*2.93*side,Y[i+1]+.014,Z[i+1]+bz*2.93*side]];
     for(const k of[0,1,2,0,2,3])edgePositions.push(...pts[k]);}}
   const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePositions,3));edgeGeo.computeVertexNormals();road.add(new THREE.Mesh(edgeGeo,new THREE.MeshLambertMaterial({color:0xe8e5d7,side:THREE.DoubleSide})));
   /* v78 : ligne médiane discontinue — trait de 3 m tous les 13 m */
   const dashPositions=[];
-  for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3);if(nearJunctionMark(a2[0],a2[2],junctionZones)||nearJunctionMark(b2[0],b2[2],junctionZones))continue;const dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
+  for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3);if(junctionMarkCrosses(a2[0],a2[2],b2[0],b2[2],junctionZones))continue;const dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
     const quad=[[a2[0]+nx2,a2[1]+.016,a2[2]+nz2],[b2[0]+nx2,b2[1]+.016,b2[2]+nz2],[b2[0]-nx2,b2[1]+.016,b2[2]-nz2],[a2[0]-nx2,a2[1]+.016,a2[2]-nz2]];
     for(const k of[0,1,2,0,2,3])dashPositions.push(...quad[k]);}
   if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();road.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0xefece0,side:THREE.DoubleSide})));}
