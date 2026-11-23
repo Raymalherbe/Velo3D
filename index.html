@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v175 — marquage interrompu aux carrefours et heure réelle au fuseau du parcours</title>
+<title>Vélo 3D v176 — branche préparée dès le choix, carrefour traversé sans blocage</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v175</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v176</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -3553,7 +3553,21 @@ function freeRenderRouteArrows(event,nav){
           candidate.buttonNode.classList.toggle('selected',candidate===option);
           candidate.buttonNode.setAttribute('aria-pressed',String(candidate===option));
         }
-        freePreviewChoice(event,option,nav); /* v173 : le tracé rouge et le décor suivent la direction choisie dès l’appui */
+        /* v176 : la branche choisie est installée pendant l’approche (chaussée, décor, tracé) au lieu
+           d’attendre le carrefour — la traversée ne bloque plus une image. Continuer tout droit sur un
+           carrefour intermédiaire ne change rien : on mémorise seulement la direction. */
+        const followsRoute=event.roundabout?(option&&freePathExitsRoundabout(nav,event,option)):(option===event.planned);
+        if(!followsRoute||event.distance>=route.len-1){
+          if(freeApplyChoiceImmediately(event,option,nav)){
+            for(const candidate of event.options){
+              candidate.buttonNode.classList.toggle('selected',candidate===option);
+              candidate.buttonNode.setAttribute('aria-pressed',String(candidate===option));
+            }
+            toast('Direction enregistrée · la route et le décor sont prêts pour le carrefour.');buzz(25);
+            return;
+          }
+          freePreviewChoice(event,option,nav); /* repli : tracé seul, le décor suivra au carrefour */
+        }
         toast('Direction enregistrée · tu continues jusqu’au carrefour.');buzz(25);
         return;
       }
@@ -6872,6 +6886,7 @@ document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wak
   setInterval(()=>{if(document.hidden)return;for(const box of document.querySelectorAll('#routeArrows .routeTowns')){const roll=box.firstElementChild,n=roll?roll.children.length:0;if(n<2)continue;box._i=((box._i||0)+1)%n;const h=box.getBoundingClientRect().height||13;roll.style.transition=box._i===0?'none':'transform .45s ease';roll.style.transform='translateY(-'+box._i*h+'px)'}},2600);
 })();
 demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.lat,freeCenter.lon); /* v138 : météo du secteur par défaut */requestAnimationFrame(loop);
+
 
 } catch(error) {
   console.error(error);
