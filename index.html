@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v173 — choix de direction sans téléportation, flèche calée sur la route, mini-carte orientée</title>
+<title>Vélo 3D v174 — virage au carrefour sans coupure et heure réelle au fuseau du parcours</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v173</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v174</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -724,11 +724,36 @@ function buildAmbiance(target){
     window._cars.push({mesh:car,off:s+(Math.random()*700-350),v:8+Math.random()*7,dir:Math.random()<.5?1:-1});
   }
 }
+/* v174 : heure réelle — le ciel suit le soleil du lieu du parcours, pas le fuseau de l'appareil.
+   Open-Meteo renvoie lever/coucher à l'heure locale du lieu sans décalage : on les ramène en instants
+   absolus, puis on place la journée sur l'arc du ciel (0 = lever, .25 = midi, .5 = coucher, .75 = minuit). */
+function sunTimeInstant(value,offsetSeconds){
+  if(!value)return null;
+  const text=String(value),hasZone=/[zZ]$|[+-]\d\d:?\d\d$/.test(text);
+  const stamp=Date.parse(hasZone?text:text+'Z');
+  if(!Number.isFinite(stamp))return null;
+  const offset=Number(offsetSeconds);
+  return new Date(stamp-(Number.isFinite(offset)?offset:0)*1000);
+}
+function realtimeDayTime(now=new Date()){
+  const clock=(now.getHours()*3600+now.getMinutes()*60+now.getSeconds())/86400;
+  /* sans lever/coucher connus : 6 h = aube, midi = plein jour, 18 h = crépuscule */
+  const fallback=(((clock-.25)%1)+1)%1;
+  const st=window._sunTimes;
+  const rise=st&&st.sunrise?st.sunrise.getTime():null,set=st&&st.sunset?st.sunset.getTime():null;
+  if(!(Number.isFinite(rise)&&Number.isFinite(set)&&set>rise))return fallback;
+  const t=now.getTime();
+  if(t>=rise&&t<=set)return .5*(t-rise)/(set-rise); /* jour : aube → midi → crépuscule */
+  const nextRise=st.nextSunrise&&Number.isFinite(st.nextSunrise.getTime())?st.nextSunrise.getTime():rise+86400000;
+  if(t>set&&nextRise>set)return .5+.5*Math.min(1,Math.max(0,(t-set)/(nextRise-set))); /* nuit après le coucher */
+  const previousSet=set-86400000;
+  return .5+.5*Math.min(1,Math.max(0,(t-previousSet)/(rise-previousSet))); /* nuit avant le lever */
+}
 function updateAmbiance(dt,t){
   /* v138/v141 : cycle auto (~2 min 30), mode manuel fixe, OU heure réelle (le ciel suit l'heure actuelle et avance en temps réel) */
   const dm=window._dayMode||'auto';
   if(dm==='day')dayTime=.25;else if(dm==='night')dayTime=.97; /* v154 : .25 = midi (sin(2π·.25)=1), .5 donnait elev=0 donc la nuit */
-  else if(dm==='realtime'){const n=new Date();let _dt=(((n.getHours()*3600+n.getMinutes()*60+n.getSeconds())/86400)%1+1)%1;const st=window._sunTimes;if(st&&st.sunrise&&st.sunset){const now=n.getTime(),_r=st.sunrise.getTime(),_s=st.sunset.getTime();if(now<_r||now>_s)_dt=.97;else _dt=.25+.5*Math.min(1,Math.max(0,(now-_r)/(_s-_r)));}dayTime=_dt;} /* v153 : nuit/jour sur les vrais lever/coucher du soleil (Open-Meteo) */
+  else if(dm==='realtime')dayTime=realtimeDayTime(); /* v174 : heure du lieu et vraie course du soleil (jour ↔ nuit) */
   else dayTime=(dayTime+dt/150)%1;
   const ang=dayTime*Math.PI*2,elev=Math.sin(ang),az=Math.cos(ang);
   const dim=(window._weatherFx&&window._weatherFx.dim)||1; /* v138 : la météo assombrit la scène */
@@ -818,13 +843,18 @@ async function fetchWeatherAt(lat,lon,label){
   if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
   const chip=$('weatherChip');
   try{
-    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=sunrise,sunset&forecast_days=1&timezone=auto' /* v153 : lever/coucher réels */;
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=sunrise,sunset&forecast_days=2&timezone=auto' /* v153 : lever/coucher réels */;
     const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);
     let resp;try{resp=await fetch(url,{mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}
     if(!resp.ok)throw new Error('HTTP '+resp.status);
     const data=await resp.json(),cur=data&&data.current;
     if(!cur)throw new Error('réponse invalide');
-    if(data.daily&&data.daily.sunrise&&data.daily.sunrise[0]&&data.daily.sunset&&data.daily.sunset[0])window._sunTimes={sunrise:new Date(data.daily.sunrise[0]),sunset:new Date(data.daily.sunset[0])}; /* v153 */
+    if(data.daily&&data.daily.sunrise&&data.daily.sunrise[0]&&data.daily.sunset&&data.daily.sunset[0]){
+      /* v174 : lever/coucher ramenés au fuseau du lieu (utc_offset_seconds), pas à celui de l'appareil */
+      const offset=data.utc_offset_seconds;
+      window._sunTimes={sunrise:sunTimeInstant(data.daily.sunrise[0],offset),sunset:sunTimeInstant(data.daily.sunset[0],offset),nextSunrise:sunTimeInstant(data.daily.sunrise[1],offset)};
+      if(!window._sunTimes.sunrise||!window._sunTimes.sunset)window._sunTimes=null;
+    } /* v153 */
     const w=applyWeatherScene(cur.weather_code);
     window._weather={code:cur.weather_code,temp:cur.temperature_2m,wind:cur.wind_speed_10m,hum:cur.relative_humidity_2m,place:label||''};
     if(chip)chip.textContent=w.emoji+' '+Math.round(cur.temperature_2m)+' °C · '+w.label+' · vent '+Math.round(cur.wind_speed_10m)+' km/h'+(label?' · '+label:'');
@@ -3379,13 +3409,32 @@ function freeApplyChoiceImmediately(event,option,nav){
     }
   }
   nav.path=combined;
-  /* v170 : le décor suit la direction choisie — reconstruction propre de la chaussée, du décor
-     (bâtiments OSM, routes secondaires, arbres, haies) et des embranchements autour du nouveau tracé. */
   freeClearChoicePreview();
+  /* v174 : le virage ne relance plus la construction complète du parcours (qui remettait s, v et la
+     caméra à zéro et affichait l'écran de chargement juste avant le carrefour). La chaussée fusionnée
+     et le décor de la branche sont appliqués à la scène en gardant la position, la vitesse et le suivi
+     caméra : le cycliste traverse le carrefour sans coupure. */
+  const oldS=s,oldTotal=totalDistance,oldV=v,oldRunning=running;
   try{
-    freeBuildLeg(option.way,combined,nav,true,option.direction,prepared);
-    s=Math.min(event.distance,route.len-.5);
-  }catch(_err){ freeInstallRoute(next); }
+    route=next;
+    let nextGain=0;
+    for(let i=1;i<next.Y.length;i++)nextGain+=Math.max(0,next.Y[i]-next.Y[i-1]);
+    window._routeGain=nextGain;
+    nav.preserveSettlement=true;nav.currentWay=option.way;nav.currentDir=option.direction||nav.currentDir||1;
+    nav.events=freeRouteEvents(combined,option.way,nav);nav.eventIndex=0;nav.prompt=null;
+    nav.preparedElements=freeWithJunctionArms(Array.isArray(prepared)?prepared:freePrepareScenery(combined,nav),combined,nav);
+    nav.preparedFor=option.way;window._freeCurrentWay=option.way;
+    freeHideRouteArrows();
+    makeWorld();
+    if(nav.preparedElements.length)applyOSM(nav.preparedElements,world);
+    const junctionEvent=(nav.events||[]).find(item=>item.distance>route.len-4&&(item.options||[]).length>=2);
+    if(junctionEvent)freeAddJunctionSign(Math.abs(osmNoise(route.len,42))>.5?'stop':'yield');else freeClearJunctionSigns();
+    s=Math.max(0,Math.min(oldS,route.len-.5));totalDistance=oldTotal;v=oldV;running=oldRunning;
+  }catch(_err){
+    /* repli : reconstruction complète, mais le cycliste garde sa vitesse et sa position */
+    s=oldS;totalDistance=oldTotal;v=oldV;running=oldRunning;
+    freeInstallRoute(next,Math.min(event.distance,Math.max(0,next.len-.5)));
+  }
   for(const ev of nav.events){ if(ev.distance<=event.distance+3){ ev.merged=true; ev.shown=true; ev.choicePending=false; } }
   nav.prompt=null;
   try{ drawMiniMap(performance.now(),true); }catch(_err){}
@@ -6812,7 +6861,6 @@ document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wak
 })();
 demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.lat,freeCenter.lon); /* v138 : météo du secteur par défaut */requestAnimationFrame(loop);
 
-/* TEST_HOOK */
 } catch(error) {
   console.error(error);
   document.getElementById('fatalText').textContent=error.message+' Si le problème persiste, essayez Chrome avec WebGL activé.';
