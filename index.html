@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v176 — branche préparée dès le choix, carrefour traversé sans blocage</title>
+<title>Vélo 3D v177 — plus de ligne blanche en travers des carrefours</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v176</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v177</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -4189,7 +4189,16 @@ function junctionMarkCrosses(ax,az,bx,bz,zones){
 function makeRouteRoad(target){
   const road=new THREE.Group();
   const {X,Y,Z,n}=route;
+  const step=route.step||ST;
   const junctionZones=routeJunctionZones();
+  /* v177 : les carrefours sont aussi repérés par leur distance sur le tracé — le marquage s’arrête
+     franchement de part et d’autre, y compris dans le virage choisi (ligne blanche en « V »). */
+  const junctionSpans=(()=>{
+    const nav=window._freeNavigation,out=[];
+    if(nav&&nav.active&&Array.isArray(nav.events))for(const ev of nav.events)if(ev&&Number.isFinite(ev.distance))out.push(ev.distance);
+    return out;
+  })();
+  const nearJunctionDistance=d=>junctionSpans.some(x=>Math.abs(x-d)<=16);
   const tangent=i=>{const a=Math.max(0,i-1),b=Math.min(n,i+1),dx=X[b]-X[a],dz=Z[b]-Z[a],l=Math.hypot(dx,dz)||1;return[-dz/l,dx/l]};
   const ribbon=(width,dy,color,texture)=>{
     const pos=[],uv=[],idx=[];
@@ -4201,14 +4210,14 @@ function makeRouteRoad(target){
   road.add(ribbon(3.75,-.04,0xb9b199));road.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
   // Light painted edge lines; no automatic invented centre-line/speed restrictions.
   const edgePositions=[];
-  for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(junctionMarkCrosses(X[i],Z[i],X[i+1],Z[i+1],junctionZones))continue;for(const side of[-1,1]){const pts=[
+  for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(junctionMarkCrosses(X[i],Z[i],X[i+1],Z[i+1],junctionZones)||nearJunctionDistance(i*step)||nearJunctionDistance((i+1)*step))continue;for(const side of[-1,1]){const pts=[
     [X[i]+nx*2.93*side,Y[i]+.014,Z[i]+nz*2.93*side],[X[i]+nx*3.01*side,Y[i]+.014,Z[i]+nz*3.01*side],
     [X[i+1]+bx*3.01*side,Y[i+1]+.014,Z[i+1]+bz*3.01*side],[X[i+1]+bx*2.93*side,Y[i+1]+.014,Z[i+1]+bz*2.93*side]];
     for(const k of[0,1,2,0,2,3])edgePositions.push(...pts[k]);}}
   const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePositions,3));edgeGeo.computeVertexNormals();road.add(new THREE.Mesh(edgeGeo,new THREE.MeshLambertMaterial({color:0xe8e5d7,side:THREE.DoubleSide})));
   /* v78 : ligne médiane discontinue — trait de 3 m tous les 13 m */
   const dashPositions=[];
-  for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3);if(junctionMarkCrosses(a2[0],a2[2],b2[0],b2[2],junctionZones))continue;const dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
+  for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3);if(junctionMarkCrosses(a2[0],a2[2],b2[0],b2[2],junctionZones)||nearJunctionDistance(d)||nearJunctionDistance(d+3))continue;const dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
     const quad=[[a2[0]+nx2,a2[1]+.016,a2[2]+nz2],[b2[0]+nx2,b2[1]+.016,b2[2]+nz2],[b2[0]-nx2,b2[1]+.016,b2[2]-nz2],[a2[0]-nx2,a2[1]+.016,a2[2]-nz2]];
     for(const k of[0,1,2,0,2,3])dashPositions.push(...quad[k]);}
   if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();road.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0xefece0,side:THREE.DoubleSide})));}
@@ -6045,7 +6054,7 @@ function buildRoadNetwork(roadParts,targetWorld){
     const roadType=String(tags.highway||'').toLowerCase(),major=/^(trunk|primary|secondary)$/.test(roadType)||Number(tags.lanes)>=2;
     if(major){const continuous=/^(trunk|primary)$/.test(roadType);for(let ri=1;ri<raw.length;ri++){const a=raw[ri-1],b=raw[ri],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);if(len<.2)continue;const dash=continuous?len:2.8,gap=continuous?0:2.7;for(let d=0;d<len;d+=dash+gap){const e=Math.min(len,d+dash),ax=a[0]+dx*d/len,az=a[1]+dz*d/len,bx=a[0]+dx*e/len,bz=a[1]+dz*e/len,na=nearestOnRoute(ax,az),nb=nearestOnRoute(bx,bz);if(!na||!nb||na.dist2>190*190||nb.dist2>190*190)continue;const nx=-dz/len*.055,nz=dx/len*.055,y1=na.y+.075,y2=nb.y+.075;if(nearJunctionMark(ax,az,junctionZones)||nearJunctionMark(bx,bz,junctionZones))continue;laneMarks.push(ax+nx,y1,az+nz,ax-nx,y1,az-nz,bx-nx,y2,bz-nz,ax+nx,y1,az+nz,bx-nx,y2,bz-nz,bx+nx,y2,bz+nz);
       /* v135 : lignes de rive continues sur les grands axes — deux fines lignes près des bords, PAS une bande pleine largeur */
-      const eo=half-.3;if(eo>.5){const fxn=-dz/len,fzn=dx/len,fy1=na.y+.075,fy2=nb.y+.075,w=.05;
+      const eo=half-.3;if(eo>.5&&!nearJunctionMark(ax,az,junctionZones)&&!nearJunctionMark(bx,bz,junctionZones)){const fxn=-dz/len,fzn=dx/len,fy1=na.y+.075,fy2=nb.y+.075,w=.05;
         for(const s of[-1,1]){const o=s*eo,a1x=ax+fxn*(o-w),a1z=az+fzn*(o-w),a2x=ax+fxn*(o+w),a2z=az+fzn*(o+w),b1x=bx+fxn*(o-w),b1z=bz+fzn*(o-w),b2x=bx+fxn*(o+w),b2z=bz+fzn*(o+w);
           edgeMarks.push(a1x,fy1,a1z,a2x,fy1,a2z,b2x,fy2,b2z,a1x,fy1,a1z,b2x,fy2,b2z,b1x,fy2,b1z);}}}}}
     if((String(tags.junction||'').toLowerCase()==='roundabout' ||osmRingSignatures.has(osmRingSignature(raw)))&&osmClosed(raw)){const ring=raw.slice(0,-1);if(ring.length>=8){const cx=ring.reduce((sum,p)=>sum+p[0],0)/ring.length,cz=ring.reduce((sum,p)=>sum+p[1],0)/ring.length,near=nearestOnRoute(cx,cz),radius=ring.reduce((sum,p)=>sum+Math.hypot(p[0]-cx,p[1]-cz),0)/ring.length,inner=radius-half*.95;if(near&&near.dist2<190*190&&inner>1){const center=[cx,near.y-.055,cz];for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];islands.push(...center,a[0],near.y-.055,a[1],b[0],near.y-.055,b[1])}roundabouts++}}}
