@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v177 — plus de ligne blanche en travers des carrefours</title>
+<title>Vélo 3D v178 — plus aucune ligne blanche en travers du tracé, marquage coupé au survol de la chaussée</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow">Home trainer · OpenStreetMap · v177</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v178</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -4186,6 +4186,15 @@ function junctionMarkCrosses(ax,az,bx,bz,zones){
   }
   return false;
 }
+/* v178 : les marquages d'une annexe qui FRANCHIT le tracé sans nœud OSM partagé n'ont aucune
+   zone de carrefour — on coupe aussi tout marquage dont un point survole la chaussée suivie. */
+function markOnRoute(ax,az,bx,bz){
+  for(const t of[0,.25,.5,.75,1]){
+    const near=nearestOnRoute(ax+(bx-ax)*t,az+(bz-az)*t);
+    if(near&&near.dist2<11*11)return true;
+  }
+  return false;
+}
 function makeRouteRoad(target){
   const road=new THREE.Group();
   const {X,Y,Z,n}=route;
@@ -6052,9 +6061,9 @@ function buildRoadNetwork(roadParts,targetWorld){
     for(let i=1;i<centres.length;i++){const a=centres[i-1],b=centres[i];if(!a||!b)continue;const prev=centres[Math.max(0,i-2)]||a,next=centres[Math.min(centres.length-1,i+1)]||b,dx=next.x-prev.x,dz=next.z-prev.z,length=Math.hypot(dx,dz)||1,nx=-dz/length,nz=dx/length,al=[a.x+nx*half,a.y,a.z+nz*half],ar=[a.x-nx*half,a.y,a.z-nz*half],bl=[b.x+nx*half,b.y,b.z+nz*half],br=[b.x-nx*half,b.y,b.z-nz*half];surface.push(...al,...ar,...br,...al,...br,...bl);used=true}
     if(used)drawn++;
     const roadType=String(tags.highway||'').toLowerCase(),major=/^(trunk|primary|secondary)$/.test(roadType)||Number(tags.lanes)>=2;
-    if(major){const continuous=/^(trunk|primary)$/.test(roadType);for(let ri=1;ri<raw.length;ri++){const a=raw[ri-1],b=raw[ri],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);if(len<.2)continue;const dash=continuous?len:2.8,gap=continuous?0:2.7;for(let d=0;d<len;d+=dash+gap){const e=Math.min(len,d+dash),ax=a[0]+dx*d/len,az=a[1]+dz*d/len,bx=a[0]+dx*e/len,bz=a[1]+dz*e/len,na=nearestOnRoute(ax,az),nb=nearestOnRoute(bx,bz);if(!na||!nb||na.dist2>190*190||nb.dist2>190*190)continue;const nx=-dz/len*.055,nz=dx/len*.055,y1=na.y+.075,y2=nb.y+.075;if(nearJunctionMark(ax,az,junctionZones)||nearJunctionMark(bx,bz,junctionZones))continue;laneMarks.push(ax+nx,y1,az+nz,ax-nx,y1,az-nz,bx-nx,y2,bz-nz,ax+nx,y1,az+nz,bx-nx,y2,bz-nz,bx+nx,y2,bz+nz);
+    if(major){const continuous=/^(trunk|primary)$/.test(roadType);for(let ri=1;ri<raw.length;ri++){const a=raw[ri-1],b=raw[ri],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);if(len<.2)continue;const dash=continuous?len:2.8,gap=continuous?0:2.7;for(let d=0;d<len;d+=dash+gap){const e=Math.min(len,d+dash),ax=a[0]+dx*d/len,az=a[1]+dz*d/len,bx=a[0]+dx*e/len,bz=a[1]+dz*e/len,na=nearestOnRoute(ax,az),nb=nearestOnRoute(bx,bz);if(!na||!nb||na.dist2>190*190||nb.dist2>190*190)continue;const nx=-dz/len*.055,nz=dx/len*.055,y1=na.y+.075,y2=nb.y+.075;if(nearJunctionMark(ax,az,junctionZones)||nearJunctionMark(bx,bz,junctionZones)||markOnRoute(ax,az,bx,bz))continue;laneMarks.push(ax+nx,y1,az+nz,ax-nx,y1,az-nz,bx-nx,y2,bz-nz,ax+nx,y1,az+nz,bx-nx,y2,bz-nz,bx+nx,y2,bz+nz);
       /* v135 : lignes de rive continues sur les grands axes — deux fines lignes près des bords, PAS une bande pleine largeur */
-      const eo=half-.3;if(eo>.5&&!nearJunctionMark(ax,az,junctionZones)&&!nearJunctionMark(bx,bz,junctionZones)){const fxn=-dz/len,fzn=dx/len,fy1=na.y+.075,fy2=nb.y+.075,w=.05;
+      const eo=half-.3;if(eo>.5&&!nearJunctionMark(ax,az,junctionZones)&&!nearJunctionMark(bx,bz,junctionZones)&&!markOnRoute(ax,az,bx,bz)){const fxn=-dz/len,fzn=dx/len,fy1=na.y+.075,fy2=nb.y+.075,w=.05;
         for(const s of[-1,1]){const o=s*eo,a1x=ax+fxn*(o-w),a1z=az+fzn*(o-w),a2x=ax+fxn*(o+w),a2z=az+fzn*(o+w),b1x=bx+fxn*(o-w),b1z=bz+fzn*(o-w),b2x=bx+fxn*(o+w),b2z=bz+fzn*(o+w);
           edgeMarks.push(a1x,fy1,a1z,a2x,fy1,a2z,b2x,fy2,b2z,a1x,fy1,a1z,b2x,fy2,b2z,b1x,fy2,b1z);}}}}}
     if((String(tags.junction||'').toLowerCase()==='roundabout' ||osmRingSignatures.has(osmRingSignature(raw)))&&osmClosed(raw)){const ring=raw.slice(0,-1);if(ring.length>=8){const cx=ring.reduce((sum,p)=>sum+p[0],0)/ring.length,cz=ring.reduce((sum,p)=>sum+p[1],0)/ring.length,near=nearestOnRoute(cx,cz),radius=ring.reduce((sum,p)=>sum+Math.hypot(p[0]-cx,p[1]-cz),0)/ring.length,inner=radius-half*.95;if(near&&near.dist2<190*190&&inner>1){const center=[cx,near.y-.055,cz];for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];islands.push(...center,a[0],near.y-.055,a[1],b[0],near.y-.055,b[1])}roundabouts++}}}
@@ -6894,6 +6903,8 @@ document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wak
   homeSync();
   setInterval(()=>{if(document.hidden)return;for(const box of document.querySelectorAll('#routeArrows .routeTowns')){const roll=box.firstElementChild,n=roll?roll.children.length:0;if(n<2)continue;box._i=((box._i||0)+1)%n;const h=box.getBoundingClientRect().height||13;roll.style.transition=box._i===0?'none':'transform .45s ease';roll.style.transform='translateY(-'+box._i*h+'px)'}},2600);
 })();
+/* v178 : le badge de version de l'écran d'accueil suit automatiquement le titre de la page */
+(function(){try{const m=document.title.match(/v(\d+)/),eb=document.getElementById('appEyebrow');if(m&&eb)eb.textContent=eb.textContent.replace(/v\d+$/,'v'+m[1]);}catch(e){}})();
 demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.lat,freeCenter.lon); /* v138 : météo du secteur par défaut */requestAnimationFrame(loop);
 
 
@@ -6906,4 +6917,5 @@ demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.
 </script>
 </body>
 </html>
+
 
