@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v181 — diagnostic couleurs</title>
+<title>Vélo 3D v182 — plus de grosses lignes blanches au sol aux carrefours</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v181</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v182</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -3678,7 +3678,7 @@ function freeAddJunctionSign(kind){
   freeClearJunctionSigns();
   const d=Math.max(6,route.len-15),p=at(d),q=at(Math.min(route.len-1,d+2));
   let tx2=q[0]-p[0],tz2=q[2]-p[2];const l2=Math.hypot(tx2,tz2)||1;tx2/=l2;tz2/=l2;
-  const white=new THREE.MeshBasicMaterial({color:0xffff00}),red=new THREE.MeshStandardMaterial({color:0xc81e1e,roughness:0.5}),poleMat=new THREE.MeshStandardMaterial({color:0x333333,roughness:0.6}); /* DEBUG v181 : stop/cédez = jaune */
+  const white=new THREE.MeshBasicMaterial({color:0xffffff}),red=new THREE.MeshStandardMaterial({color:0xc81e1e,roughness:0.5}),poleMat=new THREE.MeshStandardMaterial({color:0x333333,roughness:0.6});
   /* Poteau + panneau à droite de la route, face au cycliste */
   const group=new THREE.Group();
   group.position.set(p[0]-tz2*5.2,p[1],p[2]+tx2*5.2);
@@ -4216,20 +4216,20 @@ function makeRouteRoad(target){
     const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,map:texture||null,side:THREE.DoubleSide}));mesh.receiveShadow=true;return mesh;
   };
   if(!proj)road.add(ribbon(145,-.43,0x769b52));
-  road.add(ribbon(3.75,-.04,0xb9b199));road.add(ribbon(3.2,0,0xff6060,getRoadTexture())); /* DEBUG v181 : ruban chaussée tinté rouge */
+  road.add(ribbon(3.75,-.04,0xb9b199));road.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
   // Light painted edge lines; no automatic invented centre-line/speed restrictions.
   const edgePositions=[];
   for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(junctionMarkCrosses(X[i],Z[i],X[i+1],Z[i+1],junctionZones)||nearJunctionDistance(i*step)||nearJunctionDistance((i+1)*step))continue;for(const side of[-1,1]){const pts=[
     [X[i]+nx*2.93*side,Y[i]+.014,Z[i]+nz*2.93*side],[X[i]+nx*3.01*side,Y[i]+.014,Z[i]+nz*3.01*side],
     [X[i+1]+bx*3.01*side,Y[i+1]+.014,Z[i+1]+bz*3.01*side],[X[i+1]+bx*2.93*side,Y[i+1]+.014,Z[i+1]+bz*2.93*side]];
     for(const k of[0,1,2,0,2,3])edgePositions.push(...pts[k]);}}
-  const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePositions,3));edgeGeo.computeVertexNormals();road.add(new THREE.Mesh(edgeGeo,new THREE.MeshLambertMaterial({color:0xff00ff,side:THREE.DoubleSide}))); /* DEBUG v181 : rives du tracé = magenta */
+  const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePositions,3));edgeGeo.computeVertexNormals();road.add(new THREE.Mesh(edgeGeo,new THREE.MeshLambertMaterial({color:0xe8e5d7,side:THREE.DoubleSide})));
   /* v78 : ligne médiane discontinue — trait de 3 m tous les 13 m */
   const dashPositions=[];
   for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3);if(junctionMarkCrosses(a2[0],a2[2],b2[0],b2[2],junctionZones)||nearJunctionDistance(d)||nearJunctionDistance(d+3))continue;const dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
     const quad=[[a2[0]+nx2,a2[1]+.016,a2[2]+nz2],[b2[0]+nx2,b2[1]+.016,b2[2]+nz2],[b2[0]-nx2,b2[1]+.016,b2[2]-nz2],[a2[0]-nx2,a2[1]+.016,a2[2]-nz2]];
     for(const k of[0,1,2,0,2,3])dashPositions.push(...quad[k]);}
-  if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();road.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0x00c8ff,side:THREE.DoubleSide})));} /* DEBUG v181 : tiretés du tracé = bleu */
+  if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();road.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0xefece0,side:THREE.DoubleSide})));}
   target.add(road);
   return road;
 }
@@ -5985,7 +5985,7 @@ function buildRoadFurniture(elements,target){
     let px=pts[0][0],pz=pts[0][1];
     if(String(kind).indexOf('speed:')===0){let found=false;const step=Math.max(1,Math.floor(pts.length/10));for(let i=0;i<pts.length;i+=step){const n2=nearestOnRoute(pts[i][0],pts[i][1]);if(n2&&n2.dist2<=30*30){px=pts[i][0];pz=pts[i][1];found=true;break}}if(!found)continue;}
     const near=nearestOnRoute(px,pz); if(!near||near.dist2>30*30) continue;
-    items.push({kind,x:px,z:pz,y:near.y});if(kind==='stop'||kind==='yield')items.push({kind:kind==='stop'?'stopLine':'yieldLine',x:px,z:pz,y:near.y});
+    items.push({kind,x:px,z:pz,y:near.y}); /* v182 : plus de lignes d'arrêt / cédez-le-passage tirées au sol — le nœud STOP d'une branche voisine était projeté sur la chaussée suivie (grosse ligne blanche en travers) */
   }
   // Rond-points : marquages cédez-le-passage + panneau triangle à chaque entrée
   for(const z of roundaboutZones){
@@ -6014,15 +6014,14 @@ function buildRoadFurniture(elements,target){
   for(const it of items){
     const group=new THREE.Group();
     /* v78 : les panneaux se placent sur le côté de la route suivie, face au cycliste */
+    /* v182 : les branches stopLine/yieldLine (lignes blanches au sol) sont supprimées */
     const kindText=String(it.kind);
-    if(kindText==='stopLine'||kindText==='yieldLine'){const snap=nearestOnRoute(it.x,it.z);if(snap&&isFinite(snap.tx)){group.position.set(snap.x,snap.y+.075,snap.z);group.rotation.y=Math.atan2(-snap.tx,snap.tz);}else group.position.set(it.x,it.y+.075,it.z);}
-    else if(kindText==='yieldMark'){group.position.set(it.x, it.y, it.z);}
+    if(kindText==='yieldMark'){group.position.set(it.x, it.y, it.z);}
     else if(kindText.indexOf('chevron:')===0){group.position.set(it.x, it.y, it.z);if(it.face)group.rotation.y=Math.atan2(it.face.x,it.face.z);}
     else{const snap=nearestOnRoute(it.x,it.z);
       if(snap&&isFinite(snap.tx)){group.position.set(snap.x-snap.tz*5.4, snap.y, snap.z+snap.tx*5.4);group.rotation.y=Math.atan2(-snap.tx,-snap.tz);}
       else{group.position.set(it.x, it.y, it.z);}}
-    if(it.kind==='stopLine'||it.kind==='yieldLine'){const width=it.kind==='stopLine'?4.8:3.8;const line=new THREE.Mesh(new THREE.BoxGeometry(width,.018,.14),white);line.position.y=.012;group.add(line);if(it.kind==='yieldLine'){for(let k=-1;k<=1;k++){const tooth=new THREE.Mesh(new THREE.ConeGeometry(.22,.36,3),white);tooth.rotation.x=-Math.PI/2;tooth.position.set(k*1.0,.02,-.34);group.add(tooth);}}}
-    else if(it.kind==='yieldMark'){
+    if(it.kind==='yieldMark'){
       // Triangles blancs au sol
       const tri=new THREE.Mesh(new THREE.CircleGeometry(0.55,3), white); tri.rotation.x=-Math.PI/2; tri.rotation.z=Math.PI; tri.position.y=0.06; group.add(tri);
     } else {
@@ -6072,9 +6071,9 @@ function buildRoadNetwork(roadParts,targetWorld){
     if((String(tags.junction||'').toLowerCase()==='roundabout' ||osmRingSignatures.has(osmRingSignature(raw)))&&osmClosed(raw)){const ring=raw.slice(0,-1);if(ring.length>=8){const cx=ring.reduce((sum,p)=>sum+p[0],0)/ring.length,cz=ring.reduce((sum,p)=>sum+p[1],0)/ring.length,near=nearestOnRoute(cx,cz),radius=ring.reduce((sum,p)=>sum+Math.hypot(p[0]-cx,p[1]-cz),0)/ring.length,inner=radius-half*.95;if(near&&near.dist2<190*190&&inner>1){const center=[cx,near.y-.055,cz];for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];islands.push(...center,a[0],near.y-.055,a[1],b[0],near.y-.055,b[1])}roundabouts++}}}
   }
   addDrapedSurface(targetWorld,surface,0x5e6460,'road',.025);
-  addDrapedSurface(targetWorld,laneMarks,0x00ff00,'road',.039,false); /* DEBUG v181 : tiretés annexe = vert */
+  addDrapedSurface(targetWorld,laneMarks,0xe8e4cb,'road',.039,false);
   addDrapedSurface(targetWorld,islands,0x789054,'ground',.045);
-  addDrapedSurface(targetWorld,edgeMarks,0xffa500,'road',.039,false); /* DEBUG v181 : rives annexe = orange */
+  addDrapedSurface(targetWorld,edgeMarks,0xf2efe4,'road',.039,false);
   return{drawn,roundabouts};
 }
 
@@ -6920,6 +6919,7 @@ demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.
 </script>
 </body>
 </html>
+
 
 
 
