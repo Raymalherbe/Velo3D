@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v179 — diagnostic couleurs du marquage</title>
+<title>Vélo 3D v163 – stades avec tribunes et terrain coté, flèche SVG alignée, vallées en profondeur</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -428,7 +428,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 @media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:space-between;gap:4px;padding:0 clamp(30px,21vw,320px)}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}}
 
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script></head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script></head>
 <body>
 <canvas id="c" aria-label="Simulation 3D du parcours à vélo" tabindex="0"></canvas>
 <div id="topTools" aria-label="Affichage de la séance"><button id="hudToggle" aria-label="Masquer les données de la sortie" aria-expanded="true" title="Afficher ou masquer les données">📊</button></div>
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v179</div>
+    <div class="eyebrow">Home trainer · OpenStreetMap · v163</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -604,7 +604,6 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><input id="icuFile" type="file" accept=".zwo,.erg,.mrc,.txt" class="hide"><button id="icuImport" type="button">📥 Importer un entraînement (.zwo/.erg/.mrc)</button><button id="icuRemove" type="button" class="hide">🗑 Retirer l’entraînement</button><span style="font-size:12px;color:var(--muted)">fichier perso, sans clé API</span></div>
 </details>
     <div class="row"><button id="gp">Choisir un GPX</button><button id="pg">Coller un GPX</button></div>
-    <label style="display:block;font-size:12px;color:var(--muted);margin-top:5px"><input id="gpxRegrade" type="checkbox"> Recalculer l’altitude du GPX (IGN en France)</label>
     <button id="dm" class="wide">Essayer la démonstration</button>
     <div id="pb" role="progressbar" aria-label="Chargement des routes et du décor" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="pf"></i></div>
     <div id="hs" role="status"></div><div style="font-size:11px;color:var(--muted)">Posture : <b id="posture">Assis</b> · Automatique selon l’effort ou choix manuel depuis la barre.</div>
@@ -613,7 +612,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
     <label style="display:flex;gap:8px;align-items:center;font-size:12px;margin-top:6px;color:var(--muted)"><input id="liveWeather" type="checkbox" style="min-height:22px;min-width:22px;accent-color:var(--ac)"> Météo réelle en roulant (relevée toutes les 10 min à ta position GPS)</label>
     <button id="go" class="wide primary" disabled>Lancer le parcours</button>
     <button id="skipScenery" class="wide hide">Lancer sans attendre le décor</button>
-    <details><summary>Caméra, données et connexion</summary><p>Glissez un doigt sur la scène pour regarder autour de vous. Pincez à deux doigts pour zoomer (le pincement repasse en vue suivi). L’icône 📷 en haut change de vue à chaque appui : suivi, paysage, profil, puis cintre — en vue cintre vous êtes à la place du cycliste, comme sur le vélo.</p><p>Rouler libre télécharge dans le rayon choisi les routes et objets OSM utilisés par le décor. Le secteur est préparé dans les deux sens disponibles ; la flèche sur la carte indique le sens de départ (touche-la pour l’inverser), puis appuie sur Lancer. Les villes affichées sous les flèches sont des indications tirées des noms OSM proches, pas une garantie d’itinéraire jusqu’à la ville.</p><p>Le relief libre est estimé à partir du modèle tuiles d’altitude <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles (Terrarium)</a> pour les versants ; Open-Meteo reste utilisé pour le profil de la route. La précision dépend des données disponibles dans la région. Si le service est inaccessible, le parcours reste utilisable mais la pente peut être incomplète.</p><p>Les haies cartographiées sont complétées par des haies estimées sur les portions rurales sans bâtiments voisins. Routes annexes et ronds-points suivent les données OpenStreetMap ; leurs alentours peuvent être incomplets.</p><p>Hébergez ce fichier en HTTPS (GitHub Pages convient). Pour le trainer et le cardio : Chrome Android ou navigateur compatible Web Bluetooth. La démonstration fonctionne sans capteur.</p></details>
+    <details><summary>Caméra, données et connexion</summary><p>Glissez un doigt sur la scène pour regarder autour de vous. Pincez à deux doigts pour zoomer (le pincement repasse en vue suivi). L’icône 📷 en haut change de vue à chaque appui : suivi, paysage, profil, puis cintre — en vue cintre vous êtes à la place du cycliste, comme sur le vélo.</p><p>Rouler libre télécharge dans le rayon choisi les routes et objets OSM utilisés par le décor. Le secteur est préparé dans les deux sens disponibles ; la flèche sur la carte indique le sens de départ (touche-la pour l’inverser), puis appuie sur Lancer. Les villes affichées sous les flèches sont des indications tirées des noms OSM proches, pas une garantie d’itinéraire jusqu’à la ville.</p><p>Le relief libre est estimé à partir du modèle Copernicus DEM GLO-90 via <a href="https://open-meteo.com/en/docs/elevation-api" target="_blank" rel="noopener">l’API d’altitude Open-Meteo</a> ; la résolution du modèle est d’environ 90 m. Si le service est inaccessible, le parcours reste utilisable mais la pente peut être incomplète.</p><p>Les haies cartographiées sont complétées par des haies estimées sur les portions rurales sans bâtiments voisins. Routes annexes et ronds-points suivent les données OpenStreetMap ; leurs alentours peuvent être incomplets.</p><p>Hébergez ce fichier en HTTPS (GitHub Pages convient). Pour le trainer et le cardio : Chrome Android ou navigateur compatible Web Bluetooth. La démonstration fonctionne sans capteur.</p></details>
   </div>
 </div>
 <div id="pp" class="hide"><label for="pt">Importer une trace GPX</label><textarea id="pt" spellcheck="false" placeholder="Collez ici le contenu complet du fichier GPX"></textarea><div id="pe" role="alert"></div><div class="row"><button id="pl" class="primary">Charger</button><button id="px">Annuler</button></div></div>
@@ -724,36 +723,11 @@ function buildAmbiance(target){
     window._cars.push({mesh:car,off:s+(Math.random()*700-350),v:8+Math.random()*7,dir:Math.random()<.5?1:-1});
   }
 }
-/* v174 : heure réelle — le ciel suit le soleil du lieu du parcours, pas le fuseau de l'appareil.
-   Open-Meteo renvoie lever/coucher à l'heure locale du lieu sans décalage : on les ramène en instants
-   absolus, puis on place la journée sur l'arc du ciel (0 = lever, .25 = midi, .5 = coucher, .75 = minuit). */
-function sunTimeInstant(value,offsetSeconds){
-  if(!value)return null;
-  const text=String(value),hasZone=/[zZ]$|[+-]\d\d:?\d\d$/.test(text);
-  const stamp=Date.parse(hasZone?text:text+'Z');
-  if(!Number.isFinite(stamp))return null;
-  const offset=Number(offsetSeconds);
-  return new Date(stamp-(Number.isFinite(offset)?offset:0)*1000);
-}
-function realtimeDayTime(now=new Date()){
-  const clock=(now.getHours()*3600+now.getMinutes()*60+now.getSeconds())/86400;
-  /* sans lever/coucher connus : 6 h = aube, midi = plein jour, 18 h = crépuscule */
-  const fallback=(((clock-.25)%1)+1)%1;
-  const st=window._sunTimes;
-  const rise=st&&st.sunrise?st.sunrise.getTime():null,set=st&&st.sunset?st.sunset.getTime():null;
-  if(!(Number.isFinite(rise)&&Number.isFinite(set)&&set>rise))return fallback;
-  const t=now.getTime();
-  if(t>=rise&&t<=set)return .5*(t-rise)/(set-rise); /* jour : aube → midi → crépuscule */
-  const nextRise=st.nextSunrise&&Number.isFinite(st.nextSunrise.getTime())?st.nextSunrise.getTime():rise+86400000;
-  if(t>set&&nextRise>set)return .5+.5*Math.min(1,Math.max(0,(t-set)/(nextRise-set))); /* nuit après le coucher */
-  const previousSet=set-86400000;
-  return .5+.5*Math.min(1,Math.max(0,(t-previousSet)/(rise-previousSet))); /* nuit avant le lever */
-}
 function updateAmbiance(dt,t){
   /* v138/v141 : cycle auto (~2 min 30), mode manuel fixe, OU heure réelle (le ciel suit l'heure actuelle et avance en temps réel) */
   const dm=window._dayMode||'auto';
   if(dm==='day')dayTime=.25;else if(dm==='night')dayTime=.97; /* v154 : .25 = midi (sin(2π·.25)=1), .5 donnait elev=0 donc la nuit */
-  else if(dm==='realtime')dayTime=realtimeDayTime(); /* v174 : heure du lieu et vraie course du soleil (jour ↔ nuit) */
+  else if(dm==='realtime'){const n=new Date();let _dt=(((n.getHours()*3600+n.getMinutes()*60+n.getSeconds())/86400)%1+1)%1;const st=window._sunTimes;if(st&&st.sunrise&&st.sunset){const now=n.getTime(),_r=st.sunrise.getTime(),_s=st.sunset.getTime();if(now<_r||now>_s)_dt=.97;else _dt=.25+.5*Math.min(1,Math.max(0,(now-_r)/(_s-_r)));}dayTime=_dt;} /* v153 : nuit/jour sur les vrais lever/coucher du soleil (Open-Meteo) */
   else dayTime=(dayTime+dt/150)%1;
   const ang=dayTime*Math.PI*2,elev=Math.sin(ang),az=Math.cos(ang);
   const dim=(window._weatherFx&&window._weatherFx.dim)||1; /* v138 : la météo assombrit la scène */
@@ -843,18 +817,13 @@ async function fetchWeatherAt(lat,lon,label){
   if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
   const chip=$('weatherChip');
   try{
-    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=sunrise,sunset&forecast_days=2&timezone=auto' /* v153 : lever/coucher réels */;
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lon.toFixed(4)+'&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=sunrise,sunset&forecast_days=1&timezone=auto' /* v153 : lever/coucher réels */;
     const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);
     let resp;try{resp=await fetch(url,{mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}
     if(!resp.ok)throw new Error('HTTP '+resp.status);
     const data=await resp.json(),cur=data&&data.current;
     if(!cur)throw new Error('réponse invalide');
-    if(data.daily&&data.daily.sunrise&&data.daily.sunrise[0]&&data.daily.sunset&&data.daily.sunset[0]){
-      /* v174 : lever/coucher ramenés au fuseau du lieu (utc_offset_seconds), pas à celui de l'appareil */
-      const offset=data.utc_offset_seconds;
-      window._sunTimes={sunrise:sunTimeInstant(data.daily.sunrise[0],offset),sunset:sunTimeInstant(data.daily.sunset[0],offset),nextSunrise:sunTimeInstant(data.daily.sunrise[1],offset)};
-      if(!window._sunTimes.sunrise||!window._sunTimes.sunset)window._sunTimes=null;
-    } /* v153 */
+    if(data.daily&&data.daily.sunrise&&data.daily.sunrise[0]&&data.daily.sunset&&data.daily.sunset[0])window._sunTimes={sunrise:new Date(data.daily.sunrise[0]),sunset:new Date(data.daily.sunset[0])}; /* v153 */
     const w=applyWeatherScene(cur.weather_code);
     window._weather={code:cur.weather_code,temp:cur.temperature_2m,wind:cur.wind_speed_10m,hum:cur.relative_humidity_2m,place:label||''};
     if(chip)chip.textContent=w.emoji+' '+Math.round(cur.temperature_2m)+' °C · '+w.label+' · vent '+Math.round(cur.wind_speed_10m)+' km/h'+(label?' · '+label:'');
@@ -876,309 +845,63 @@ function updatePrecip(dt,t){
   }
 }
 
-/* v164 : terrain continu, tuiles DEM Terrarium, sans pics artificiels. */
-const TERRAIN_PALETTE={forest:0x42643e,grass:0x829b5a,rock:0x888b80,snow:0xe9eef0};
-const terrainTiles=new Map();
-function terrainDecode(r,g,b){return r*256+g+b/256-32768;}
-function terrainBlend(a,b,c,d,u,v){return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
-function terrainRoadHeight(height,roadHeight,distance,clearance,blend){
-  const t=Math.max(0,Math.min(1,(distance-clearance)/blend)),f=t*t*(3-2*t);
-  return roadHeight-.48+(height-roadHeight+.48)*f;
-}
-function terrainTileXY(lat,lon,zoom){const n=2**zoom;return[(lon+180)/360*n,_mercY(Math.max(-85,Math.min(85,lat)))*n];}
-async function terrainLoadTile(z,x,y){
-  const key=z+'/'+x+'/'+y;if(terrainTiles.has(key))return terrainTiles.get(key);
-  const job=new Promise(resolve=>{const image=new Image();image.crossOrigin='anonymous';
-    const timer=setTimeout(()=>{image.src='';resolve(null)},12000);
-    image.onerror=()=>{clearTimeout(timer);resolve(null)};
-    image.onload=()=>{clearTimeout(timer);try{const cv=document.createElement('canvas');cv.width=cv.height=256;const ctx=cv.getContext('2d');ctx.drawImage(image,0,0);resolve(ctx.getImageData(0,0,256,256).data)}catch(e){resolve(null)}};
-    image.src='https://s3.amazonaws.com/elevation-tiles-prod/terrarium/'+key+'.png';
-  });terrainTiles.set(key,job);const result=await job;
-  if(!result)terrainTiles.delete(key);
-  while(terrainTiles.size>48)terrainTiles.delete(terrainTiles.keys().next().value);
-  return result;
-}
-function terrainSample(mesh,x,z,natural=false){
-  const ud=mesh&&mesh.userData.ground;if(!ud)return null;
-  const fx=(x-ud.minX)/ud.w*(ud.nx-1),fz=(z-ud.minZ)/ud.d*(ud.nz-1);
-  if(fx<0||fz<0||fx>ud.nx-1||fz>ud.nz-1)return null;
-  const i=Math.min(ud.nx-2,Math.floor(fx)),j=Math.min(ud.nz-2,Math.floor(fz)),p=mesh.geometry.attributes.position,k=j*ud.nx+i;
-  const atVertex=index=>natural?ud.altitudes[index]:p.getY(index),u=fx-i,v=fz-j;
-  const a=atVertex(k),b=atVertex(k+1),c=atVertex(k+ud.nx),d=atVertex(k+ud.nx+1);
-  return u+v<=1?a+(b-a)*u+(c-a)*v:d+(c-d)*(1-u)+(b-d)*(1-v);
-}
-function terrainRouteProfile(grid,trace){
-  const {nx,nz,minX,minZ,w,d,altitudes}=grid,dx=w/(nx-1),dz=d/(nz-1),cell=Math.max(dx,dz);
-  const clearance=cell*1.2+4,blend=Math.max(45,cell*1.25),reach=clearance+blend;
-  const best=new Float32Array(nx*nz).fill(Infinity),heights=new Float32Array(nx*nz);
-  const {X,Y,Z,n}=trace;
-  for(let segment=0;segment<n;segment++){
-    const ax=X[segment],az=Z[segment],bx=X[segment+1],bz=Z[segment+1],vx=bx-ax,vz=bz-az;
-    const inv=1/(vx*vx+vz*vz||1);
-    const x0=Math.max(0,Math.ceil((Math.min(ax,bx)-reach-minX)/dx)),x1=Math.min(nx-1,Math.floor((Math.max(ax,bx)+reach-minX)/dx));
-    const z0=Math.max(0,Math.ceil((Math.min(az,bz)-reach-minZ)/dz)),z1=Math.min(nz-1,Math.floor((Math.max(az,bz)+reach-minZ)/dz));
-    for(let j=z0;j<=z1;j++)for(let i=x0;i<=x1;i++){
-      const x=minX+i*dx-ax,z=minZ+j*dz-az,t=Math.max(0,Math.min(1,(x*vx+z*vz)*inv));
-      const distance=(x-vx*t)**2+(z-vz*t)**2,k=j*nx+i;
-      if(distance<best[k]&&distance<reach*reach){best[k]=distance;heights[k]=Y[segment]+(Y[segment+1]-Y[segment])*t;}
-    }
-  }
-  const result=new Float32Array(altitudes.length);
-  for(let i=0;i<result.length;i++)result[i]=(Number.isFinite(best[i])?terrainRoadHeight(altitudes[i],heights[i],Math.sqrt(best[i]),clearance,blend):altitudes[i])-.12;
-  // Les triangles entre les sommets du maillage ne doivent pas couper la chaussée.
-  const cuts=new Float32Array(result.length);
-  const clear=(x,y,z)=>{
-    const fx=(x-minX)/dx,fz=(z-minZ)/dz,i=Math.floor(fx),j=Math.floor(fz);
-    if(i<0||i>=nx-1||j<0||j>=nz-1)return;
-    const u=fx-i,v=fz-j,k=j*nx+i;
-    const a=result[k],b=result[k+1],c=result[k+nx],e=result[k+nx+1];
-    const ground=u+v<=1?a+(b-a)*u+(c-a)*v:e+(c-e)*(1-u)+(b-e)*(1-v);
-    const cut=ground-y+.29;
-    if(cut<=0)return;
-    for(const index of [k,k+1,k+nx,k+nx+1])cuts[index]=Math.max(cuts[index],cut);
-  };
-  for(let k=0;k<n;k++){
-    const vx=X[k+1]-X[k],vz=Z[k+1]-Z[k],l=Math.hypot(vx,vz)||1,samples=Math.max(1,Math.ceil(l/4));
-    for(let j=0;j<samples;j++)for(const width of [-3.8,0,3.8]){
-      const t=j/samples;
-      clear(X[k]+vx*t-vz/l*width,Y[k]+(Y[k+1]-Y[k])*t,Z[k]+vz*t+vx/l*width);
-    }
-  }
-  clear(X[n],Y[n],Z[n]);
-  for(let i=0;i<result.length;i++)result[i]-=cuts[i];
-  return result;
-}
-/* D918 côté Aspin-Aure : les deux branches du lacet partagent des mailles DEM.
-   Raffiner uniquement le raccord sous la branche haute, sans changer le terrain
-   utilisé pour placer le décor, ni le profil du cycliste. */
-function updateAspinRoadBed(terrain){
-  const ud=terrain.userData,old=ud.aspinRoadBed;
-  if(old){terrain.remove(old.mesh);old.mesh.geometry.dispose();ud.aspinRoadBed=null;}
-  if(!proj||!ud.demLoaded)return;
-  const {X,Y,Z,n,step}=route,g=ud.ground;
-  const tx=(.3419924-proj.lo)*proj.kx,tz=(proj.la-42.9411519)*proj.kz;
-  const segments=[];
-  let anchor=null;
-  const projection=(seg,x,z)=>{
-    const a=Math.max(0,Math.min(1,((x-seg.x)*seg.dx+(z-seg.z)*seg.dz)*seg.inv));
-    return {a,d2:(x-seg.x-a*seg.dx)**2+(z-seg.z-a*seg.dz)**2};
-  };
-  for(let i=0;i<n;i++){
-    if(Math.abs(X[i]-tx)>310||Math.abs(Z[i]-tz)>310)continue;
-    const dx=X[i+1]-X[i],dz=Z[i+1]-Z[i],seg={i,x:X[i],z:Z[i],dx,dz,inv:1/(dx*dx+dz*dz||1)};
-    segments.push(seg);
-    const {a,d2}=projection(seg,tx,tz);
-    if(!anchor||d2<anchor.d2)anchor={s:(i+a)*step,d2};
-  }
-  if(!anchor||anchor.d2>13**2)return;
-  const halfLength=205,radius=44,shoulder=5.8;
-  const first=Math.max(0,Math.floor((anchor.s-halfLength)/step)),last=Math.min(n,Math.ceil((anchor.s+halfLength)/step));
-  const focus=segments.filter(seg=>seg.i>=first&&seg.i<last);
-  if(!focus.length)return;
-  const other=segments.filter(seg=>seg.i<first||seg.i>=last);
-  const dx=g.w/(g.nx-1),dz=g.d/(g.nz-1),sub=Math.max(4,Math.ceil(Math.max(dx,dz)/3));
-  const xs=X.slice(first,last+1),zs=Z.slice(first,last+1);
-  const ix0=Math.max(0,Math.floor((Math.min(...xs)-radius-g.minX)/dx));
-  const iz0=Math.max(0,Math.floor((Math.min(...zs)-radius-g.minZ)/dz));
-  const ix1=Math.min(g.nx-1,Math.ceil((Math.max(...xs)+radius-g.minX)/dx));
-  const iz1=Math.min(g.nz-1,Math.ceil((Math.max(...zs)+radius-g.minZ)/dz));
-  const nx=(ix1-ix0)*sub+1,nz=(iz1-iz0)*sub+1;
-  if(nx<2||nz<2||nx*nz>100000)return;
-  const x0=g.minX+ix0*dx,z0=g.minZ+iz0*dz,sx=dx/sub,sz=dz/sub;
-  const count=nx*nz,pos=new Float32Array(count*3),uv=new Float32Array(count*2);
-  const colors=new Float32Array(count*3),raised=new Uint8Array(count),indices=[];
-  const base=terrain.geometry.attributes;
-  const refreshColors=()=>{
-    const c=base.color.array;
-    for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
-      const k=j*nx+i,ci=Math.min(g.nx-2,ix0+Math.floor(i/sub)),cj=Math.min(g.nz-2,iz0+Math.floor(j/sub));
-      const u=ix0+i/sub-ci,v=iz0+j/sub-cj,key=cj*g.nx+ci;
-      for(let ch=0;ch<3;ch++){
-        const a=c[key*3+ch],b=c[(key+1)*3+ch],d=c[(key+g.nx)*3+ch],e=c[(key+g.nx+1)*3+ch];
-        colors[k*3+ch]=u+v<=1?a+(b-a)*u+(d-a)*v:e+(d-e)*(1-u)+(b-e)*(1-v);
-      }
-    }
-  };
-  const ramp=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
-  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
-    const k=j*nx+i,x=x0+i*sx,z=z0+j*sz,ground=terrainSample(terrain,x,z);
-    let height=ground;
-    if(i&&j&&i<nx-1&&j<nz-1){
-      let best=radius**2,along=0,roadY=0;
-      for(const seg of focus){
-        if(Math.abs(x-seg.x)>radius+step||Math.abs(z-seg.z)>radius+step)continue;
-        const {a,d2}=projection(seg,x,z);
-        if(d2>=best)continue;
-        best=d2;along=(seg.i+a)*step;roadY=Y[seg.i]+(Y[seg.i+1]-Y[seg.i])*a;
-      }
-      if(best<radius**2&&roadY>ground+.6){
-        const distance=Math.sqrt(best);
-        let lift=(roadY-.6-ground)*(1-ramp(shoulder,radius,distance))*(1-ramp(105,halfLength,Math.abs(along-anchor.s)));
-        // Ne pas remonter le terrain sur la branche basse ni aux extrémités du raccord.
-        if(lift>.001)for(const seg of other){
-          if(Math.abs(x-seg.x)>14+step||Math.abs(z-seg.z)>14+step)continue;
-          lift*=ramp(5,14,Math.sqrt(projection(seg,x,z).d2));
-        }
-        if(lift>.001){height+=lift;raised[k]=1;}
-      }
-    }
-    pos.set([x,height,z],k*3);uv.set([x/80,z/80],k*2);
-  }
-  const triangle=(a,b,c)=>{if(raised[a]||raised[b]||raised[c])indices.push(a,b,c);};
-  for(let j=0;j<nz-1;j++)for(let i=0;i<nx-1;i++){
-    const k=j*nx+i;triangle(k,k+nx,k+1);triangle(k+nx,k+nx+1,k+1);
-  }
-  if(!indices.length)return;
-  refreshColors();
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));
-  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
-  geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();
-  const mesh=new THREE.Mesh(geo,terrain.material);mesh.receiveShadow=terrain.receiveShadow;terrain.add(mesh);
-  ud.aspinRoadBed={mesh,refreshColors(){refreshColors();geo.attributes.color.needsUpdate=true;},sample(x,z){
-    const fx=(x-x0)/sx,fz=(z-z0)/sz,i=Math.floor(fx),j=Math.floor(fz);
-    if(i<0||j<0||i>=nx-1||j>=nz-1)return null;
-    const u=fx-i,v=fz-j,k=j*nx+i,h=index=>pos[index*3+1];
-    const a=h(k),b=h(k+1),c=h(k+nx),d=h(k+nx+1);
-    return u+v<=1?a+(b-a)*u+(c-a)*v:d+(c-d)*(1-u)+(b-d)*(1-v);
-  }};
-}
-function updateRouteShoulders(target,terrain){
-  const old=target.userData.routeShoulders;
-  if(old){target.remove(old);old.geometry.dispose();old.material.dispose();target.userData.routeShoulders=null;}
-  const vertices=[],{X,Y,Z,n}=route;
-  for(const side of [-1,1]){
-    let previous=null;
-    for(let i=0;i<=n;i++){
-      const a=Math.max(0,i-1),b=Math.min(n,i+1),dx=X[b]-X[a],dz=Z[b]-Z[a],l=Math.hypot(dx,dz)||1,nx=-dz/l*side,nz=dx/l*side;
-      const x=X[i]+nx*8,z=Z[i]+nz*8,baseGround=terrainSample(terrain,x,z);
-      const patchedGround=terrain.userData.aspinRoadBed?.sample(x,z);
-      const ground=patchedGround==null?baseGround:Math.max(baseGround,patchedGround);
-      const top=[X[i]+nx*3.72,Y[i]-.07,Z[i]+nz*3.72],base=[x,Number.isFinite(ground)?ground-.06:top[1],z];
-      if(previous&&(top[1]-base[1]>.75||previous.top[1]-previous.base[1]>.75))vertices.push(...previous.top,...previous.base,...base,...previous.top,...base,...top);
-      previous={top,base};
-    }
-  }
-  if(!vertices.length)return;
-  const geometry=new THREE.BufferGeometry();
-  geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.computeVertexNormals();
-  const mesh=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x77765b,side:THREE.DoubleSide}));
-  mesh.receiveShadow=true;target.add(mesh);target.userData.routeShoulders=mesh;
-}
-function terrainDrapeHeight(mesh,x,z,kind,offset){
-  const ground=terrainSample(mesh,x,z);
-  if(!Number.isFinite(ground))return null;
-  if(kind!=='road')return ground+offset;
-  const near=nearestOnRoute(x,z,10);
-  if(!near)return ground+offset;
-  const mix=Math.max(0,1-Math.max(0,Math.sqrt(near.dist2)-4)/6);
-  return ground+offset+(near.y-.05-ground)*mix;
-}
-function registerTerrainLayer(target,mesh,kind,offset){
-  const layers=target.userData.terrainLayers||(target.userData.terrainLayers=[]);
-  layers.push({mesh,kind,offset});
-  mesh.visible=false;
-}
-function addDrapedSurface(target,values,color,kind,offset,lit=true){
-  const data=values instanceof Float32Array?values:new Float32Array(values);
-  for(let i=0;i<data.length;i+=18000){
-    const geometry=new THREE.BufferGeometry();
-    geometry.setAttribute('position',new THREE.BufferAttribute(data.subarray(i,i+18000),3));
-    const Material=lit?THREE.MeshLambertMaterial:THREE.MeshBasicMaterial;
-    const mesh=new THREE.Mesh(geometry,new Material({color,side:THREE.DoubleSide}));
-    target.add(mesh);registerTerrainLayer(target,mesh,kind,offset);
-  }
-}
-function scheduleTerrainAlignment(target){
-  const mesh=window._terrain;
-  if(!mesh||mesh.parent!==target)return;
-  const revision=(target.userData.terrainRevision||0)+1;
-  target.userData.terrainRevision=revision;
-  const valid=()=>world===target&&target.userData.terrainRevision===revision;
-  requestAnimationFrame(()=>{
-    if(!valid())return;
-    if(mesh.userData.alignedRoute!==route){
-      const next=terrainRouteProfile(mesh.userData.ground,route),pos=mesh.geometry.attributes.position;
-      for(let i=0;i<next.length;i++)pos.setY(i,next[i]);
-      pos.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere();
-      mesh.userData.alignedRoute=route;
-    }
-    if(target.userData.shoulderRoute!==route){updateAspinRoadBed(mesh);updateRouteShoulders(target,mesh);target.userData.shoulderRoute=route;}
-    const layers=target.userData.terrainLayers||[];
-    let index=0,vertex=0;
-    const drape=()=>{
-      if(!valid())return;
-      let budget=6000;
-      while(index<layers.length&&budget>0){
-        const layer=layers[index],geometry=layer.mesh.geometry,pos=geometry.attributes.position;
-        while(vertex<pos.count&&budget-->0){
-          const y=terrainDrapeHeight(mesh,pos.getX(vertex),pos.getZ(vertex),layer.kind,layer.offset);
-          if(Number.isFinite(y))pos.setY(vertex,y);
-          vertex++;
-        }
-        if(vertex===pos.count){
-          pos.needsUpdate=true;
-          if(layer.mesh.material.isMeshLambertMaterial)geometry.computeVertexNormals();
-          geometry.computeBoundingSphere();
-          layer.mesh.visible=true;index++;vertex=0;
-        }
-      }
-      if(index<layers.length)requestAnimationFrame(drape);
-    };
-    drape();
-  });
-}
-function terrainTexture(){
-  const cv=document.createElement('canvas');cv.width=cv.height=128;const ctx=cv.getContext('2d');
-  let seed=91;const rand=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
-  ctx.fillStyle='#d7d9cf';ctx.fillRect(0,0,128,128);
-  for(let i=0;i<5000;i++){const shade=Math.floor(202+rand()*27);ctx.fillStyle='rgb('+shade+','+shade+','+shade+')';ctx.fillRect(rand()*128,rand()*128,1+rand()*2,1+rand()*2)}
-  const tex=new THREE.CanvasTexture(cv);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.encoding=THREE.sRGBEncoding;return tex;
-}
+/* v137 : vrai relief 3D — maillage de terrain échantillonné sur le DEM Copernicus (via Open-Meteo), repli sur terrain plat. */
 async function buildTerrain(target){
   if(!route||!proj||!target)return;
-  if(target.userData.terrainPromise)return target.userData.terrainPromise;
-  const currentRoute=route,projection={...proj},token=window._worldToken;
-  const work=(async()=>{
-    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
-    for(let i=0;i<=currentRoute.n;i++){minX=Math.min(minX,currentRoute.X[i]);maxX=Math.max(maxX,currentRoute.X[i]);minZ=Math.min(minZ,currentRoute.Z[i]);maxZ=Math.max(maxZ,currentRoute.Z[i])}
-    const margin=5000;minX-=margin;maxX+=margin;minZ-=margin;maxZ+=margin;
-    const w=maxX-minX,d=maxZ-minZ,cell=Math.max(w,d)/192,nx=Math.max(4,Math.round(w/cell)+1),nz=Math.max(4,Math.round(d/cell)+1);
-    let zoom=12,bounds;
-    do{const a=terrainTileXY(projection.la-minZ/projection.kz,projection.lo+minX/projection.kx,zoom),b=terrainTileXY(projection.la-maxZ/projection.kz,projection.lo+maxX/projection.kx,zoom);bounds={x0:Math.floor(a[0]),x1:Math.floor(b[0]),y0:Math.floor(a[1]),y1:Math.floor(b[1])};if((bounds.x1-bounds.x0+1)*(bounds.y1-bounds.y0+1)<=25||zoom<=5)break;zoom--}while(true);
-    const tiles=new Map(),jobs=[];
-    for(let y=bounds.y0;y<=bounds.y1;y++)for(let x=bounds.x0;x<=bounds.x1;x++)jobs.push({x,y});
-    let cursor=0;
-    await Promise.all(Array.from({length:4},async()=>{while(cursor<jobs.length){if(token!==window._worldToken)return;const job=jobs[cursor++],data=await terrainLoadTile(zoom,job.x,job.y);if(data)tiles.set(job.x+','+job.y,data)}}));
-    if(token!==window._worldToken||!target.parent)return;
-    const pixel=(x,y)=>{const data=tiles.get(Math.floor(x/256)+','+Math.floor(y/256));if(!data)return null;const k=((y%256+256)%256*256+(x%256+256)%256)*4;return terrainDecode(data[k],data[k+1],data[k+2])};
-    const sample=(x,z)=>{const t=terrainTileXY(projection.la-z/projection.kz,projection.lo+x/projection.kx,zoom),px=t[0]*256-.5,py=t[1]*256-.5,ix=Math.floor(px),iy=Math.floor(py),values=[pixel(ix,iy),pixel(ix+1,iy),pixel(ix,iy+1),pixel(ix+1,iy+1)];return values.every(Number.isFinite)?terrainBlend(...values,px-ix,py-iy):null};
-    const geo=new THREE.PlaneGeometry(w,d,nx-1,nz-1);geo.rotateX(-Math.PI/2);
-    const pos=geo.attributes.position,colours=new Float32Array(pos.count*3),uv=geo.attributes.uv,altitudes=new Float32Array(pos.count);
-    const ground={minX,minZ,nx,nz,w,d,altitudes};
-    for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
-      const k=j*nx+i,x=minX+i*w/(nx-1),z=minZ+j*d/(nz-1),measured=sample(x,z);
-      altitudes[k]=Number.isFinite(measured)?measured:currentRoute.Y[0];
-      pos.setXYZ(k,x,0,z);uv.setXY(k,x/80,z/80);
+  const token=window._worldToken;
+  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(let i=0;i<route.n;i++){minX=Math.min(minX,route.X[i]);maxX=Math.max(maxX,route.X[i]);minZ=Math.min(minZ,route.Z[i]);maxZ=Math.max(maxZ,route.Z[i]);minY=Math.min(minY,route.Y[i]);maxY=Math.max(maxY,route.Y[i]);}
+  const M=1800;minX-=M;maxX+=M;minZ-=M;maxZ+=M; /* v163 : terrain élargi (avant 1000 m) — on voit le contrebas des vallées depuis les cols */
+  const w=maxX-minX,d=maxZ-minZ,cell=Math.max(20,Math.max(w,d)/110); /* v163 : maillage porté à 110 pour garder du détail malgré la marge */
+  const nx=Math.max(4,Math.min(110,Math.round(w/cell)+1)),nz=Math.max(4,Math.min(110,Math.round(d/cell)+1)); /* v163 */
+  const lats=[],lons=[];
+  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const x=minX+i*(w/(nx-1)),z=minZ+j*(d/(nz-1));lats.push(proj.la-z/proj.kz);lons.push(proj.lo+x/proj.kx);}
+  const n=nx*nz;let ele=new Float32Array(n).fill(NaN);let okCount=0;
+  const jobs=[];
+  for(let off=0;off<n;off+=100){
+    const la=lats.slice(off,off+100).map(q=>q.toFixed(6)).join(','),lo=lons.slice(off,off+100).map(q=>q.toFixed(6)).join(',');
+    jobs.push((async()=>{
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+      let resp;
+      try{resp=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+la+'&longitude='+lo,{mode:'cors',credentials:'omit',cache:'force-cache',signal:ctrl.signal});}
+      finally{clearTimeout(timer);}
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      const data=await resp.json();
+      if(!Array.isArray(data.elevation))throw new Error('réponse invalide');
+      for(let i=0;i<data.elevation.length;i++){const ve=Number(data.elevation[i]);if(Number.isFinite(ve)){ele[off+i]=ve;okCount++;}}
+    })());
+  }
+  for(let j0=0;j0<jobs.length;j0+=6){try{await Promise.all(jobs.slice(j0,j0+6));}catch(_){}} /* v160 : requêtes parallèles par groupes de 6 (chargement ~6× plus rapide) */
+  if(token!==window._worldToken)return; /* le monde a été reconstruit entre-temps */
+  if(okCount<n*.5){const flat=(minY+maxY)/2;for(let i=0;i<n;i++)if(!Number.isFinite(ele[i]))ele[i]=flat;} /* repli : terrain plat */
+  let eMin=Infinity,eMax=-Infinity;for(let i=0;i<n;i++){eMin=Math.min(eMin,ele[i]);eMax=Math.max(eMax,ele[i]);}
+  const geo=new THREE.PlaneGeometry(w,d,nx-1,nz-1);geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position,colors=new Float32Array(pos.count*3),c=new THREE.Color();
+  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
+    const idx=j*nx+i,e=ele[idx],t=Math.max(0,Math.min(1,(e-eMin)/Math.max(1,eMax-eMin)));
+    pos.setXYZ(idx,minX+i*(w/(nx-1)),e-.65,minZ+j*(d/(nz-1)));
+    if(e>1600)c.set(0xf2f4f6);else c.setHSL(.26-t*.09,.34+t*.12,.30+t*.16);
+    colors[idx*3]=c.r;colors[idx*3+1]=c.g;colors[idx*3+2]=c.b;
+  }
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
+  const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
+  mesh.receiveShadow=true;mesh.userData.ground={minX:minX,minZ:minZ,nx:nx,nz:nz,w:w,d:d};mesh.userData.elevColors=colors.slice(0);target.add(mesh);window._terrain=mesh;
+  /* v156 : silhouettes de crêtes en anneau si le relief du secteur est marqué */
+  const relief=eMax-eMin;
+  if(relief>120){
+    const rockMat=new THREE.MeshLambertMaterial({color:0x6f6a60}),snowMat=new THREE.MeshLambertMaterial({color:0xeef1f4});
+    const cx0=(minX+maxX)/2,cz0=(minZ+maxZ)/2,R=Math.max(w,d)*.98,nRing=Math.max(12,Math.round(R/240));
+    for(let k=0;k<nRing;k++){
+      const a=k/nRing*Math.PI*2+osmNoise(k*7.3,1.7)*.4,rr=R*(.9+Math.abs(osmNoise(k*3.1,9.4))*.2);
+      const h=relief*(.5+Math.abs(osmNoise(k*5.7,3.3))*.9)+80,rad=110+Math.abs(osmNoise(k*2.9,4.4))*150;
+      const cone=new THREE.Mesh(new THREE.ConeGeometry(rad,h,7),rockMat);
+      cone.position.set(cx0+Math.cos(a)*rr,eMin-12+h/2,cz0+Math.sin(a)*rr);target.add(cone);
+      if(h>relief+60){const cap=new THREE.Mesh(new THREE.ConeGeometry(rad*.34,h*.2,7),snowMat);cap.position.set(cone.position.x,eMin-12+h-h*.1+.4,cone.position.z);target.add(cap);}
     }
-    const conformed=terrainRouteProfile(ground,route);
-    for(let i=0;i<conformed.length;i++)pos.setY(i,conformed[i]);
-    geo.computeVertexNormals();const normal=geo.attributes.normal,c=new THREE.Color(),forest=new THREE.Color(TERRAIN_PALETTE.forest),grass=new THREE.Color(TERRAIN_PALETTE.grass),rock=new THREE.Color(TERRAIN_PALETTE.rock),snow=new THREE.Color(TERRAIN_PALETTE.snow);
-    for(let i=0;i<pos.count;i++){const height=altitudes[i],steep=1-Math.abs(normal.getY(i)),variation=.5+.5*osmNoise(pos.getX(i)*.004,pos.getZ(i)*.004);c.copy(forest).lerp(grass,Math.max(.12,Math.min(.9,variation*.5+(height-900)/1600)));c.lerp(rock,Math.max(0,Math.min(1,(steep-.17)*2.8+(height-1900)/1300)));if(height>2700&&steep<.65)c.lerp(snow,Math.min(.9,(height-2700)/600));colours[i*3]=c.r;colours[i*3+1]=c.g;colours[i*3+2]=c.b}
-    geo.setAttribute('color',new THREE.BufferAttribute(colours,3));geo.computeBoundingSphere();
-    const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,map:terrainTexture(),side:THREE.DoubleSide}));mesh.receiveShadow=true;
-    mesh.userData.ground=ground;mesh.userData.elevColors=colours.slice();mesh.userData.demLoaded=tiles.size>0;mesh.userData.alignedRoute=route;
-    target.add(mesh);window._terrain=mesh;if(target.userData.base)target.userData.base.visible=false;
-    scheduleTerrainAlignment(target);
-    target.userData.terrainReady=true;document.getElementById('c').setAttribute('data-terrain-ready',tiles.size?'dem':'fallback');
-    if(window._osmGroundData)recolorTerrainByOSM(window._osmGroundData);
-    if(groundStyle()==='satellite')setGroundStyle('satellite',true);
-    if(!tiles.size)toast('Relief indisponible : sol estimé le long du parcours. Vérifiez votre connexion puis rechargez.');
-  })();target.userData.terrainPromise=work;
-  try{await work}catch(error){if(token===window._worldToken){target.userData.terrainPromise=null;console.warn('Terrain :',error);toast('Le relief n’a pas pu être chargé. Rechargez le parcours pour réessayer.')}}
+  }
+  if(window._osmGroundData)recolorTerrainByOSM(window._osmGroundData); /* v147 : recoloration si le décor OSM est arrivé avant le terrain */
+  if(groundStyle()==="satellite")setGroundStyle("satellite",true); /* v149 : réapplique la texture satellite si le terrain est reconstruit */
 }
-
 /* v147 : sol colorié selon les données OSM (champs beige, forêts vert foncé, villages gris, eau bleue) */
 function osmPointInRing(x,z,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],zi=ring[i][1],xj=ring[j][0],zj=ring[j][1];if(((zi>z)!==(zj>z))&&(x<(xj-xi)*(z-zi)/((zj-zi)||1e-9)+xi))inside=!inside}return inside}
 function recolorTerrainByOSM(data){
@@ -1189,6 +912,7 @@ function recolorTerrainByOSM(data){
   if(!pos||!col)return;
   const polys=[];
   const push=(ring,colour)=>{if(ring&&ring.length>2)polys.push({ring:ring,colour:colour})};
+  for(const w of data.waters||[])push(Array.isArray(w[0])?w[0]:w,new THREE.Color(0x3b87c7));
   for(const f of data.forests||[])push(Array.isArray(f[0])?f[0]:f,new THREE.Color(0x2e5d33));
   const farmCol={farmland:0xc2a852,meadow:0x6f9e4f,orchard:0x5d8f3e,grass:0x7fae57};
   for(const item of data.farmland||[]){const ring=Array.isArray(item[0])?item[0]:item,tags=Array.isArray(item[0])?item[1]:{};push(ring,new THREE.Color(farmCol[String(tags.landuse||'').toLowerCase()]||0xc2a852))}
@@ -1199,11 +923,11 @@ function recolorTerrainByOSM(data){
     const x=pos.getX(i),z=pos.getZ(i);
     for(const p of polys){if(osmPointInRing(x,z,p.ring)){col.setXYZ(i,p.colour.r,p.colour.g,p.colour.b);changed++;break;}}
   }
-  if(changed){col.needsUpdate=true;ud.aspinRoadBed?.refreshColors();}
+  if(changed){col.needsUpdate=true;}
 }
 /* v149 : choix du style de sol — couleurs OSM (vectoriel) ou photos satellite Esri */
 function groundStyle(){let m='osm';try{m=localStorage.getItem('velo3d-ground')||'osm'}catch(e){}return m==='satellite'?'satellite':'osm'}
-function _restoreElevColors(mesh){const ud=mesh&&mesh.userData;if(!ud||!ud.elevColors)return;const col=mesh.geometry.attributes.color;if(!col)return;col.array.set(ud.elevColors);col.needsUpdate=true;ud.aspinRoadBed?.refreshColors();}
+function _restoreElevColors(mesh){const ud=mesh&&mesh.userData;if(!ud||!ud.elevColors)return;const col=mesh.geometry.attributes.color;if(!col)return;col.array.set(ud.elevColors);col.needsUpdate=true;}
 function _mercY(lat){const r=lat*Math.PI/180;return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2}
 async function loadSatelliteTexture(){
   const mesh=window._terrain;if(!mesh||!proj)return null;
@@ -2705,19 +2429,8 @@ async function freeAlignStartArrowToRoad(){ /* v161 : avant le chargement du sec
   if(!freeMarker||!freeCenter||freeNavigation)return;
   const tok=++_freeArrowAlignTok,lat=freeCenter.lat,lon=freeCenter.lon;
   try{
-    /* v173 : deux serveurs avec délai — overpass-api.de reste souvent muet, ce qui laissait la flèche au nord */
-    const query='[out:json][timeout:25];way["highway"](around:90,'+lat+','+lon+');out geom 200;';
-    let j=null;
-    for(const server of['https://overpass.openstreetmap.fr/api/interpreter','https://overpass-api.de/api/interpreter']){
-      try{
-        const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),8000);let response;
-        try{response=await fetch(server+'?data='+encodeURIComponent(query),{mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}
-        if(!response.ok)continue;
-        const data=await response.json();
-        if(data&&Array.isArray(data.elements)){j=data;break;}
-      }catch(_){}
-    }
-    if(!j)return;
+    const r=await fetch('https://overpass-api.de/api/interpreter?data='+encodeURIComponent('[out:json][timeout:25];way["highway"](around:90,'+lat+','+lon+');out geom 200;'),{mode:'cors',credentials:'omit'});
+    const j=await r.json();
     if(tok!==_freeArrowAlignTok||freeNavigation)return;
     const kx=111320*Math.cos(lat*Math.PI/180),kz=110540;
     let best=null,bd=Infinity;
@@ -2745,23 +2458,19 @@ function freeUpdateStartArrow(){ /* v121 : la flèche montre le vrai sens de dé
   }catch(_){}
   if(freeMarker)freeMarker.setIcon(freeArrowIcon(bearing));
 }
-function initFreeMap(){try{
-  const el=$('freeMap');if(!el||!window.L)return;
-  /* v173 : si la carte a été créée sur un conteneur remplacé (ou avant que Leaflet soit prêt), on la refait */
-  if(freeMap&&(!freeMap.getContainer().isConnected)){try{freeMap.remove()}catch(_){}freeMap=null;freeMarker=null;window._freeCircle=null;}
-  if(freeMap)return;
-  freeMap=L.map(el,{rotate:false}).setView([freeCenter.lat,freeCenter.lon],14);
+function initFreeMap(){
+  const el=$('freeMap');if(!el||freeMap||!window.L)return;
+  freeMap=L.map(el).setView([freeCenter.lat,freeCenter.lon],14);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(freeMap);
   window._freeStartDir=1;
   freeMarker=L.marker([freeCenter.lat,freeCenter.lon],{icon:freeArrowIcon(0)}).addTo(freeMap); /* v121 : flèche à la place du point */
   freeMarker.on('click',e=>{try{L.DomEvent.stopPropagation(e.originalEvent)}catch(_){};window._freeStartDir*=-1;freeUpdateStartArrow();toast(window._freeStartDir>0?'Départ dans le sens de la flèche.':'Départ dans le sens inverse de la flèche.');}); /* v121 : un appui sur la flèche inverse le sens de départ */
   window._freeCircle=L.circle([freeCenter.lat,freeCenter.lon],{radius:freeMapRadius(),color:'#34d399',fillOpacity:.12,weight:2}).addTo(freeMap);
-  freeMap.on('click',e=>{const ll=e&&e.latlng;if(!ll||!Number.isFinite(ll.lat)||!Number.isFinite(ll.lng)){toast('Point de carte invalide.');return;}freeCenter={lat:ll.lat,lon:ll.lng};fetchWeatherAt(ll.lat,ll.lng); /* v138 : météo du point choisi */freeMarker.setLatLng(ll);freeUpdateStartArrow();freeAlignStartArrowToRoad();  window._freeCircle.setLatLng(ll);freeClearStartChoices();$('freeInfo').textContent='Point de départ choisi · rayon '+(freeMapRadius()/1000).toFixed(1)+' km · touche « Rouler ici » pour charger les routes';});
-  freeAlignStartArrowToRoad(); /* v173 : flèche calée sur la route dès l’ouverture de la carte */
-}catch(_){}}
+  freeMap.on('click',e=>{const ll=e&&e.latlng;if(!ll||!Number.isFinite(ll.lat)||!Number.isFinite(ll.lng)){toast('Point de carte invalide.');return;}freeCenter={lat:ll.lat,lon:ll.lng};fetchWeatherAt(ll.lat,ll.lng); /* v138 : météo du point choisi */freeMarker.setLatLng(ll);freeUpdateStartArrow();freeAlignStartArrowToRoad();window._freeCircle.setLatLng(ll);freeClearStartChoices();$('freeInfo').textContent='Point de départ choisi · rayon '+(freeMapRadius()/1000).toFixed(1)+' km · touche « Rouler ici » pour charger les routes';});
+}
 function freeMapRefresh(){if(freeMap)setTimeout(()=>freeMap.invalidateSize({pan:false}),120);}
-setTimeout(()=>{initFreeMap();freeAlignStartArrowToRoad();},400); /* v173 : flèche d’accueil calée sur la route dès l’ouverture */
-const freeRideDetails=$('freeRide');if(freeRideDetails)freeRideDetails.addEventListener('toggle',()=>{if(freeRideDetails.open){initFreeMap();freeAlignStartArrowToRoad();freeMapRefresh();}});
+setTimeout(initFreeMap,400);
+const freeRideDetails=$('freeRide');if(freeRideDetails)freeRideDetails.addEventListener('toggle',()=>{if(freeRideDetails.open){initFreeMap();freeMapRefresh();}});
 $('freeRadius')?.addEventListener('change',()=>{freeMapRadius();freeClearStartChoices();$('freeInfo').textContent='Rayon sélectionné : '+(freeMapRadius()/1000).toFixed(1)+' km';});
 $('enlargeMap')?.addEventListener('click',()=>{const mapEl=$('freeMap'),large=mapEl.style.height==='420px';mapEl.style.height=large?'220px':'420px';$('enlargeMap').textContent=large?'Agrandir la carte':'Réduire la carte';freeMapRefresh();});
 $('locateMe')?.addEventListener('click',()=>{if(!navigator.geolocation){toast('La géolocalisation n’est pas disponible.');return;}navigator.geolocation.getCurrentPosition(pos=>{freeCenter={lat:pos.coords.latitude,lon:pos.coords.longitude};fetchWeatherAt(pos.coords.latitude,pos.coords.longitude,'ta position'); /* v138 */if(freeMap)freeMap.setView([freeCenter.lat,freeCenter.lon],14);if(freeMarker)freeMarker.setLatLng([freeCenter.lat,freeCenter.lon]);freeUpdateStartArrow();freeAlignStartArrowToRoad();if(window._freeCircle)window._freeCircle.setLatLng([freeCenter.lat,freeCenter.lon]).setRadius(freeMapRadius());freeClearStartChoices();$('freeInfo').textContent='Point de départ : ta position · choisis « Rouler ici » pour charger le secteur';},()=>toast('Position indisponible. Vérifie l’autorisation de localisation du navigateur.'),{enableHighAccuracy:true,timeout:12000});});
@@ -2972,7 +2681,8 @@ function freeRoundaboutOptions(node,inX,inZ,nav){
 function freePathExitsRoundabout(nav,event,chosen){
   if(!chosen||!chosen.exitKey||!Array.isArray(nav.path)||!Array.isArray(chosen.points)||chosen.points.length<2)return false;
   const wanted=chosen.points.map(p=>freeNodeKey(p));
-  const start=event.pathIndex;
+  const start=nav.path.findIndex(p=>freeNodeKey(p)===wanted[0]);
+  if(start<0)return false;
   for(let i=0;i<wanted.length;i++){
     const pathPoint=nav.path[start+i];
     if(!pathPoint||freeNodeKey(pathPoint)!==wanted[i])return false;
@@ -3113,9 +2823,7 @@ function freeBuildSceneryIndex(elements,center){
     const minX=Math.min(x0,x1),maxX=Math.max(x0,x1);
     const minZ=Math.min(z0,z1),maxZ=Math.max(z0,z1);
     const locality=element.type==='node'&&element.tags&&/^(city|town|village)$/.test(String(element.tags.place||''));
-    /* v167 : coussin décor élargi pour les routes — les voies secondaires ne sont plus coupées */
-    const hw=element.type==='way'&&element.tags&&element.tags.highway;
-    index.push({element,minX,minZ,maxX,maxZ,padding:locality?2000:(hw?520:240)});
+    index.push({element,minX,minZ,maxX,maxZ,padding:locality?2000:240});
   }
   return index;
 }
@@ -3128,10 +2836,7 @@ function freePrepareScenery(points,nav){
     minX=Math.min(minX,projected.x);maxX=Math.max(maxX,projected.x);
     minZ=Math.min(minZ,projected.z);maxZ=Math.max(maxZ,projected.z);
   }
-  /* v167 : décor préchargé au départ sur un périmètre nettement plus grand, quel que soit le sens */
-  return nav.sceneryIndex.filter(item=>{
-    const pad=item.padding*(item.padding>=2000?2:2.2);
-    return item.maxX>=minX-pad&&item.minX<=maxX+pad&&item.maxZ>=minZ-pad&&item.minZ<=maxZ+pad;}).map(item=>item.element);
+  return nav.sceneryIndex.filter(item=>item.maxX>=minX-item.padding&&item.minX<=maxX+item.padding&&item.maxZ>=minZ-item.padding&&item.minZ<=maxZ+item.padding).map(item=>item.element);
 }
 /* v73 : toutes les routes qui rejoignent le tracé (chaque carrefour, le départ, le demi-tour)
    doivent être rendues en 3D, sinon on voit du gazon à gauche ou à droite selon le sens. */
@@ -3155,7 +2860,7 @@ function freeWithJunctionArms(base,points,nav){
     return out;
   }catch(_){return Array.isArray(base)?base:[]}
 }
-function freeRaw(points,nav){return points.map(p=>{const q=freeProject(p,nav.center);return{x:q.x,z:q.z,y:Number.isFinite(p.ele)?p.ele:0,estimated:p.eleSource==='Open-Meteo'};});}
+function freeRaw(points,nav){return points.map(p=>{const q=freeProject(p,nav.center);return{x:q.x,z:q.z,y:Number.isFinite(p.ele)?p.ele:0};});}
 function freeWalkWay(way,index,direction,startPoint,startKey,nav){
   if(!freeCanTravel(way,direction))return[];
   const points=[{...startPoint}];
@@ -3201,12 +2906,12 @@ function freeStartingDirections(way,segment,t,snap,nav){
   }
   return result;
 }
-function freeExtendPathFromOption(option,nav,maxLength=nav.radius*3){
+function freeExtendPathFromOption(option,nav,maxLength=nav.radius*1.8){
   const path=option.points.map(point=>({...point})),visited=new Set();
   let length=0;
   for(let i=1;i<path.length;i++)length+=freeDistance(path[i-1],path[i],nav);
   let current=option;
-  for(let hop=0;hop<240&&length<maxLength;hop++){
+  for(let hop=0;hop<120&&length<maxLength;hop++){
     const node=current.points.at(-1),key=freeNodeKey(node);
     if(!nav.junctions.has(key)||path.length<2)break;
     const before=path.at(-2),a=freeProject(before,nav.center),b=freeProject(node,nav.center);
@@ -3219,11 +2924,7 @@ function freeExtendPathFromOption(option,nav,maxLength=nav.radius*3){
       if(nextOptions.length)next=nextOptions.filter(o=>!o.deadEnd).reduce((best,item)=>!best||Math.abs(item.angle)<Math.abs(best.angle)?item:best,null);
     }else{
       nextOptions=freeBuildOptionsAt(key,b.x-a.x,b.z-a.z,nav);
-      /* v171 : on prolonge tant que la route continue tout droit (même seuil que la flèche ↑)
-         ou qu’il n’y a qu’une seule suite possible (virage). On s’arrête uniquement au carrefour
-         où il faut réellement choisir entre plusieurs directions sans tout droit. */
-      const viable=nextOptions.filter(option=>!option.deadEnd),straight=viable.filter(option=>option.arrow==='↑').reduce((best,item)=>!best||Math.abs(item.angle)<Math.abs(best.angle)?item:best,null);
-      next=straight||(viable.length===1?viable[0]:null);
+      next=freeChooseStraight(nextOptions);
     }
     if(!next)break;const token=String(next.way.id)+':'+next.direction+':'+key;
     if(visited.has(token))break;
@@ -3231,99 +2932,22 @@ function freeExtendPathFromOption(option,nav,maxLength=nav.radius*3){
     let added=false;
     for(const point of next.points.slice(1)){
       length+=freeDistance(path.at(-1),point,nav);path.push({...point});added=true;
-    } /* v171 : on ajoute le tronçon entier (il finit à un carrefour) — jamais de coupure au milieu d’une ligne droite */
+      if(length>=maxLength)break;
+    }
     if(!added)break;
     current=next;
   }
   return path;
 }
-/* v172 : préchargement du tracé au-delà du secteur — la ligne rouge rejoint le prochain carrefour à choix
-   au lieu de s’arrêter au bord du cercle de données. Requête « routes seules » (rapide) : le décor 3D,
-   lui, continue d’être chargé par le rechargement de secteur habituel. */
-let freeAhead=null,freeAheadBusy=false,freeAheadRetry=0,freeAheadError='';
-function freeAheadSame(nav){return !!freeAhead&&freeAhead.nav===nav&&freeAhead.pathRef===nav.path}
-function freeAheadGeo(nav){if(!nav||!freeAheadSame(nav))return[];return freeAhead.points.map(point=>[Number(point.lon),Number(point.lat)])}
-async function freeFetchRoadsAhead(center,radius){
-  const query='[out:json][timeout:25];way["highway"](around:'+radius+','+center.lat+','+center.lon+');out geom;';
-  for(const server of['https://overpass.openstreetmap.fr/api/interpreter','https://overpass-api.de/api/interpreter']){
-    try{
-      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);let response;
-      try{response=await fetch(server+'?data='+encodeURIComponent(query),{mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}
-      if(!response.ok)continue;
-      const data=await response.json();
-      if(data&&Array.isArray(data.elements))return data.elements;
-    }catch(_){}
-  }
-  return null;
-}
-async function freePreloadAhead(nav){
-  if(freeAheadBusy||!nav||!nav.active||!nav.path||nav.path.length<2||!route)return;
-  if(freeAheadSame(nav))return;
-  const end=nav.path.at(-1);
-  if(nav.junctions.has(freeNodeKey(end)))return; /* le tracé s’arrête déjà sur un carrefour : rien à faire */
-  if(freeDistance(nav.center,end,nav)<nav.radius*.72)return; /* bout de route à l’intérieur du secteur (impasse) */
-  if(Date.now()<(freeAheadRetry||0))return;
-  freeAheadBusy=true;
-  try{
-    let cursor=end,previous=nav.path[nav.path.length-2]||end,points=[],endsAtJunction=false,endsAtChoice=false;
-    for(let round=0;round<3;round++){ /* v172 : au plus trois tronçons pour rejoindre le prochain carrefour à choix */
-      const center={lat:cursor.lat,lon:cursor.lon},radius=Math.max(1200,Math.round(nav.radius*1.2));
-      const elements=await freeFetchRoadsAhead(center,radius);
-      if(!elements||!elements.length||!nav.path||nav.path.at(-1)!==end)break;
-      const built=freeMakeGraph(elements,center);
-      const aheadNav={center,kx:111320*Math.cos(center.lat*Math.PI/180),kz:110540,radius,graph:built.graph,junctions:built.junctions,localities:built.localities||[],sceneryIndex:built.sceneryIndex||[],elements};
-      const snap={lat:cursor.lat,lon:cursor.lon,ele:cursor.ele,nodeId:cursor.nodeId};
-      let best=null,bestD=Infinity,bestSegment=0,bestT=0;
-      for(const way of built.graph)for(let i=0;i<way.pts.length-1;i++){
-        const a=way.pts[i],b=way.pts[i+1],pa=freeProject(a,center),pb=freeProject(b,center),dx=pb.x-pa.x,dz=pb.z-pa.z,t=Math.max(0,Math.min(1,-(pa.x*dx+pa.z*dz)/(dx*dx+dz*dz||1))),x=pa.x+dx*t,z=pa.z+dz*t,d=x*x+z*z;
-        if(d<bestD){bestD=d;best=way;bestSegment=i;bestT=t}
-      }
-      if(!best||bestD>400)break;
-      const pa=freeProject(previous,center),pb=freeProject(snap,center),hl=Math.hypot(pb.x-pa.x,pb.z-pa.z)||1,inX=(pb.x-pa.x)/hl,inZ=(pb.z-pa.z)/hl;
-      const options=freeStartingDirections(best,bestSegment,bestT,snap,aheadNav);
-      let pick=null;
-      for(const option of options){const heading=freeHeading(option.points,aheadNav),score=heading.x*inX+heading.z*inZ;if(!pick||score>pick.score)pick={option,score}}
-      if(!pick||pick.score<.2)break;
-      const path=freeExtendPathFromOption(pick.option,aheadNav);
-      if(path.length<2)break;
-      points=points.concat(path.slice(1));
-      const tail=path.at(-1);previous=path[Math.max(0,path.length-2)];cursor=tail;
-      const tailKey=freeNodeKey(tail),ta=freeProject(previous,center),tb=freeProject(tail,center),thl=Math.hypot(tb.x-ta.x,tb.z-ta.z)||1;
-      endsAtJunction=aheadNav.junctions.has(tailKey);endsAtChoice=false;
-      if(endsAtJunction){const ends=freeBuildOptionsAt(tailKey,(tb.x-ta.x)/thl,(tb.z-ta.z)/thl,aheadNav).filter(o=>!o.deadEnd);endsAtChoice=ends.length>1&&!ends.some(o=>o.arrow==='↑')} /* v172 : le tracé préchargé finit-il sur un vrai carrefour à choix ? */
-      if(endsAtChoice)break; /* carrefour à choix atteint : le tracé peut s’arrêter là */
-    }
-    if(!points.length)return;
-    freeAhead={nav,pathRef:nav.path,points,endsAtJunction,endsAtChoice};
-    freeAheadRetry=0;
-    try{drawMiniMap(performance.now(),true)}catch(_){}
-  }catch(error){freeAheadError=String(error&&error.message||error);freeAheadRetry=Date.now()+15000}
-  finally{freeAheadBusy=false}
-}
 async function freeFetchElevations(paths,nav,onProgress=()=>{}){
-  nav.elevationSource=null;
-  const validPaths=(paths||[]).filter(points=>Array.isArray(points)&&points.length>=2);
-  if(!validPaths.length)return false;
-  const france=validPaths.every(points=>points.every(p=>p.lat>=41.3&&p.lat<=51.2&&p.lon>=-5.3&&p.lon<=9.7));
-  for(const source of france?['IGN','Open-Meteo']:['Open-Meteo']){
-    try{
-      await fetchRouteElevation(validPaths,nav,source,(f)=>onProgress(f,source));
-      nav.elevationSource=source;return true;
-    }catch(error){if(source==='Open-Meteo')onProgress(-1,error.message||String(error));}
-  }
-  return false;
-}
-let nextIgnRequest=0;
-async function fetchRouteElevation(paths,nav,source,onProgress){
-  const ign=source==='IGN',spacing=ign?25:45,batchSize=ign?24:100;
   const profiles=[];
   for(const points of paths||[]){
     if(!Array.isArray(points)||points.length<2)continue;
     const distances=[0];
     for(let i=1;i<points.length;i++)distances[i]=distances[i-1]+freeDistance(points[i-1],points[i],nav);
     const total=distances.at(-1),samples=[];
-    for(let distance=0,i=1;distance<total;distance+=spacing){
-      while(i<distances.length-1&&distances[i]<distance)i++;
+    for(let distance=0;distance<total;distance+=45){ /* v155 : profil d'altitude deux fois plus dense (le DEM fait ~90 m) */
+      let i=1;while(i<distances.length-1&&distances[i]<distance)i++;
       const a=points[i-1],b=points[i],span=distances[i]-distances[i-1]||1;
       const fraction=(distance-distances[i-1])/span;
       samples.push({d:distance,lat:a.lat+(b.lat-a.lat)*fraction,lon:a.lon+(b.lon-a.lon)*fraction,ele:null});
@@ -3332,27 +2956,28 @@ async function fetchRouteElevation(paths,nav,source,onProgress){
     samples.push({d:total,lat:lastPoint.lat,lon:lastPoint.lon,ele:null});
     profiles.push({points,distances,samples});
   }
-  const records=profiles.flatMap(profile=>profile.samples);
-  for(let offset=0;offset<records.length;offset+=batchSize){
-      const batch=records.slice(offset,offset+batchSize);
-      const latitude=batch.map(p=>p.lat.toFixed(6)).join(',');
-      const longitude=batch.map(p=>p.lon.toFixed(6)).join(',');
-      const url=ign?
-        'https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json?lon='+longitude+'&lat='+latitude+'&resource=ign_rge_alti_wld&delimiter=%2C&zonly=true':
-        'https://api.open-meteo.com/v1/elevation?latitude='+latitude+'&longitude='+longitude;
-      if(ign){const now=Date.now(),run=Math.max(now,nextIgnRequest);nextIgnRequest=run+1050;if(run>now)await new Promise(resolve=>setTimeout(resolve,run-now));}
-      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),ign?8000:15000);
+  const records=[];
+  profiles.forEach((profile,profileIndex)=>profile.samples.forEach((sample,sampleIndex)=>records.push({profileIndex,sampleIndex,sample})));
+  let success=0;
+  try{
+    for(let offset=0;offset<records.length;offset+=100){
+      const batch=records.slice(offset,offset+100);
+      const latitude=batch.map(record=>record.sample.lat.toFixed(6)).join(',');
+      const longitude=batch.map(record=>record.sample.lon.toFixed(6)).join(',');
+      const url='https://api.open-meteo.com/v1/elevation?latitude='+latitude+'&longitude='+longitude;
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
       let response;
       try{response=await fetch(url,{mode:'cors',credentials:'omit',cache:'force-cache',signal:controller.signal});}
       finally{clearTimeout(timer);}
-      if(!response.ok)throw new Error(source+' HTTP '+response.status);
+      if(!response.ok)throw new Error('Open-Meteo HTTP '+response.status);
       const data=await response.json();
-      const values=ign?data.elevations:data.elevation;
-      if(!Array.isArray(values)||values.length!==batch.length||values.some(v=>!Number.isFinite(v)||v<=-1000||v>=10000))throw new Error('réponse altimétrique incomplète');
-      for(let i=0;i<batch.length;i++)batch[i].ele=values[i];
+      if(!Array.isArray(data.elevation)||data.elevation.length!==batch.length)throw new Error('réponse altimétrique incomplète');
+      for(let i=0;i<batch.length;i++){
+        const value=Number(data.elevation[i]);
+        if(Number.isFinite(value)){const record=batch[i];profiles[record.profileIndex].samples[record.sampleIndex].ele=value;success++;}
+      }
       onProgress(Math.min(1,(offset+batch.length)/records.length));
-  }
-  // Écrire le profil seulement après réception complète d'une même source.
+    }
     for(const profile of profiles){
       let sampleIndex=1;
       for(let i=0;i<profile.points.length;i++){
@@ -3363,9 +2988,10 @@ async function fetchRouteElevation(paths,nav,source,onProgress){
         if(Number.isFinite(a.ele)&&Number.isFinite(b.ele))profile.points[i].ele=a.ele+(b.ele-a.ele)*fraction;
         else if(Number.isFinite(a.ele))profile.points[i].ele=a.ele;
         else if(Number.isFinite(b.ele))profile.points[i].ele=b.ele;
-        profile.points[i].eleSource=source;
       }
     }
+    return success>0;
+  }catch(error){onProgress(-1,error.message||String(error));return false;}
 }
 function freeSeedElevation(points,nav,routeDistance){
   if(!Array.isArray(points)||!points.length||!route)return false;
@@ -3373,125 +2999,63 @@ function freeSeedElevation(points,nav,routeDistance){
   let travelled=0,filled=0;
   for(let i=0;i<points.length;i++){
     if(i)travelled+=freeDistance(points[i-1],points[i],nav);
-    if(!Number.isFinite(points[i].ele)){
-      const xy=freeProject(points[i],nav.center);
-      const terrain=window._terrain?.userData.demLoaded?terrainSample(window._terrain,xy.x,xy.z,true):null;
-      points[i].ele=Number.isFinite(terrain)&&travelled>25?terrain+.15:sample[1]+grade*Math.min(80,travelled);
-      filled++;
-    }
+    if(!Number.isFinite(points[i].ele)){points[i].ele=sample[1]+grade*travelled;filled++;}
   }
   return filled;
 }
 function freeRoundJunctionMeters(remaining){return Math.ceil(Math.max(0,remaining)/10)*10;}
-function freeHideRouteArrows(){const el=$('routeArrows');if(el)el.classList.add('hide');freeClearOptionTraces();freeClearChoicePreview(); /* v161 */}
+function freeHideRouteArrows(){const el=$('routeArrows');if(el)el.classList.add('hide');freeClearOptionTraces(); /* v161 */}
 
 function freeApplyChoiceImmediately(event,option,nav){
-  if(!route||!nav||!nav.events.includes(event))return false;
+  if(!route||!nav) return;
+  // On récupère le plan complet de la branche choisie (déjà préchargé)
   const plan=event.continuations&&event.continuations.find(item=>item.option===option);
   const chosenPoints=plan?plan.points:freeExtendPathFromOption(option,nav);
-  if(!chosenPoints||chosenPoints.length<2)return false;
-  const branch=chosenPoints.map(point=>({...point}));
-  freeSeedElevation(branch,nav,event.distance);
-  const combined=[...nav.path.slice(0,event.pathIndex+1),...branch.slice(1)];
-  const next=sampleRoute(freeRaw(combined,nav));
-  const resumeAtJunction=!!nav.awaitingChoice;
-  event.selected=option;event.merged=true;event.shown=true;
-  /* v173 : le décor déjà construit derrière le cycliste est conservé et rejoint le décor préchargé
-     de la branche choisie — sinon les bâtiments et arbres du début disparaîtraient au virage. */
-  let prepared=null;
-  if(plan&&Array.isArray(plan.preparedElements)){
-    prepared=plan.preparedElements.slice();
-    const seen=new Set(prepared.map(element=>element&&element.id!=null?element.type+':'+element.id:null));
-    for(const element of freePrepareScenery(nav.path,nav)){
-      const key=element&&element.id!=null?element.type+':'+element.id:null;
-      if(key&&seen.has(key))continue;
-      seen.add(key);prepared.push(element);
-    }
-  }
-  nav.path=combined;
-  freeClearChoicePreview();
-  /* v174 : le virage ne relance plus la construction complète du parcours (qui remettait s, v et la
-     caméra à zéro et affichait l'écran de chargement juste avant le carrefour). La chaussée fusionnée
-     et le décor de la branche sont appliqués à la scène en gardant la position, la vitesse et le suivi
-     caméra : le cycliste traverse le carrefour sans coupure. */
-  const oldS=s,oldTotal=totalDistance,oldV=v,oldRunning=running;
+  if(!chosenPoints||chosenPoints.length<2) return;
+  // On reconstruit la route actuelle : on garde le début jusqu'au carrefour, puis la branche choisie
+  const oldS=s, oldTotal=totalDistance, oldV=v, oldRunning=running, resumeAtJunction=!!nav.awaitingChoice;
+  // On prend les points du tracé actuel jusqu'au carrefour
+  const currentPath=nav.path||[];
+  let dist=0, cutIndex=0;
+  for(let i=1;i<currentPath.length;i++){ dist+=freeDistance(currentPath[i-1],currentPath[i],nav); if(dist>=event.distance){ cutIndex=i; break; } }
+  const prefix=currentPath.slice(0,cutIndex+1);
+  const combined=[...prefix, ...chosenPoints.slice(1)];
+  const raw=freeRaw(combined,nav);
+  // Même interpolation que build(), mais sans makeWorld ni place(true) ni reset de s
+  const filtered=[]; for(const pp of raw){ if(!Number.isFinite(pp.x)||!Number.isFinite(pp.y)||!Number.isFinite(pp.z)) continue; const prev=filtered[filtered.length-1]; if(!prev||Math.hypot(pp.x-prev.x,pp.z-prev.z)>.05) filtered.push(pp); }
+  const L=[0]; for(let i=1;i<filtered.length;i++) L[i]=L[i-1]+Math.hypot(filtered[i].x-filtered[i-1].x,filtered[i].z-filtered[i-1].z);
+  const tot=L[L.length-1]; const n=Math.max(2,Math.ceil(tot/ST)), step=tot/n, X=[],Y=[],Z=[]; let j=0;
+  for(let i=0;i<=n;i++){ const d=i*step; while(j<filtered.length-2&&L[j+1]<d) j++; const a=filtered[j],b=filtered[j+1],f=(d-L[j])/((L[j+1]-L[j])||1); X.push(a.x+(b.x-a.x)*f); Y.push(a.y+(b.y-a.y)*f); Z.push(a.z+(b.z-a.z)*f); }
+  sm(Y,3,true); sm(Y,3,true); sm(X,2,true); sm(Z,2,true); limitGrades(Y,step); /* v161 : plus de toboggans à 20 % */
+  const G=Y.map((_,i)=>{ const a=Math.max(0,i-1), b=Math.min(n,i+1); return Math.max(-.14,Math.min(.14,(Y[b]-Y[a])/((b-a)*step))); }); sm(G,2);
+  // On remplace la route sans toucher à s, v, running, ni à la caméra
+  route={X,Y,Z,G,n,step,len:tot};let _gain=0;for(let i=1;i<Y.length;i++)_gain+=Math.max(0,Y[i]-Y[i-1]);window._routeGain=_gain; s=oldS; totalDistance=oldTotal; v=oldV; running=oldRunning||resumeAtJunction;
+  /* v73 : la route fusionnée doit aussi exister en 3D — on reconstruit la chaussée
+     et on applique le décor préchargé du tracé complet (préfixe + branche choisie),
+     sans toucher à la position, la vitesse ni la caméra : pas de saut d'image */
   try{
-    route=next;
-    let nextGain=0;
-    for(let i=1;i<next.Y.length;i++)nextGain+=Math.max(0,next.Y[i]-next.Y[i-1]);
-    window._routeGain=nextGain;
-    nav.preserveSettlement=true;nav.currentWay=option.way;nav.currentDir=option.direction||nav.currentDir||1;
-    nav.events=freeRouteEvents(combined,option.way,nav);nav.eventIndex=0;nav.prompt=null;
-    nav.preparedElements=freeWithJunctionArms(Array.isArray(prepared)?prepared:freePrepareScenery(combined,nav),combined,nav);
-    nav.preparedFor=option.way;window._freeCurrentWay=option.way;
-    freeHideRouteArrows();
+    nav.preparedElements=freeWithJunctionArms(freePrepareScenery(combined,nav),combined,nav);nav.preparedFor=option.way;
     makeWorld();
-    if(nav.preparedElements.length)applyOSM(nav.preparedElements,world);
-    const junctionEvent=(nav.events||[]).find(item=>item.distance>route.len-4&&(item.options||[]).length>=2);
-    if(junctionEvent)freeAddJunctionSign(Math.abs(osmNoise(route.len,42))>.5?'stop':'yield');else freeClearJunctionSigns();
-    s=Math.max(0,Math.min(oldS,route.len-.5));totalDistance=oldTotal;v=oldV;running=oldRunning;
-  }catch(_err){
-    /* repli : reconstruction complète, mais le cycliste garde sa vitesse et sa position */
-    s=oldS;totalDistance=oldTotal;v=oldV;running=oldRunning;
-    freeInstallRoute(next,Math.min(event.distance,Math.max(0,next.len-.5)));
-  }
-  for(const ev of nav.events){ if(ev.distance<=event.distance+3){ ev.merged=true; ev.shown=true; ev.choicePending=false; } }
-  nav.prompt=null;
-  try{ drawMiniMap(performance.now(),true); }catch(_err){}
-  if(resumeAtJunction){nav.awaitingChoice=false;running=true;last=performance.now();requestWakeLock();$('pause').textContent='Pause';toast('Direction choisie · la sortie reprend.');buzz(25);}
-  if(plan&&plan.elevationPromise&&!plan.elevationReady){
-    plan.elevationPromise.then(ok=>{
-      if(!ok||freeNavigation!==nav||nav.path!==combined||route!==next||s>=event.distance-25)return;
-      for(let i=1;i<plan.points.length;i++){
-        const elevation=plan.points[i].ele;
-        if(Number.isFinite(elevation)){
-          combined[event.pathIndex+i].ele=elevation;
-          combined[event.pathIndex+i].eleSource=plan.points[i].eleSource;
-        }
-      }
-      freeInstallRoute(sampleRoute(freeRaw(combined,nav)));
-    }).catch(()=>{});
-  }
-  return true;
-}
-function freeInstallRoute(next,distance=s){
-  route=next;s=Math.max(0,Math.min(distance,next.len));
-  let gain=0;
-  for(let i=1;i<next.Y.length;i++)gain+=Math.max(0,next.Y[i]-next.Y[i-1]);
-  window._routeGain=gain;
-  // Mettre à jour uniquement la chaussée, sans reconstruire le terrain ni le décor OSM.
-  if(world){
-    const oldRoad=world.userData.routeRoad;
-    world.userData.routeRoad=makeRouteRoad(world);
-    if(oldRoad){
-      world.remove(oldRoad);
-      oldRoad.traverse(mesh=>{if(mesh.geometry)mesh.geometry.dispose();if(mesh.material)mesh.material.dispose();});
-    }
-    scheduleTerrainAlignment(world);
-  }
-  try{drawMiniMap(performance.now(),true);}catch(_){}
+    applyOSM(nav.preparedElements,world);
+  }catch(err){}
+  // On met à jour le tracé de la navigation pour que l'arrivée au carrefour ne reconstruise plus
+  nav.path=combined; nav.currentWay=option.way; nav.currentDir=option.direction;
+  // On recalcule les événements après le carrefour
+  nav.events=freeRouteEvents(combined,option.way,nav);
+  // On marque l'événement actuel comme déjà traité : quand on arrive au carrefour, on ne refait pas de build
+  nav.eventIndex=0; nav.prompt=null;
+  // v73 : le carrefour déjà tranché ne doit pas re-proposer de flèches après la fusion du tracé
+  for(const ev of nav.events){ if(ev.distance<=event.distance+3){ ev.shown=true; ev.merged=true; ev.selected=ev.options.find(o=>o.way===option.way&&o.direction===option.direction)||ev.planned; } }
+  // Le tracé rouge sur la mini-carte se met à jour tout de suite
+  try{ drawMiniMap(performance.now(), true); }catch(e){}
+  // On garde le décor préchargé pour la branche
+  nav.preparedElements=plan?plan.preparedElements:freePrepareScenery(chosenPoints,nav);
+  nav.preparedFor=option;
+  if(resumeAtJunction){nav.awaitingChoice=false;$('pause').textContent='Pause';last=performance.now();requestWakeLock();toast('Direction choisie · la sortie reprend.');buzz(25);}
 }
 /* v161 : chaque panneau de direction a sa couleur, retracée sur la carte ; la direction tout droit (par défaut) garde toujours le vert d'origine */
 const FREE_OPTION_COLORS=[{a:'#28724f',b:'#145238'},{a:'#2f6fb5',b:'#1d4f8a'},{a:'#c26a10',b:'#8f4d08'},{a:'#7a4bc9',b:'#5a35a0'},{a:'#c04a44',b:'#8f312c'},{a:'#0e7490',b:'#0a5568'}];
 let freeOptionTraces=[];
-let freeChoicePreview=null; /* v173 : direction mémorisée — tracé rouge et décor préparés avant le carrefour */
-function freeClearChoicePreview(){freeChoicePreview=null;}
-function freeChoiceGeo(nav){
-  if(!nav||!freeChoicePreview||freeChoicePreview.nav!==nav||freeChoicePreview.pathRef!==nav.path)return null;
-  return{end:Number(freeChoicePreview.distance)||0,points:freeChoicePreview.points.filter(freeValidCoord).map(point=>[Number(point.lon),Number(point.lat)])};
-}
-function freePreviewChoice(event,option,nav){
-  try{
-    if(!nav||!option||!event)return;
-    const plans=freePrepareJunctionPlans(event,nav);
-    const plan=plans&&plans.find(item=>item.option===option);
-    if(!plan||!Array.isArray(plan.points)||plan.points.length<2)return;
-    /* v173 : le décor de la branche choisie est sélectionné dans le secteur déjà chargé */
-    if(!Array.isArray(plan.preparedElements))plan.preparedElements=freeWithJunctionArms(freePrepareScenery(plan.points,nav),plan.points,nav);
-    freeChoicePreview={nav,pathRef:nav.path,option,points:plan.points,distance:event.distance};
-    drawMiniMap(performance.now(),true);
-  }catch(_){}
-}
 function freeClearOptionTraces(){
   for(const t of freeOptionTraces){try{if(t.layer2d&&rideMap2D)rideMap2D.removeLayer(t.layer2d);}catch(_){}}
   freeOptionTraces=[];
@@ -3540,44 +3104,25 @@ function freeRenderRouteArrows(event,nav){
     const towns=document.createElement('span');towns.className='routeTowns';
     btn.append(arrow,dist,towns);
     option.buttonNode=btn;option.metersNode=dist;option.townsNode=towns;option.cityNode=null;option.cityDistanceNode=null;
-    btn.classList.toggle('selected',event.selected===option);
-    btn.setAttribute('aria-pressed',String(event.selected===option));
     freeSetTownHint(option,nav);if(option.deadEnd){towns.textContent='Impasse';btn.classList.add('deadEndArrow');}
     btn.onclick=()=>{
-      if(freeNavigation!==nav||nav.prompt!==event||s>=event.distance||event.selected===option)return;
-      /* v173 : un appui avant le carrefour mémorise seulement la direction — le cycliste continue de
-         rouler normalement jusqu’au carrefour, où la nouvelle branche est construite sur place. */
-      if(event.distance-s>4){
-        event.selected=option;
-        for(const candidate of event.options){
-          candidate.buttonNode.classList.toggle('selected',candidate===option);
-          candidate.buttonNode.setAttribute('aria-pressed',String(candidate===option));
-        }
-        /* v176 : la branche choisie est installée pendant l’approche (chaussée, décor, tracé) au lieu
-           d’attendre le carrefour — la traversée ne bloque plus une image. Continuer tout droit sur un
-           carrefour intermédiaire ne change rien : on mémorise seulement la direction. */
-        const followsRoute=event.roundabout?(option&&freePathExitsRoundabout(nav,event,option)):(option===event.planned);
-        if(!followsRoute||event.distance>=route.len-1){
-          if(freeApplyChoiceImmediately(event,option,nav)){
-            for(const candidate of event.options){
-              candidate.buttonNode.classList.toggle('selected',candidate===option);
-              candidate.buttonNode.setAttribute('aria-pressed',String(candidate===option));
-            }
-            toast('Direction enregistrée · la route et le décor sont prêts pour le carrefour.');buzz(25);
-            return;
-          }
-          freePreviewChoice(event,option,nav); /* repli : tracé seul, le décor suivra au carrefour */
-        }
-        toast('Direction enregistrée · tu continues jusqu’au carrefour.');buzz(25);
-        return;
+      event.selected=option;
+      freeClearOptionTraces(); /* v161 : le tracé choisi devient la route rouge suivie */
+      for(const button of el.querySelectorAll('button'))button.classList.toggle('selected',button===btn);
+      const plan=event.continuations&&event.continuations.find(item=>item.option===option);
+      if(plan&&!plan.elevationPromise){
+        freeSeedElevation(plan.points,nav,event.distance);
+        plan.elevationPromise=freeFetchElevations([plan.points],nav).then(ok=>{
+          if(!ok)toast('Altitude indisponible pour cette branche; vérifie la connexion.');
+          if(ok&&event.selected===option&&route)freeApplyChoiceImmediately(event,option,nav);
+          return ok;
+        });
       }
-      if(freeApplyChoiceImmediately(event,option,nav)){
-        for(const candidate of event.options){
-          candidate.buttonNode.classList.toggle('selected',candidate===option);
-          candidate.buttonNode.setAttribute('aria-pressed',String(candidate===option));
-        }
-        toast('Direction choisie.');buzz(25);
-      }
+      nav.preparedElements=plan?plan.preparedElements:freePrepareScenery(option.points,nav);
+      nav.preparedFor=option;
+      freeApplyChoiceImmediately(event,option,nav);
+      if(nav.awaitingChoice){nav.awaitingChoice=false;event.waiting=false;running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();toast('Direction choisie · la sortie reprend.');buzz(25);}
+      else toast('Direction choisie · décor et altitude préchargés depuis le secteur.');
     };
     el.appendChild(btn);
   }
@@ -3586,13 +3131,7 @@ function freeRenderRouteArrows(event,nav){
 }
 function freePrepareJunctionPlans(event,nav){
   if(event.continuations)return event.continuations;
-  event.continuations=event.options.map(option=>({option,points:freeExtendPathFromOption(option,nav)}));
-  const plans=event.continuations;
-  const elevationPromise=freeFetchElevations(plans.map(plan=>plan.points),nav).then(ok=>{
-    for(const plan of plans)plan.elevationReady=ok;
-    return ok;
-  }).catch(()=>false);
-  for(const plan of plans)plan.elevationPromise=elevationPromise;
+  event.continuations=event.options.map(option=>{const points=freeExtendPathFromOption(option,nav);return{option,points,preparedElements:freePrepareScenery(points,nav)};});
   return event.continuations;
 }
 function freeArrivalHeading(points,index,nav){if(!points||index<1)return{x:0,z:1};let j=index-1,covered=freeDistance(points[j],points[index],nav);while(j>0&&covered<12){covered+=freeDistance(points[j-1],points[j],nav);j--;}const a=freeProject(points[j],nav.center),b=freeProject(points[index],nav.center),dx=b.x-a.x,dz=b.z-a.z,n=Math.hypot(dx,dz)||1;return{x:dx/n,z:dz/n};}
@@ -3621,7 +3160,7 @@ function freeRouteEvents(points,way,nav){
         const options=sideArms.concat(exits);
         let planned=null;
         for(const option of options)if(!option.deadEnd&&(!planned||Math.abs(option.angle)<Math.abs(planned.angle)))planned=option;
-        events.push({key,distance,pathIndex:i,options,selected:null,planned,shown:false,roundabout:true,ringId:ringIncident.way.id});
+        events.push({key,distance,options,selected:null,planned,shown:false,roundabout:true,ringId:ringIncident.way.id});
         activeRing=true;
         continue;
       }
@@ -3641,7 +3180,7 @@ function freeRouteEvents(points,way,nav){
       }
       planned=best?best.option:null;
     }
-    events.push({key,distance,pathIndex:i,options,selected:null,planned,shown:false});
+    events.push({key,distance,options,selected:null,planned,shown:false});
   }
   return events;
 }
@@ -3678,7 +3217,7 @@ function freeAddJunctionSign(kind){
   freeClearJunctionSigns();
   const d=Math.max(6,route.len-15),p=at(d),q=at(Math.min(route.len-1,d+2));
   let tx2=q[0]-p[0],tz2=q[2]-p[2];const l2=Math.hypot(tx2,tz2)||1;tx2/=l2;tz2/=l2;
-  const white=new THREE.MeshBasicMaterial({color:0xffff00}),red=new THREE.MeshStandardMaterial({color:0xc81e1e,roughness:0.5}),poleMat=new THREE.MeshStandardMaterial({color:0x333333,roughness:0.6}); /* DEBUG v179 marquage stop/cédez = jaune */
+  const white=new THREE.MeshBasicMaterial({color:0xffffff}),red=new THREE.MeshStandardMaterial({color:0xc81e1e,roughness:0.5}),poleMat=new THREE.MeshStandardMaterial({color:0x333333,roughness:0.6});
   /* Poteau + panneau à droite de la route, face au cycliste */
   const group=new THREE.Group();
   group.position.set(p[0]-tz2*5.2,p[1],p[2]+tx2*5.2);
@@ -3850,38 +3389,24 @@ function freeReverseCurrent(nav=freeNavigation){
   const here=at(s),snap={lat:nav.center.lat-here[2]/nav.kz,lon:nav.center.lon+here[0]/nav.kx,ele:here[1],nodeId:null},way=nav.currentWay.pts;
   let best={d:Infinity,index:0,t:0};
   for(let i=0;i<way.length-1;i++){const a=freeProject(way[i],nav.center),b=freeProject(way[i+1],nav.center),dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((here[0]-a.x)*dx+(here[2]-a.z)*dz)/(dx*dx+dz*dz||1))),x=a.x+dx*t,z=a.z+dz*t,d=(x-here[0])**2+(z-here[2])**2;if(d<best.d)best={d,index:i,t};}
-  if(!Number.isFinite(best.d)||best.d>15*15)return false;
+  if(!Number.isFinite(best.d)||best.d>100*100)return false;
   const direction=-(nav.currentDir||1),points=[snap],start=direction<0?best.index:best.index+1;
-  if(!freeCanTravel(nav.currentWay,direction))return false;
   for(let i=start;i>=0&&i<way.length;i+=direction){const p=way[i];if(freeDistance(points[points.length-1],p,nav)>.05)points.push(p);if(i!==start&&nav.junctions.has(freeNodeKey(p))&&freeInsideRadius(p,nav))break;}
   if(points.length<2)return false;
-  const branch=freeExtendPathFromOption({way:nav.currentWay,direction,points},nav);
-  let length=0;
-  for(let i=1;i<branch.length;i++){
-    length+=freeDistance(branch[i-1],branch[i],nav);
-    if(!Number.isFinite(branch[i].ele)){
-      const xy=freeProject(branch[i],nav.center);
-      const terrain=window._terrain?.userData.demLoaded?terrainSample(window._terrain,xy.x,xy.z,true):null;
-      branch[i].ele=Number.isFinite(terrain)&&length>25?terrain+.15:here[1]-(here[3]||0)*Math.min(80,length);
-    }
-  }
-  if(length<1)return false;
-  const next=sampleRoute(freeRaw(branch,nav));
-  const from=rideHeading();
-  nav.prompt=null;nav.path=branch;nav.currentDir=direction;
-  nav.events=freeRouteEvents(branch,nav.currentWay,nav);nav.eventIndex=0;
-  window._rideDir=1;
-  freeInstallRoute(next,0);freeHideRouteArrows();freeClearJunctionSigns();
-  startRideTurn(from,Math.min(850,Math.max(120,next.len/Math.max(1,v)*650)));
+  /* v73 : on complète les altitudes manquantes à partir de l'altitude et de la pente actuelles,
+     sinon la route inversée plonge vers 0 m et le cycliste semble descendre au demi-tour */
+  freeSeedElevation(points,nav,s);
+  const _ob=at(s-2),_oa=at(s+2);const _uFrom=Math.atan2(_oa[0]-_ob[0],_oa[2]-_ob[2]); /* v126 : angle actuel pour animer le demi-tour */
+  nav.reloading=false;nav.prompt=null;nav.lastReloadAttempt=Date.now();freeBuildLeg(nav.currentWay,points,nav,true,direction);freeHideRouteArrows();
+  window._uTurn={t0:performance.now(),dur:2600,from:_uFrom}; /* v126 : le cycliste effectue visiblement son demi-tour avant de repartir */
   toast('Demi-tour : retour sur la route OSM en sens inverse.');return true;
 }
 async function freeReloadSectorAtCurrent(nav){
   if(!nav||nav.reloading||freeNavigation!==nav)return;nav.reloading=true;nav.lastReloadAttempt=Date.now();
-  const pathAtRequest=nav.path;
   const p=at(s),q=at(Math.min(route.len,s+60)),hx=q[0]-p[0],hz=q[2]-p[2],hl=Math.hypot(hx,hz)||1,shift=nav.radius*.3,center={lat:nav.center.lat-(p[2]+hz/hl*shift)/nav.kz,lon:nav.center.lon+(p[0]+hx/hl*shift)/nav.kx};
   toast('Chargement du prochain secteur autour de ta position…');
   try{
-    const result=await freeFetchSector(center,nav.radius,()=>{});if(freeNavigation!==nav||nav.path!==pathAtRequest)return;const live=at(s),liveGeo={lat:nav.center.lat-live[2]/nav.kz,lon:nav.center.lon+live[0]/nav.kx},target=freeProject(liveGeo,center);
+    const result=await freeFetchSector(center,nav.radius,()=>{});if(freeNavigation!==nav)return;const live=at(s),liveGeo={lat:nav.center.lat-live[2]/nav.kz,lon:nav.center.lon+live[0]/nav.kx},target=freeProject(liveGeo,center);
     const built=result.graphData,nextNav={center,kx:111320*Math.cos(center.lat*Math.PI/180),kz:110540,radius:result.radius,elements:result.elements,graph:built.graph,junctions:built.junctions,localities:built.localities,sceneryIndex:built.sceneryIndex,remark:result.remark||'',active:true,preparedElements:null,events:[],eventIndex:0,currentDir:nav.currentDir||1,refreshCount:(nav.refreshCount||0)+1,destination:nav.destination||null};
     freeCarryLocalities(nav.localities,nextNav);
     let best=null,bestD=Infinity,bestSegment=0,bestT=0,bestSnap=null;
@@ -3891,12 +3416,10 @@ async function freeReloadSectorAtCurrent(nav){
     const chosen=options.reduce((bestOption,item)=>{let score;if(nav.destination){const t=freeProject(nav.destination,center),f=freeProject(item.points[item.points.length-1],center);score=-Math.hypot(t.x-f.x,t.z-f.z);}else{const h=freeHeading(item.points,nextNav);score=h.x*heading.x+h.z*heading.z;}return !bestOption||score>bestOption.score?{item,score}:bestOption},null);
     if(!chosen)throw new Error('aucune route connectée n’a été trouvée pour continuer');
     const continued=freeExtendPathFromOption(chosen.item,nextNav);freeSeedElevation(continued,nextNav,s);await freeFetchElevations([continued],nextNav);nextNav.active=true;
-    if(freeNavigation!==nav||nav.path!==pathAtRequest||nav.prompt)return;
     freeNavigation=nextNav;window._freeNavigation=nextNav;window._freeSectorCache=nextNav;window._freeGraph=nextNav.graph;window._freeCurrentWay=chosen.item.way;freeCenter=center;freeRadiusUsed=result.radius;proj={la:center.lat,lo:center.lon,kx:nextNav.kx,kz:nextNav.kz};
     if(window._freeCircle)window._freeCircle.setLatLng([center.lat,center.lon]).setRadius(result.radius);if(freeMarker)freeMarker.setLatLng([center.lat,center.lon]);
     freeBuildLeg(chosen.item.way,continued,nextNav,true,chosen.item.direction);toast('Nouveau secteur OSM chargé · poursuite du parcours.');
-  }catch(error){if(freeNavigation===nav&&nav.path===pathAtRequest)toast('Rechargement du secteur impossible : '+(error.message||error));}
-  finally{nav.reloading=false;}
+  }catch(error){if(freeNavigation===nav){nav.reloading=false;toast('Rechargement du secteur impossible : '+(error.message||error));}}
 }
 function freeSelectStart(optionDirection){
   const nav=freeNavigation;if(!nav||!nav.awaitingStart)return;const option=nav.startOptions.find(item=>item.direction===Number(optionDirection));
@@ -3918,13 +3441,9 @@ function freeAdvanceNavigation(){
   const current=at(s),radial=Math.hypot(current[0],current[2]),reloadThreshold=Math.max(550,nav.radius*.42);
   freeUpdateOnewayChip(nav); /* v159 : panneau sens unique de la voie courante */
   nav.currentGeo={lat:nav.center.lat-current[2]/nav.kz,lon:nav.center.lon+current[0]/nav.kx};
+  if(nav.radius-radial<=reloadThreshold&&!nav.reloading&&Date.now()-(nav.lastReloadAttempt||0)>30000)freeReloadSectorAtCurrent(nav);
   while(nav.eventIndex<nav.events.length){const event=nav.events[nav.eventIndex],remaining=event.distance-s;
-    if(remaining<=350&&remaining>0&&!event.shown){ /* v167 : plus de demande à chaque carrefour — l'itinéraire principal préchargé continue tout droit ; panneaux seulement sur un vrai embranchement ou destination guidée */
-      event.shown=true;
-      const viable=(event.options||[]).filter(o=>o&&!o.deadEnd);
-      event.choicePending=!!(nav&&nav.destination)||viable.length>1;
-      if(event.choicePending){nav.prompt=event;freePrepareJunctionPlans(event,nav);freeRenderRouteArrows(event,nav);buzz(35);}
-    }
+    if(remaining<=350&&remaining>0&&!event.shown){event.shown=true;nav.prompt=event;freePrepareJunctionPlans(event,nav);freeRenderRouteArrows(event,nav);buzz(35);}
     if(event.shown){
       if(!Number.isFinite(event.lastHintS)||s-event.lastHintS>=20){
         for(const option of event.options)freeSetTownHint(option,nav);
@@ -3933,23 +3452,29 @@ function freeAdvanceNavigation(){
       const metres=freeRoundJunctionMeters(remaining);
       for(const o of event.options)if(o.metersNode&&o.metersNode._m!==metres){o.metersNode._m=metres;o.metersNode.textContent=metres+' m'}
     }
-    if(remaining>.02)break;
-    const chosen=event.selected||event.planned||freeGuidedBest(event.options,nav)||freeChooseStraight(event.options)
-      ||event.options.reduce((best,option)=>!best||(best.deadEnd&&!option.deadEnd)||(!!best.deadEnd===!!option.deadEnd&&Math.abs(option.angle)<Math.abs(best.angle))?option:best,null);
-    const followsRoute=event.roundabout?(chosen&&freePathExitsRoundabout(nav,event,chosen)):(chosen===event.planned);
-    if(chosen&&!event.merged&&(!followsRoute||event.distance>=route.len-.25)&&freeApplyChoiceImmediately(event,chosen,nav))continue;
-    freeHideRouteArrows();freeClearJunctionSigns();
+    if(remaining>.25)break;
+    const chosen=event.selected||event.planned||(nav.destination?freeGuidedBest(event.options,nav):null)||freeChooseStraight(event.options);
+    if(!chosen&&event.options.length){const overshoot=Math.max(0,s-event.distance);totalDistance=Math.max(0,totalDistance-overshoot);s=event.distance;v=0;running=false;nav.awaitingChoice=true;event.waiting=true;nav.prompt=event;const label=$('junctionDistance');if(label){label.textContent='Choisis une direction pour repartir';label.classList.add('waiting')}toast('Carrefour sans tout droit : choisis une direction pour repartir.');buzz([70,50,70]);return;}
+    freeHideRouteArrows();
+    /* v75 : rond-point — on applique la sortie choisie (ou la plus directe) en traversant l'anneau,
+       sans jamais bloquer le cycliste sur le rond-point ni lui redemander son chemin dessus */
+    if(event.roundabout&&chosen){
+      nav.prompt=null;
+      nav.currentWay=chosen.way;nav.currentDir=chosen.direction;window._freeCurrentWay=chosen.way;
+      if(event.merged||freePathExitsRoundabout(nav,event,chosen)){nav.eventIndex++;return;}
+      const plan=event.continuations&&event.continuations.find(item=>item.option===chosen);
+      const points=plan?plan.points:freeExtendPathFromOption(chosen,nav);
+      freeSeedElevation(points,nav,event.distance);
+      freeBuildLeg(chosen.way,points,nav,true,chosen.direction,plan?plan.preparedElements:null);
+      for(let index=0;index<nav.events.length;index++){const ev=nav.events[index];if(ev.roundabout&&ev.key===event.key&&ev.distance<=3){ev.shown=true;ev.selected=chosen;ev.merged=true;nav.eventIndex=index+1;break;}}
+      nav.prompt=null;freeHideRouteArrows();
+      return;
+    }
+    if(chosen&&chosen!==event.planned){const plan=event.continuations&&event.continuations.find(item=>item.option===chosen),points=plan?plan.points:freeExtendPathFromOption(chosen,nav);freeSeedElevation(points,nav,event.distance);nav.currentWay=chosen.way;nav.currentDir=chosen.direction;nav.preparedElements=plan?plan.preparedElements:freePrepareScenery(points,nav);freeBuildLeg(chosen.way,points,nav,true,chosen.direction,nav.preparedElements);return;}
     if(chosen){nav.currentWay=chosen.way;nav.currentDir=chosen.direction;window._freeCurrentWay=chosen.way;}
     nav.prompt=null;nav.eventIndex++;
   }
-  if(!nav.prompt&&nav.radius-radial<=reloadThreshold&&!nav.reloading&&Date.now()-(nav.lastReloadAttempt||0)>30000)freeReloadSectorAtCurrent(nav);
-  if(s>=route.len-.25){
-    const endP=nav.path&&nav.path.at(-1);
-    if(endP&&!nav.junctions.has(freeNodeKey(endP))&&freeInsideRadius(endP,nav)&&freeReverseCurrent(nav))return;
-    if(nav.reloading)return;
-    if(Date.now()-(nav.lastReloadAttempt||0)>12000){freeReloadSectorAtCurrent(nav);return;}
-    running=false;v=0;$('pause').textContent='Reprendre';toast('Aucune continuation OpenStreetMap disponible à cet endroit.');
-  }
+  if(s>=route.len-.25){const lastOptions=nav.events.length?nav.events[nav.events.length-1].options:null;const endP=nav.path&&nav.path[nav.path.length-1];if(endP&&!nav.junctions.has(freeNodeKey(endP))&&freeInsideRadius(endP,nav)){toast('Impasse : demi-tour.');doTurnAround();return;} /* v157 */let chosen=lastOptions?(freeChooseStraight(lastOptions)||lastOptions.filter(o=>!o.openEnd&&!o.deadEnd).reduce((c,o)=>!c||Math.abs(o.angle)<Math.abs(c.angle)?o:c,null)):null;if(nav.destination&&lastOptions)chosen=freeGuidedBest(lastOptions,nav)||chosen;if(chosen&&!chosen.openEnd){freeBuildLeg(chosen.way,chosen.points,nav,true,chosen.direction);return;}if(nav.reloading)return;if(Date.now()-(nav.lastReloadAttempt||0)>12000){freeReloadSectorAtCurrent(nav);return;}running=false;v=0;toast('Aucune continuation OpenStreetMap disponible à ce carrefour.');}
 }
 async function freeFetchSector(center,radius,onProgress=()=>{}){
   const servers=['https://overpass.openstreetmap.fr/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass-api.de/api/interpreter'];
@@ -3961,7 +3486,7 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
        les voies eau/rail/tunnel passent dans l'union du décor (avant, écrites hors union, leur résultat était perdu) ;
        quota de routes progressif selon le rayon pour éviter les réponses géantes en zone rurale élargie */
     const roadCap=r<=5000?30000:(r<=10000?20000:12000);
-    const q=`[out:json][timeout:60];(way[\"highway\"](around:${r},${center.lat},${center.lon}););out body geom ${roadCap};(way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});relation["leisure"="stadium"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 12000;(way[\"building\"](around:${r},${center.lat},${center.lon});relation[\"building\"][\"type\"=\"multipolygon\"](around:${r},${center.lat},${center.lon}););out body geom 20000; /* v168 : vrais bâtiments OSM, quota dédié */node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
+    const q=`[out:json][timeout:60];(way[\"highway\"](around:${r},${center.lat},${center.lon}););out body geom ${roadCap};(way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});relation["leisure"="stadium"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 9000;node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
     try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000); /* v155 : 45 s par serveur */let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const seenEls=new Set();const elements=data.elements.filter(e=>{if(!e||!['way','node'].includes(e.type))return false;const k=e.type+'/'+e.id;if(seenEls.has(k))return false;seenEls.add(k);return true;}); /* v159 : dédoublonnage (tunnelways présents dans les deux out) */onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
     catch(error){last=error&&error.name==='AbortError'?host+' délai dépassé':(error.message||String(error));onProgress(Math.min(.12+attempt*.10,.42),'Serveur OSM indisponible · nouvel essai…');}
   }
@@ -3970,7 +3495,6 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
 window._freeGraph=null;window._freeCurrentWay=null;window._freeSectorCache=null;window._freeNavigation=null;
 window._clearFreeNavigation=freeClearStartChoices;
 if($('startFreeRide'))$('startFreeRide').onclick=async()=>{
-  ++gpxLoadRevision;
   const go=$('go');go.disabled=true;if(typeof mapState!=='undefined')mapState.activeTown=null;freeClearStartChoices();freeHideRouteArrows();$('freeInfo').textContent='Chargement des routes et du décor dans le cercle…';prog(.01,'Recherche des routes et du décor dans la zone sélectionnée…');
   if(!freeCenter||!Number.isFinite(Number(freeCenter.lat))||!Number.isFinite(Number(freeCenter.lon)))freeCenter={lat:49.4736,lon:-1.5125};
   const center={lat:Number(freeCenter.lat),lon:Number(freeCenter.lon)},radius=freeMapRadius();
@@ -3986,39 +3510,29 @@ if($('startFreeRide'))$('startFreeRide').onclick=async()=>{
     const startOptions=freeStartingDirections(best,bestSegment,bestT,bestSnap,nav);
     if(!startOptions.length)throw new Error('La route la plus proche ne permet pas de partir dans un sens praticable. Choisis un point près d’une route traversante.');
     for(const option of startOptions)option.fullPoints=freeExtendPathFromOption(option,nav);
-    const hasElevation=await freeFetchElevations(startOptions.map(option=>option.fullPoints),nav,(fraction,source)=>{if(fraction>=0)prog(.68+fraction*.06,'Récupération du profil altimétrique · '+source+'…');});
+    const hasElevation=await freeFetchElevations(startOptions.map(option=>option.fullPoints),nav,fraction=>{if(fraction>=0)prog(.68+fraction*.06,'Récupération du profil altimétrique…');});
     for(const option of startOptions)option.preparedElements=freePrepareScenery(option.fullPoints,nav);
     nav.startOptions=startOptions;nav.previewOption=startOptions.find(option=>option.direction>0)||startOptions[0];nav.active=true;nav.awaitingStart=true;nav.lastReloadAttempt=Date.now();freeUpdateStartArrow(); /* v121 : la flèche de la carte reflète le sens de départ */
-    if(!hasElevation)toast('Profil altimétrique indisponible · vérifie la connexion.');
+    if(!hasElevation)toast('Profil altimétrique indisponible · vérifie la connexion à Open-Meteo.');
     proj={la:center.lat,lo:center.lon,kx:nav.kx,kz:nav.kz};freeBuildLeg(nav.previewOption.way,nav.previewOption.fullPoints,nav,false,nav.previewOption.direction,nav.previewOption.preparedElements);
-    $('freeInfo').textContent+=` · ${startOptions.length} sens préparé${startOptions.length>1?'s':''} · ${hasElevation?'profil '+nav.elevationSource+(nav.elevationSource==='IGN'?'':' (estimé)'):'altitude indisponible'} · touche la flèche sur la carte pour inverser le sens`;$('turnAround').disabled=true;prog(.82,'Parcours préparé dans les deux sens disponibles · finalisation du décor…');
+    $('freeInfo').textContent+=` · ${startOptions.length} sens préparé${startOptions.length>1?'s':''} · ${hasElevation?'profil altimétrique chargé':'altitude indisponible'} · touche la flèche sur la carte pour inverser le sens`;$('turnAround').disabled=true;prog(.82,'Parcours préparé dans les deux sens disponibles · finalisation du décor…');
   }catch(error){go.disabled=true;$('freeInfo').textContent='Chargement du secteur impossible : '+(error.message||error);prog(.02,'Chargement du secteur impossible : '+(error.message||error));}
 };
 if($('startForward'))$('startForward').onclick=()=>freeSelectStart(1);
 if($('startReverse'))$('startReverse').onclick=()=>freeSelectStart(-1);
 
-function rideHeading(){
-  const b=at(s-2),a=at(s+2);
-  return Math.atan2(a[0]-b[0],a[2]-b[2])+((window._rideDir||1)<0?Math.PI:0);
-}
-function startRideTurn(from,dur=850){
-  window._uTurn={t0:performance.now(),dur,from,reach:Math.min(2.5,Math.max(0,v)*dur/1000/Math.PI)};
-  window._leanSmooth=0;
-}
-function doTurnAround(){
-  if(!route||window._uTurn)return;
+function doTurnAround(){ /* v127+v128 : demi-tour — route OSM inversée si possible, sinon VRAI demi-tour en demi-cercle sur le parcours démo */
   if(freeReverseCurrent())return;
   const nav=window._freeNavigation;
-  if(nav&&nav.active){toast('Demi-tour indisponible sur cette voie.');return;}
-  const oldDir=window._rideDir||1;
-  const available=oldDir>0?s:route.len-s;
-  if(available<.25){toast('Pas de parcours dans ce sens.');return;}
-  const from=rideHeading();window._rideDir=-oldDir;
-  startRideTurn(from,Math.min(850,Math.max(120,available/Math.max(1,v)*650)));
+  if(nav&&nav.active){toast('Demi-tour indisponible : aucune route OSM adaptée à cet endroit.');return;}
+  if(!route)return;
+  const oldDir=window._rideDir||1;window._rideDir=oldDir*-1;
+  const b=at(s-2),a=at(s+2),base=Math.atan2(a[0]-b[0],a[2]-b[2]);
+  window._uTurn={t0:performance.now(),dur:2600,from:base+(oldDir<0?Math.PI:0)}; /* le cycliste pivote visiblement sur lui-même */
   toast(window._rideDir<0?'Demi-tour : retour dans l’autre sens.':'Sens du parcours rétabli.');
 }
 if($('turnAround'))$('turnAround').onclick=()=>{doTurnAround()};
-window._freeNavTest={freeMakeGraph,freeBuildOptionsAt,freeStartArms,freeStartingDirections,freeExtendPathFromOption,freeFetchElevations,freeRaw,freeRouteEvents,freeAdvanceNavigation,freeRenderRouteArrows,freeRoundJunctionMeters,freeSeedElevation,freeTownAhead,freeTownAheadInfo,freeSetTownHint,freeCarryLocalities,freeElementNearPath,freePrepareScenery,freeReverseCurrent,freeReloadSectorAtCurrent,freeSelectStart,freeChooseStraight,freeApplyChoiceImmediately,freeArmHasContinuation,freeOptionHasContinuation,freeHeading,freeArrivalHeading,freePreloadAhead,freeAheadInfo:()=>({busy:freeAheadBusy,retry:freeAheadRetry,error:freeAheadError,current:!!freeAhead&&freeAhead.nav===window._freeNavigation,count:freeAhead?freeAhead.points.length:0,last:freeAhead?freeAhead.points[freeAhead.points.length-1]:null,endsAtJunction:freeAhead?freeAhead.endsAtJunction:null,endsAtChoice:freeAhead?freeAhead.endsAtChoice:null})};
+window._freeNavTest={freeMakeGraph,freeBuildOptionsAt,freeStartArms,freeStartingDirections,freeExtendPathFromOption,freeFetchElevations,freeRaw,freeRouteEvents,freeAdvanceNavigation,freeRenderRouteArrows,freeRoundJunctionMeters,freeSeedElevation,freeTownAhead,freeTownAheadInfo,freeSetTownHint,freeCarryLocalities,freeElementNearPath,freePrepareScenery,freeReverseCurrent,freeReloadSectorAtCurrent,freeSelectStart,freeChooseStraight,freeApplyChoiceImmediately,freeArmHasContinuation,freeOptionHasContinuation,freeHeading,freeArrivalHeading};
 applyRiderStyleToInputs();r4ApplyCyclistStyle(rider.userData,riderStyle);r4SetBikeModel(rider.userData,riderStyle.bikeModel||'classic');if(riderStyle.riderWeight>=40&&riderStyle.riderWeight<=200)MASS=riderStyle.riderWeight; const cust=$('customize'); if(cust)cust.addEventListener('toggle',()=>{if(cust.open)setTimeout(drawPreview,50)});
 
 /* ---------- Aperçu 3D réel sur la page paramètres ---------- */
@@ -4087,18 +3601,20 @@ $('resetStyle').onclick=()=>{for(const key of Object.keys(defaultRiderStyle))upd
 /* ---------- Parcours ---------- */
 let route=null,world=null,proj=null,s=0,v=0,running=false,totalDistance=0;
 function sm(values,width,preserveEnds=false){const source=values.slice();for(let i=0;i<values.length;i++){if(preserveEnds&&(i===0||i===values.length-1))continue;let sum=0,count=0;for(let offset=-width;offset<=width;offset++){const k=i+offset;if(k>=0&&k<values.length){sum+=source[k];count++}}values[i]=sum/count}}
-function smoothRouteAltitude(values,step,metres){
-  const src=values.slice(),n=src.length-1,r=Math.min(n,Math.max(1,Math.round(metres/step)));
-  // Filtre symétrique avec prolongement par réflexion : mêmes pentes dans
-  // les deux sens et maintien exact de l'altitude aux extrémités.
-  const z=i=>i<0?2*src[0]-src[-i]:i>n?2*src[n]-src[2*n-i]:src[i];
-  for(let i=1;i<n;i++){
-    let sum=0;
-    for(let j=-r;j<=r;j++)sum+=z(i+j)*(r+1-Math.abs(j));
-    values[i]=sum/((r+1)**2);
+function limitGrades(values,step,maxG=.13){ /* v161 : anti-toboggan — le DEM invente des rampes à 20 % ; on écrête la pente du profil à 13 % max */
+  if(!(step>0)||values.length<2)return;
+  for(let pass=0;pass<8;pass++){
+    let changed=false;
+    for(let i=1;i<values.length;i++){
+      const g=(values[i]-values[i-1])/step;
+      if(g>maxG){values[i]-=(g-maxG)*step;changed=true;}
+      else if(g<-maxG){values[i]+=(-maxG-g)*step;changed=true;}
+    }
+    if(!changed)break;
   }
+  sm(values,2,true);
 }
-function sampleRoute(raw){
+function build(raw){
   if(raw.length<2)throw new Error('La trace doit contenir au moins deux points.');
   const filtered=[];for(const p of raw){if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||!Number.isFinite(p.z))continue;const prev=filtered[filtered.length-1];if(!prev||Math.hypot(p.x-prev.x,p.z-prev.z)>.05)filtered.push(p)}
   if(filtered.length<2)throw new Error('La trace ne contient pas assez de points distincts.');
@@ -4106,16 +3622,10 @@ function sampleRoute(raw){
   const tot=L[L.length-1];if(tot<1)throw new Error('Le parcours est trop court (moins d’un mètre).');if(tot>600000)throw new Error('Cette version accepte les traces jusqu’à 600 km.');
   const n=Math.max(2,Math.ceil(tot/ST)),step=tot/n,X=[],Y=[],Z=[];let j=0;
   for(let i=0;i<=n;i++){const d=i*step;while(j<filtered.length-2&&L[j+1]<d)j++;const a=filtered[j],b=filtered[j+1],f=(d-L[j])/((L[j+1]-L[j])||1);X.push(a.x+(b.x-a.x)*f);Y.push(a.y+(b.y-a.y)*f);Z.push(a.z+(b.z-a.z)*f)}
-  const estimated=filtered.some(p=>p.estimated);
-  smoothRouteAltitude(Y,step,estimated?145:34);sm(X,2,true);sm(Z,2,true);
-  const span=Math.max(1,Math.round(25/step));
-  const G=Y.map((_,i)=>{const a=Math.max(0,i-span),b=Math.min(n,i+span);return (Y[b]-Y[a])/((b-a)*step);});
-  return {X,Y,Z,G,n,step,len:tot};
-}
-function build(raw){
-  const next=sampleRoute(raw),{Y}=next;
+  sm(Y,3,true);sm(Y,3,true);sm(X,2,true);sm(Z,2,true);limitGrades(Y,step); /* v161 : plus de toboggans à 20 % */
+  const G=Y.map((_,i)=>{const a=Math.max(0,i-1),b=Math.min(n,i+1);return Math.max(-.14,Math.min(.14,(Y[b]-Y[a])/((b-a)*step)))});sm(G,2);
   const generation=++osmTok,keepSettlement=!!(window._freeNavigation&&window._freeNavigation.active&&window._freeNavigation.preserveSettlement);resetSceneryData();resetMapState(keepSettlement);cameraState.ready=false;
-  route=next;window._rideDir=1;window._uTurn=null;let _gain=0;for(let i=1;i<Y.length;i++)_gain+=Math.max(0,Y[i]-Y[i-1]);window._routeGain=_gain;s=0;v=0;totalDistance=0;running=false;makeWorld();place(true);drawMiniMap(performance.now(),true);
+  route={X,Y,Z,G,n,step,len:tot};let _gain=0;for(let i=1;i<Y.length;i++)_gain+=Math.max(0,Y[i]-Y[i-1]);window._routeGain=_gain;s=0;v=0;totalDistance=0;running=false;makeWorld();place(true);drawMiniMap(performance.now(),true);
   $('pause').textContent='Pause';
   if(proj){
     const thisRoute=route,freeMode=!!(window._freeNavigation&&window._freeNavigation.active);$('go').disabled=true;if(freeMode)$('skipScenery').classList.add('hide');else $('skipScenery').classList.remove('hide');prog(freeMode ? .74 : 0,freeMode?'Construction du parcours et du décor OSM préchargé…':'Préparation du décor OpenStreetMap…');
@@ -4149,65 +3659,11 @@ function disposeWorld(group){
   group.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of(Array.isArray(o.material)?o.material:[o.material])){materials.add(m);if(m.map&&m.map!==roadTexture&&m.map!==osmFacadeTexture)textures.add(m.map)}});
   geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());S.remove(group);
 }
-/* v173 : zones de carrefour du parcours suivi — le marquage blanc s’interrompt à l’entrée
-   des branches, sinon la route principale paraît close et barre le carrefour. */
-function routeJunctionZones(){
-  const nav=typeof window!=='undefined'&&window._freeNavigation;
-  if(!nav||!nav.active||!nav.junctions||!nav.path||!nav.center)return[];
-  const zones=[];
-  for(const point of nav.path){
-    const node=nav.junctions.get(freeNodeKey(point));
-    if(!node)continue;
-    const xy=freeProject(point,nav.center);
-    let half=0;
-    for(const incident of node.incidents||[]){
-      const way=incident&&incident.way;
-      if(!way)continue;
-      const width=osmRoadWidth(way.tags||{});
-      if(Number.isFinite(width)&&width>half)half=width;
-    }
-    /* v175 : la zone doit couvrir toute l’ouverture de la branche (le nœud OSM est souvent décalé de
-       quelques mètres par rapport à l’axe de la chaussée) — sinon la ligne blanche barre l’entrée. */
-    zones.push({x:xy.x,z:xy.z,r:Math.min(22,Math.max(12,half+9))});
-  }
-  return zones;
-}
-function nearJunctionMark(x,z,zones){
-  for(const zone of zones||[])if(Math.hypot(x-zone.x,z-zone.z)<zone.r)return true;
-  return false;
-}
-/* v175 : un segment de marquage qui traverse la zone d’un carrefour est supprimé en entier —
-   sinon la ligne blanche de la route suivie referme l’entrée de la route latérale. */
-function junctionMarkCrosses(ax,az,bx,bz,zones){
-  for(const zone of zones||[]){
-    const dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz;
-    const t=l2>0?Math.max(0,Math.min(1,((zone.x-ax)*dx+(zone.z-az)*dz)/l2)):0;
-    if(Math.hypot(zone.x-(ax+dx*t),zone.z-(az+dz*t))<zone.r)return true;
-  }
-  return false;
-}
-/* v178 : les marquages d'une annexe qui FRANCHIT le tracé sans nœud OSM partagé n'ont aucune
-   zone de carrefour — on coupe aussi tout marquage dont un point survole la chaussée suivie. */
-function markOnRoute(ax,az,bx,bz){
-  for(const t of[0,.25,.5,.75,1]){
-    const near=nearestOnRoute(ax+(bx-ax)*t,az+(bz-az)*t);
-    if(near&&near.dist2<11*11)return true;
-  }
-  return false;
-}
-function makeRouteRoad(target){
-  const road=new THREE.Group();
+function makeWorld(){
+  disposeWorld(world);world=new THREE.Group();
+  if(window._ambiance){S.remove(window._ambiance);window._ambiance=null;window._lamps=null;window._birds=[];window._cars=[];window._flags=[];} /* v136 */
+  window._worldToken=(window._worldToken||0)+1; /* v137 : invalide le terrain asynchrone d'un ancien monde */
   const {X,Y,Z,n}=route;
-  const step=route.step||ST;
-  const junctionZones=routeJunctionZones();
-  /* v177 : les carrefours sont aussi repérés par leur distance sur le tracé — le marquage s’arrête
-     franchement de part et d’autre, y compris dans le virage choisi (ligne blanche en « V »). */
-  const junctionSpans=(()=>{
-    const nav=window._freeNavigation,out=[];
-    if(nav&&nav.active&&Array.isArray(nav.events))for(const ev of nav.events)if(ev&&Number.isFinite(ev.distance))out.push(ev.distance);
-    return out;
-  })();
-  const nearJunctionDistance=d=>junctionSpans.some(x=>Math.abs(x-d)<=16);
   const tangent=i=>{const a=Math.max(0,i-1),b=Math.min(n,i+1),dx=X[b]-X[a],dz=Z[b]-Z[a],l=Math.hypot(dx,dz)||1;return[-dz/l,dx/l]};
   const ribbon=(width,dy,color,texture)=>{
     const pos=[],uv=[],idx=[];
@@ -4215,33 +3671,22 @@ function makeRouteRoad(target){
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
     const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,map:texture||null,side:THREE.DoubleSide}));mesh.receiveShadow=true;return mesh;
   };
-  if(!proj)road.add(ribbon(145,-.43,0x769b52));
-  road.add(ribbon(3.75,-.04,0xb9b199));road.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
+  world.add(ribbon(145,-.43,0x769b52));world.add(ribbon(3.75,-.04,0xb9b199));world.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
   // Light painted edge lines; no automatic invented centre-line/speed restrictions.
   const edgePositions=[];
-  for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(junctionMarkCrosses(X[i],Z[i],X[i+1],Z[i+1],junctionZones)||nearJunctionDistance(i*step)||nearJunctionDistance((i+1)*step))continue;for(const side of[-1,1]){const pts=[
+  for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);for(const side of[-1,1]){const pts=[
     [X[i]+nx*2.93*side,Y[i]+.014,Z[i]+nz*2.93*side],[X[i]+nx*3.01*side,Y[i]+.014,Z[i]+nz*3.01*side],
     [X[i+1]+bx*3.01*side,Y[i+1]+.014,Z[i+1]+bz*3.01*side],[X[i+1]+bx*2.93*side,Y[i+1]+.014,Z[i+1]+bz*2.93*side]];
     for(const k of[0,1,2,0,2,3])edgePositions.push(...pts[k]);}}
-  const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePositions,3));edgeGeo.computeVertexNormals();road.add(new THREE.Mesh(edgeGeo,new THREE.MeshLambertMaterial({color:0xff00ff,side:THREE.DoubleSide}))); /* DEBUG v179 rives du tracé = magenta */
+  const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePositions,3));edgeGeo.computeVertexNormals();world.add(new THREE.Mesh(edgeGeo,new THREE.MeshLambertMaterial({color:0xe8e5d7,side:THREE.DoubleSide})));
   /* v78 : ligne médiane discontinue — trait de 3 m tous les 13 m */
   const dashPositions=[];
-  for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3);if(junctionMarkCrosses(a2[0],a2[2],b2[0],b2[2],junctionZones)||nearJunctionDistance(d)||nearJunctionDistance(d+3))continue;const dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
+  for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3),dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
     const quad=[[a2[0]+nx2,a2[1]+.016,a2[2]+nz2],[b2[0]+nx2,b2[1]+.016,b2[2]+nz2],[b2[0]-nx2,b2[1]+.016,b2[2]-nz2],[a2[0]-nx2,a2[1]+.016,a2[2]-nz2]];
     for(const k of[0,1,2,0,2,3])dashPositions.push(...quad[k]);}
-  if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();road.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0x00c8ff,side:THREE.DoubleSide})));} /* DEBUG v179 tiretés = bleu */
-  target.add(road);
-  return road;
-}
-function makeWorld(){
-  disposeWorld(world);world=new THREE.Group();
-  if(window._ambiance){S.remove(window._ambiance);window._ambiance=null;window._lamps=null;window._birds=[];window._cars=[];window._flags=[];} /* v136 */
-  window._worldToken=(window._worldToken||0)+1; /* v137 : invalide le terrain asynchrone d'un ancien monde */
-  const {X,Y,Z,n}=route;
-  const tangent=i=>{const a=Math.max(0,i-1),b=Math.min(n,i+1),dx=X[b]-X[a],dz=Z[b]-Z[a],l=Math.hypot(dx,dz)||1;return[-dz/l,dx/l];};
-  world.userData.routeRoad=makeRouteRoad(world);
+  if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();world.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0xefece0,side:THREE.DoubleSide})));}
   let minY=Infinity,x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;for(let i=0;i<=n;i++){minY=Math.min(minY,Y[i]);x0=Math.min(x0,X[i]);x1=Math.max(x1,X[i]);z0=Math.min(z0,Z[i]);z1=Math.max(z1,Z[i])}
-  const base=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0+1200,z1-z0+1200),new THREE.MeshLambertMaterial({color:0x71964c}));base.rotation.x=-Math.PI/2;base.position.set((x0+x1)/2,minY-12,(z0+z1)/2);world.add(base);world.userData.base=base;window._terrain=null;
+  const base=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0+1200,z1-z0+1200),new THREE.MeshLambertMaterial({color:0x71964c}));base.rotation.x=-Math.PI/2;base.position.set((x0+x1)/2,minY-12,(z0+z1)/2);world.add(base);
   if(!proj){
     const count=440,trunkGeo=new THREE.CylinderGeometry(.20,.30,3,6),leafGeo=new THREE.IcosahedronGeometry(1,1),trunks=new THREE.InstancedMesh(trunkGeo,new THREE.MeshLambertMaterial({color:0x71563e}),count),crowns=new THREE.InstancedMesh(leafGeo,new THREE.MeshLambertMaterial({color:0x4b7b36}),count*2),matrix=new THREE.Matrix4();
     let seed=7;const rnd=()=>(seed=seed*16807%2147483647)/2147483647;
@@ -4254,7 +3699,6 @@ function makeWorld(){
     world.add(trunks,crowns);world.userData.rt=crowns;
   }
   S.add(world);
-  if(proj)buildTerrain(world);
 }
 function decorateDemo(){
   if(proj)return;
@@ -4266,7 +3710,7 @@ function decorateDemo(){
   for(const [points] of hedgeWays)osmMapFeatures.push({type:'hedge',points});
   for(const [distance,name] of [[620,'Les Hauts Prés'],[1850,'Val des Saules'],[3600,'Belle-Rive']]){if(distance>=route.len)continue;const p=at(distance);const entry={distance,name,source:'demo',x:p[0],z:p[2]};cityEntries.push(entry);createTownSign(entry)}
   buildAmbiance(world); /* v136 : lampadaires, oiseaux, drapeaux, trafic */
-
+  buildTerrain(world); /* v137 : relief 3D Copernicus DEM (asynchrone, repli plat) */
   if(proj){const c=at(route.len/2);fetchWeatherAt(proj.la-c[2]/proj.kz,proj.lo+c[0]/proj.kx);} /* v138 : météo du parcours chargé */
 }
 
@@ -4349,32 +3793,29 @@ function updateBikeComputer(power,grade){ /* v162 : données réelles sur l'écr
 function place(snap,dt=.016){
   if(!route)return;
   const p=at(s),before=at(s-2),after=at(s+2),dx=after[0]-before[0],dz=after[2]-before[2],l=Math.hypot(dx,dz)||1,tx=dx/l,tz=dz/l;
-  const dir=window._rideDir||1,angle=Math.atan2(tx,tz)+(dir<0?Math.PI:0);
-  const bend=at(s+10*dir),bx=bend[0]-p[0],bz=bend[2]-p[2],cross=(tx*bz-tz*bx)*dir;
+  const angle0=Math.atan2(tx,tz);let angle=angle0;if((window._rideDir||1)<0)angle+=Math.PI; /* v127 : demi-tour en mode démo — le cycliste fait demi-tour et repart à l'envers */
+  const bend=at(s+10),bx=bend[0]-p[0],bz=bend[2]-p[2],cross=tx*bz-tz*bx;
   const targetLean=Math.max(-.45,Math.min(.45,cross*.030*Math.min(13,v)));
   window._leanSmooth=window._leanSmooth==null?targetLean:window._leanSmooth+(targetLean-window._leanSmooth)*Math.min(1,dt*5);
-  let effAngle=angle,offX=0,offZ=0,turnLean=0;
-  if(window._uTurn){
-    const u=window._uTurn,k=Math.max(0,Math.min(1,(performance.now()-u.t0)/u.dur));
-    const e=k*k*(3-2*k),target=u.from+Math.PI,correction=Math.atan2(Math.sin(angle-target),Math.cos(angle-target));
-    effAngle=u.from+(Math.PI+correction)*e;
-    const arc=Math.sin(Math.PI*k),side=1.25*arc*arc,forward=u.reach*arc;
-    offX=Math.sin(u.from)*forward+Math.cos(u.from)*side;
-    offZ=Math.cos(u.from)*forward-Math.sin(u.from)*side;
-    turnLean=-.28*arc;
-    if(k>=1)window._uTurn=null;
-  }
-  rider.rotation.set(-Math.atan(p[3]*dir),effAngle,window._leanSmooth+turnLean,'YXZ');
+  let effAngle=angle,offX=0,offZ=0,turnLean=0; /* v126 : demi-tour animé — interpolation de l'angle du cycliste */
+  if(window._uTurn){const u=window._uTurn,k=Math.min(1,(performance.now()-u.t0)/u.dur);let d=angle-u.from;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;effAngle=u.from+d*e;
+    /* v128 : VRAI demi-tour — le vélo décrit un demi-cercle de rayon R (et non plus une rotation sur place) : avancement de 2R le long de la tangente + écart latéral sin, avec penché dans le virage */
+    const th=Math.PI*e,R=1.6,nx=tz,nz=-tx; /* normale latérale gauche */
+    offX=R*((1-Math.cos(th))*tx+Math.sin(th)*nx);
+    offZ=R*((1-Math.cos(th))*tz+Math.sin(th)*nz);
+    turnLean=-0.32*Math.sin(th); /* penché vers l'intérieur du virage (rotation Z négative = vers la gauche du cycliste) */
+    if(k>=1)window._uTurn=null;}
+  rider.rotation.set(-Math.atan(p[3]),effAngle,window._leanSmooth+turnLean,'YXZ');
   let rideY=p[1]+.045;
   const imported=!!(window._importedWheels&&window._importedWheels.length);
   const contactWheels=imported?window._importedWheels:(rider.userData.wheels||[]);
   for(const wheel of contactWheels){
     const local=wheel.position,offset=new THREE.Vector3(local.x,local.y,local.z).applyEuler(rider.rotation);
-    const surface=at(s+dir*Math.max(-1,Math.min(1,local.z)))[1]+.01;
+    const surface=at(s+Math.max(-1,Math.min(1,local.z)))[1]+.01;
     const radius=imported ? 0.362 : (rider.userData.wheelRadius||.35)+.013;
     rideY=Math.max(rideY,surface+radius+.006-offset.y);
   }
-  rider.position.set(p[0]+offX,rideY,p[2]+offZ);
+  rider.position.set(p[0]+offX,rideY,p[2]+offZ); /* v128 : position décalée le long du demi-cercle pendant le demi-tour */
   const distance=cameraState.distance,baseYaw=cameraState.view==='side'?Math.PI/2:0,yaw=baseYaw+cameraState.yaw,pitch=cameraState.pitch;
   const cockpit = cameraState.view==='cockpit' || distance<=1.81; /* v121 : seuil cintre à 1,8 m */
   if(cockpit){
@@ -4410,13 +3851,13 @@ function place(snap,dt=.016){
   if(cam.fov!==55){cam.fov=55;cam.updateProjectionMatrix();} /* v121 : restaure le champ de vision en sortant du cintre */
   const ctx=Math.sin(effAngle),ctz=Math.cos(effAngle); /* v132 : la caméra reste derrière le cap RÉEL du cycliste — pendant le demi-tour elle pivote avec lui au lieu d'avoir déjà la vue de l'autre sens */
   const horizontal=distance*Math.cos(pitch),offsetX=-ctx*Math.cos(yaw)+ctz*Math.sin(yaw),offsetZ=-ctz*Math.cos(yaw)-ctx*Math.sin(yaw);
-  const targetPosition=new THREE.Vector3(p[0]+offX+offsetX*horizontal,p[1]+1+distance*Math.sin(pitch),p[2]+offZ+offsetZ*horizontal);
+  const targetPosition=new THREE.Vector3(p[0]+offsetX*horizontal,p[1]+1+distance*Math.sin(pitch),p[2]+offsetZ*horizontal);
   /* v162 : la caméra ne s'enfonce plus sous le sol/décor quand on regarde vers le bas ou en descente */
   let floorY=p[1];
   try{const gnd=nearestOnRoute(targetPosition.x,targetPosition.z);if(gnd&&Number.isFinite(gnd.y))floorY=gnd.y;}catch(_){}
   floorY+=.55;
   if(targetPosition.y<floorY)targetPosition.y=floorY;
-  const lookAhead=cameraState.view==='side'?0:Math.min(3,distance*.10),look=new THREE.Vector3(p[0]+offX+ctx*lookAhead,rider.position.y+1,p[2]+offZ+ctz*lookAhead),alpha=1-Math.exp(-dt*6);
+  const lookAhead=cameraState.view==='side'?0:Math.min(3,distance*.10),look=new THREE.Vector3(p[0]+ctx*lookAhead,rider.position.y+1,p[2]+ctz*lookAhead),alpha=1-Math.exp(-dt*6);
   if(snap||!cameraState.ready){cam.position.copy(targetPosition);cameraState.look.copy(look);cameraState.ready=true}else{cam.position.lerp(targetPosition,alpha);cameraState.look.lerp(look,alpha)}
   if(cam.position.y<floorY)cam.position.y=floorY; /* v162 : même la caméra lissée reste au-dessus du sol */
   cam.lookAt(cameraState.look);
@@ -4593,7 +4034,7 @@ function osmRouteIndex(){
 }
 
 /* Returns the closest route projection, including interpolated elevation and local +Z tangent. */
-function nearestOnRoute(x,z,maxDistance=Infinity){
+function nearestOnRoute(x,z){
   const index=osmRouteIndex();
   if(!index||!route||route.n<1)return null;
   const {X,Y,Z,n}=route,cell=index.cell,cx=Math.floor(x/cell),cz=Math.floor(z/cell);
@@ -4608,14 +4049,6 @@ function nearestOnRoute(x,z,maxDistance=Infinity){
       best={x:px,y:Y[i]+(Y[i+1]-Y[i])*t,z:pz,distance:Math.min(route.len,(i+t)*(route.step||ST)),dist2,tx:dx/l,tz:dz/l};
     }
   };
-  if(Number.isFinite(maxDistance)){
-    const x0=Math.floor((x-maxDistance)/cell),x1=Math.floor((x+maxDistance)/cell),z0=Math.floor((z-maxDistance)/cell),z1=Math.floor((z+maxDistance)/cell);
-    for(let gx=x0;gx<=x1;gx++)for(let gz=z0;gz<=z1;gz++){
-      const bucket=index.cells.get(gx+','+gz);
-      if(bucket)for(const i of bucket)visit(i);
-    }
-    return best&&best.dist2<=maxDistance*maxDistance?best:null;
-  }
   const visited=new Set();
   for(let ring=0;ring<=18;ring++){
     for(let gx=cx-ring;gx<=cx+ring;gx++)for(let gz=cz-ring;gz<=cz+ring;gz++){
@@ -5190,7 +4623,6 @@ function buildings(buildingParts,targetWorld){
 
 /* v134 : champs, prairies et vergers — polygones colorés + rangs de culture pour les terres labourées. */
 function buildFarmland(farmlandList,targetWorld){
-  if(proj)return 0; /* Les champs sont coloriés sur le relief, jamais en dalles plates. */
   if(!farmlandList||!farmlandList.length)return 0;
   /* v161 : dans les cols (haute altitude ou très grand relief), plus de champs plats flottants — le terrain réel laisse voir le contrebas */
   try{
@@ -5272,7 +4704,7 @@ function buildFlow(waterways,targetWorld){
     const total=cum[cum.length-1];if(total<12)continue;
     const nDash=Math.min(40,Math.max(6,Math.floor(total/9))),positions=new Float32Array(nDash*6);
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
-    const mesh=new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color:0xeaf6ff,transparent:true,opacity:.5,depthWrite:false}));
+    const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:0xeaf6ff,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false}));
     mesh.frustumCulled=false;targetWorld.add(mesh);
     window._flows.push({line,cum,total,n:nDash,positions,mesh,w,off:Math.random()*total});
   }
@@ -5285,18 +4717,15 @@ function flowPointAt(f,d){
   return[line[i-1][0]+(line[i][0]-line[i-1][0])*t,line[i-1][1]+(line[i][1]-line[i-1][1])*t];
 }
 function updateFlow(dt){
-  const flows=window._flows,terrain=window._terrain;if(!flows||!flows.length||!terrain||!route)return;
-  const riderAt=at(s);
+  const flows=window._flows;if(!flows||!flows.length)return;
   for(const f of flows){
     f.off+=dt*(1.6+f.w*.35);
     for(let k=0;k<f.n;k++){
       const d=f.off+k*(f.total/f.n),a=flowPointAt(f,d),b=flowPointAt(f,d+1.6);
-      if((a[0]-riderAt[0])**2+(a[1]-riderAt[2])**2>220*220){f.positions.fill(0,k*6,k*6+6);continue;}
-      const nx=-(b[1]-a[1]),nz=(b[0]-a[0]),l=Math.hypot(nx,nz)||1,w=f.w*.32;
+      const near=nearestOnRoute(a[0],a[1]);if(!near||near.dist2>220*220){f.positions.fill(0,k*6,k*6+6);continue;}
+      const y=near.y-.4,nx=-(b[1]-a[1]),nz=(b[0]-a[0]),l=Math.hypot(nx,nz)||1,w=f.w*.32;
       const ax=a[0]+nx/l*w,az=a[1]+nz/l*w,bx=b[0]+nx/l*w,bz=b[1]+nz/l*w;
-      const ya=terrainDrapeHeight(terrain,ax,az,'water',.16),yb=terrainDrapeHeight(terrain,bx,bz,'water',.16);
-      if(ya==null||yb==null){f.positions.fill(0,k*6,k*6+6);continue;}
-      f.positions[k*6]=ax;f.positions[k*6+1]=ya;f.positions[k*6+2]=az;f.positions[k*6+3]=bx;f.positions[k*6+4]=yb;f.positions[k*6+5]=bz;
+      f.positions[k*6]=ax;f.positions[k*6+1]=y;f.positions[k*6+2]=az;f.positions[k*6+3]=bx;f.positions[k*6+4]=y;f.positions[k*6+5]=bz;
     }
     f.mesh.geometry.attributes.position.needsUpdate=true;
   }
@@ -5676,6 +5105,68 @@ function buildTunnels(tunnelWays,targetWorld){
   return spans.length;
 }
 
+/* v156 : vraies montagnes aux cols (mountain_pass) et sommets (natural=peak) OSM proches de la route */
+async function buildMountainDecor(passes,peaksList,targetWorld){
+  if(!route||!targetWorld||route.n<2)return 0;
+  /* v157 : massifs déformés (bruit fractal), forêts en pied, roche, névés et neige au sommet */
+  const hash=(x,z)=>{const v=Math.sin(x*127.1+z*311.7)*43758.5453;return v-Math.floor(v);};
+  const vnoise=(x,z)=>{const xi=Math.floor(x),zi=Math.floor(z),xf=x-xi,zf=z-zi,u=xf*xf*(3-2*xf),w=zf*zf*(3-2*zf);const a=hash(xi,zi),b=hash(xi+1,zi),c=hash(xi,zi+1),d=hash(xi+1,zi+1);return a+(b-a)*u+(c-a)*w+(a-b-c+d)*u*w;};
+  const fbm=(x,z)=>{let v=0,amp=.5,f=1;for(let o=0;o<5;o++){v+=amp*(1-Math.abs(vnoise(x*f,z*f)*2-1));f*=2.03;amp*=.5;}return v;};
+  let minY=Infinity,maxY=-Infinity,sumY=0;for(let i=0;i<route.n;i++){const y=route.Y[i];minY=Math.min(minY,y);maxY=Math.max(maxY,y);sumY+=y;}
+  const relief=maxY-minY,baseAlt=(window._routeBaseAlt||0)+sumY/route.n;let maxG=0;if(route.G)for(const g of route.G)maxG=Math.max(maxG,Math.abs(g)); /* v158 */
+  const list=[...(passes||[]),...(peaksList||[])].map(p=>({...p}));
+  /* région montagneuse sans sommet cartographié : chaîne d'arrière-plan — v161 : plus de fausses montagnes en plaine (Caen) ; massifs seulement si sommets/cols OSM, ou vrai relief d'altitude (plateau > 320 m et relief marqué, ou pente de col) */
+  if(list.length||(relief>140&&baseAlt>320)||(maxG>.08&&baseAlt>320)){const cx=route.X[Math.floor(route.n/2)],cz=route.Z[Math.floor(route.n/2)];const nb=list.length?6:12;
+    for(let k=0;k<nb;k++){const ang=k/nb*Math.PI*2+hash(k,3)*.4,dist=1200+hash(k,7)*1600;list.push({x:cx+Math.cos(ang)*dist,z:cz+Math.sin(ang)*dist,ele:0,bg:true});}
+    /* v161 : collines de pied de massif plus proches, pour combler le « vide bleu » entre les sommets */
+    for(let k=0;k<8;k++){const ang=k/8*Math.PI*2+hash(k,11)*.55,dist=620+hash(k,13)*520;list.push({x:cx+Math.cos(ang)*dist,z:cz+Math.sin(ang)*dist,ele:0,fg:true});}}
+  if(!list.length)return 0;
+  const cols={forest:new THREE.Color(0x3d5a34),meadow:new THREE.Color(0x7d8f55),rock:new THREE.Color(0x7a7266),darkRock:new THREE.Color(0x58534c),snow:new THREE.Color(0xf2f5f8)};
+  const mat=new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true,fog:false});const haze=new THREE.Color(0xb9cfdc);
+  const built=[];const tmp=new THREE.Color();
+  for(const p of list.slice(0,24)){
+    let near=nearestOnRoute(p.x,p.z);if(!near||near.dist2>8000*8000)continue; /* v160 : reliefs visibles jusqu'à 8 km (avant 3,2 km) */
+    const h=p.fg?Math.max(110,Math.min(340,140+relief*.35+hash(p.x,p.z)*170)):(p.bg?Math.max(240,Math.min(1300,300+relief*1.5+hash(p.x,p.z)*350)):(p.ele>0?Math.max(200,Math.min(1200,(p.ele-baseAlt)*.9+150)):Math.max(180,Math.min(900,260+relief*1.2+hash(p.x,p.z)*250)))); /* v161 : collines de pied de massif plus basses */
+    const rad=h*(1.05+hash(p.z,p.x)*.5); /* v160 : massifs resserrés (avant ×1,5–2,2 : leurs disques recouvraient la route) */
+    /* v160 : jamais sur la chaussée — la demi-largeur du disque (rad*1,2) reste à 120 m minimum de la route */
+    let dist=Math.sqrt(near.dist2),px=p.x,pz=p.z;const minD=rad*1.35+120;
+    if(dist<minD){let dx=p.x-near.x,dz=p.z-near.z,l=Math.hypot(dx,dz);if(l<1){dx=-near.tz;dz=near.tx;l=1;}px=near.x+dx/l*minD;pz=near.z+dz/l*minD;near=nearestOnRoute(px,pz)||near;}
+    built.push({p,px,pz,h,rad,near});
+  }
+  /* v160 : altitude réelle du sol sous chaque massif (une seule requête DEM) — les sommets ne flottent plus à l'altitude de la route */
+  let eles=null;
+  if(built.length&&proj){
+    try{
+      const la=built.map(c=>(proj.la-c.pz/proj.kz).toFixed(5)).join(','),lo=built.map(c=>(proj.lo+c.px/proj.kx).toFixed(5)).join(',');
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),8000);
+      let resp;try{resp=await fetch('https://api.open-meteo.com/v1/elevation?latitude='+la+'&longitude='+lo,{mode:'cors',credentials:'omit',cache:'force-cache',signal:ctrl.signal});}finally{clearTimeout(timer);}
+      if(resp.ok){const j=await resp.json();if(Array.isArray(j.elevation)&&j.elevation.length>=built.length)eles=j.elevation.map(x=>Number(x));}
+    }catch(_){}
+  }
+  let count=0;
+  built.forEach((c,ci)=>{
+    const {p,px,pz,h,rad,near}=c;
+    const ground=(eles&&Number.isFinite(eles[ci]))?eles[ci]:near.y; /* v160 : altitude réelle du secteur */
+    const summitTarget=p.ele>0?p.ele:ground+h*.85; /* sommet OSM = altitude réelle du pic ; sinon prominance h au-dessus du sol */
+    const seg=56,geo=new THREE.PlaneGeometry(rad*2.4,rad*2.4,seg,seg);geo.rotateX(-Math.PI/2);
+    const pos=geo.attributes.position,colors=new Float32Array(pos.count*3),seed=hash(px,pz)*100;
+    let yMax=-Infinity;
+    for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i),r=Math.hypot(x,z)/rad;
+      const fall=Math.max(0,1-r*r*.92);const ridge=fbm(x/rad*2.2+seed,z/rad*2.2-seed);
+      let y=h*Math.pow(fall,1.35)*(.55+.75*ridge);if(r>1.05)y=-6; /* v160 : bords du disque enfouis plus tôt */
+      if(y>yMax)yMax=y;pos.setY(i,y);
+      const t=y/h;const n=hash(x*.3,z*.3)*.08;
+      const snowLine=summitTarget>2300?.6:(summitTarget>1700?.75:2); /* v160 : neige selon l'altitude réelle du sommet */
+      if(t>snowLine+n)tmp.copy(cols.snow);else if(t>.5+n)tmp.copy(cols.rock).lerp(cols.darkRock,ridge*.6);else if(t>.28+n)tmp.copy(cols.meadow).lerp(cols.rock,(t-.28)/.22);else tmp.copy(cols.forest).lerp(cols.meadow,t*2);
+      colors[i*3]=tmp.r;colors[i*3+1]=tmp.g;colors[i*3+2]=tmp.b;}
+    {const hz=Math.min(.55,Math.sqrt(near.dist2)/8000);for(let i=0;i<pos.count;i++){tmp.setRGB(colors[i*3],colors[i*3+1],colors[i*3+2]).lerp(haze,hz);colors[i*3]=tmp.r;colors[i*3+1]=tmp.g;colors[i*3+2]=tmp.b;}}geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();
+    const m=new THREE.Mesh(geo,mat);m.position.set(px,summitTarget-yMax,pz);m.rotation.y=hash(pz,px)*Math.PI*2;m.receiveShadow=false;m.castShadow=false;targetWorld.add(m);count++; /* v160 : ancré sur l'altitude réelle, sommet pile à target */
+  });
+  return count;
+}
+
+/* v158 : l'altitude arrive souvent après le décor — on revérifie régulièrement et on pose les montagnes dès que le relief est connu */
+setInterval(()=>{try{if(route&&world&&world.parent&&!world.userData.mtn&&buildMountainDecor(window._osmPasses||[],window._osmPeaks||[],world))world.userData.mtn=true;}catch(e){}},2500);
 function applyOSM(elements,targetWorld){
   const target=targetWorld||world;
   if(!target||!route)return{b:0,w:0,t:0,h:0,r:0,c:0};
@@ -5718,7 +5209,7 @@ function applyOSM(elements,targetWorld){
     }
   }
   osmPublishSceneryData();
-  const heightAt=(x,z)=>{const ground=terrainSample(window._terrain,x,z);if(Number.isFinite(ground))return ground;const near=nearestOnRoute(x,z);return near?near.y:0;};
+  const heightAt=(x,z)=>{const near=nearestOnRoute(x,z);return near?near.y:0;};
   const asShape=points=>new THREE.Shape(points.map(p=>new THREE.Vector2(p[0],-p[1])));
   const flatten=geometry=>{geometry.rotateX(-Math.PI/2);return geometry.index?geometry.toNonIndexed():geometry;};
   const addMerged=(parts,colour)=>{
@@ -5726,31 +5217,20 @@ function applyOSM(elements,targetWorld){
     let length=0;parts.forEach(part=>{length+=part.length;});
     const data=new Float32Array(length);let offset=0;
     parts.forEach(part=>{data.set(part,offset);offset+=part.length;});
-    addDrapedSurface(target,data,colour,'water',.09);
+    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(data,3));geometry.computeVertexNormals();
+    target.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:colour,side:THREE.DoubleSide})));
   };
 
   window._chimneys=[]; /* v134 : positions des cheminées pour la fumée animée */
   const buildingCount=buildings(buildingsList,target);const landmarkCount=buildOSMLandmarks(landmarks,target);
   const waterParts=[];
-  const splitWater=(out,a,b,c,depth=0)=>{
-    const d2=(p,q)=>(p[0]-q[0])**2+(p[1]-q[1])**2;
-    const ab=d2(a,b),bc=d2(b,c),ca=d2(c,a);
-    if(depth>=11||Math.max(ab,bc,ca)<=35**2||out.length>=54000){out.push(a[0],0,a[1],b[0],0,b[1],c[0],0,c[1]);return;}
-    if(bc>ab&&bc>=ca)return splitWater(out,b,c,a,depth);
-    if(ca>ab&&ca>bc)return splitWater(out,c,a,b,depth);
-    const mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
-    splitWater(out,a,mid,c,depth+1);splitWater(out,mid,b,c,depth+1);
-  };
+  const farFromRoute=pts=>{const near=nearestOnRoute(pts[0][0],pts[0][1]);return !near||near.dist2>250*250;}; /* v163 : au-delà de 250 m de la route, l'altitude route n'a pas de sens (vallée sous un col) */
   for(const points of waters.slice(0,150)){
     if(!osmClosed(points))continue;
-    if(!points.some(point=>nearestOnRoute(point[0],point[1],450)))continue;
+    if(farFromRoute(points))continue; /* v163 : plus de plans d'eau flottant dans les vallées */
     try{
-      const shape=new THREE.ShapeGeometry(asShape(points)),geometry=flatten(shape),pos=geometry.attributes.position,out=[];
-      for(let i=0;i<pos.count;i+=3){
-        const a=[pos.getX(i),pos.getZ(i)],b=[pos.getX(i+1),pos.getZ(i+1)],c=[pos.getX(i+2),pos.getZ(i+2)];
-        splitWater(out,a,b,c);
-      }
-      waterParts.push(out);geometry.dispose();if(shape!==geometry)shape.dispose();
+      const geometry=flatten(new THREE.ShapeGeometry(asShape(points)));geometry.translate(0,heightAt(points[0][0],points[0][1])-.15,0);
+      waterParts.push(geometry.attributes.position.array.slice());geometry.dispose();
     }catch(_){/* An invalid water ring is non-fatal. */}
   }
   addMerged(waterParts,0x3b87c7);
@@ -5787,7 +5267,8 @@ function applyOSM(elements,targetWorld){
   const waterwayParts=[],railBallast=[],railLine=[];
   for(const [pts,tags] of waterways.slice(0,150)){
     if(pts.length<2)continue;
-    ribbon(osmSampleLine(pts,3),osmWaterwayWidth(tags)/2,0,()=>0,waterwayParts);
+    if(farFromRoute(pts))continue; /* v163 : idem — rivières des vallées non dessinées à l'altitude de la route */
+    ribbon(osmSampleLine(pts,3),osmWaterwayWidth(tags)/2,0,near=>near.y-underSpan(near)-0.45,waterwayParts);
   }
   for(const [pts,tags] of railways.slice(0,120)){ /* v131 : ballast + deux rails, en tranchée sous les ponts */
     if(pts.length<2)continue;
@@ -5797,13 +5278,13 @@ function applyOSM(elements,targetWorld){
     ribbon(line,0.07,-0.72,near=>yFn(near)+0.05,railLine);
   }
   const mkFlat=(arr,color)=>{if(arr.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));g.computeVertexNormals();target.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide})));}};
-  addMerged([waterwayParts].filter(part=>part.length),0x3b87c7);mkFlat(railBallast,0x5d5a52);mkFlat(railLine,0xb9bdc2);
+  mkFlat(waterwayParts,0x3b87c7);mkFlat(railBallast,0x5d5a52);mkFlat(railLine,0xb9bdc2);
   buildFarmland(farmlandList,target); /* v134 : champs et prairies */
   recolorTerrainByOSM({forests:forests,residential:residentialAreas,farmland:farmlandList,waters:waters}); /* v147 : sol colorié selon les données OSM */
   buildSmoke(target); /* v134 : fumée des cheminées */
   buildFlow(waterways,target); /* v135 : écume animée des rivières */
   const bridgeCount=buildBridges(mergedSpans,bridgeOverpasses,target);
-  window._osmPasses=mountainPasses;window._osmPeaks=peaks; /* v158 */ /* v156 : décor de vraie montagne aux cols/sommets */
+  window._osmPasses=mountainPasses;window._osmPeaks=peaks;if(buildMountainDecor(mountainPasses,peaks,target))target.userData.mtn=true; /* v158 */ /* v156 : décor de vraie montagne aux cols/sommets */
 
   /* v133 : passages à niveau animés (barrières + feux + train occasionnel) et tunnels (voûte sombre) */
   window._levelCrossings=[];
@@ -5865,7 +5346,6 @@ function applyOSM(elements,targetWorld){
   }
   const roadStats=buildRoadNetwork(selectRoadsForScene(roads,1200),target); const furnCount=buildRoadFurniture(elements,target);
   makeTownEntries(elements,target);
-  scheduleTerrainAlignment(target);
   return{b:buildingCount,l:landmarkCount,w:Math.min(waters.length,150),t:trees.length,h:hedgeCount,hm:hedgeCounts.mapped,he:hedgeCounts.estimated,r:roadStats.drawn,roundabouts:roadStats.roundabouts,c:cityEntries.length,p:bridgeCount};
 }
 
@@ -6053,25 +5533,22 @@ function buildRoadFurniture(elements,target){
 }
 function buildRoadNetwork(roadParts,targetWorld){
   const surface=[],islands=[],laneMarks=[],edgeMarks=[];let drawn=0,roundabouts=0;
-  const junctionZones=routeJunctionZones(); /* v173 : pas de bandes blanches au travers des branches */
-  for(const [raw,tags]of roadParts){
-    if(raw.length<2||[tags.bridge,tags.tunnel].some(value=>value&&!/^(no|false|0)$/i.test(value)))continue;
-    const half=osmRoadWidth(tags),points=osmSampleLine(raw,5),centres=[];
+  for(const [raw,tags]of roadParts){if(raw.length<2)continue;const half=osmRoadWidth(tags),points=osmSampleLine(raw,5),centres=[];
     for(const point of points){const near=nearestOnRoute(point[0],point[1]);centres.push(!near||near.dist2>190*190?null:{x:point[0],z:point[1],y:near.y+.035})}let used=false;
     for(let i=1;i<centres.length;i++){const a=centres[i-1],b=centres[i];if(!a||!b)continue;const prev=centres[Math.max(0,i-2)]||a,next=centres[Math.min(centres.length-1,i+1)]||b,dx=next.x-prev.x,dz=next.z-prev.z,length=Math.hypot(dx,dz)||1,nx=-dz/length,nz=dx/length,al=[a.x+nx*half,a.y,a.z+nz*half],ar=[a.x-nx*half,a.y,a.z-nz*half],bl=[b.x+nx*half,b.y,b.z+nz*half],br=[b.x-nx*half,b.y,b.z-nz*half];surface.push(...al,...ar,...br,...al,...br,...bl);used=true}
     if(used)drawn++;
     const roadType=String(tags.highway||'').toLowerCase(),major=/^(trunk|primary|secondary)$/.test(roadType)||Number(tags.lanes)>=2;
-    if(major){const continuous=/^(trunk|primary)$/.test(roadType);for(let ri=1;ri<raw.length;ri++){const a=raw[ri-1],b=raw[ri],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);if(len<.2)continue;const dash=continuous?len:2.8,gap=continuous?0:2.7;for(let d=0;d<len;d+=dash+gap){const e=Math.min(len,d+dash),ax=a[0]+dx*d/len,az=a[1]+dz*d/len,bx=a[0]+dx*e/len,bz=a[1]+dz*e/len,na=nearestOnRoute(ax,az),nb=nearestOnRoute(bx,bz);if(!na||!nb||na.dist2>190*190||nb.dist2>190*190)continue;const nx=-dz/len*.055,nz=dx/len*.055,y1=na.y+.075,y2=nb.y+.075;if(nearJunctionMark(ax,az,junctionZones)||nearJunctionMark(bx,bz,junctionZones)||markOnRoute(ax,az,bx,bz))continue;laneMarks.push(ax+nx,y1,az+nz,ax-nx,y1,az-nz,bx-nx,y2,bz-nz,ax+nx,y1,az+nz,bx-nx,y2,bz-nz,bx+nx,y2,bz+nz);
+    if(major){const continuous=/^(trunk|primary)$/.test(roadType);for(let ri=1;ri<raw.length;ri++){const a=raw[ri-1],b=raw[ri],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);if(len<.2)continue;const dash=continuous?len:2.8,gap=continuous?0:2.7;for(let d=0;d<len;d+=dash+gap){const e=Math.min(len,d+dash),ax=a[0]+dx*d/len,az=a[1]+dz*d/len,bx=a[0]+dx*e/len,bz=a[1]+dz*e/len,na=nearestOnRoute(ax,az),nb=nearestOnRoute(bx,bz);if(!na||!nb||na.dist2>190*190||nb.dist2>190*190)continue;const nx=-dz/len*.055,nz=dx/len*.055,y1=na.y+.075,y2=nb.y+.075;laneMarks.push(ax+nx,y1,az+nz,ax-nx,y1,az-nz,bx-nx,y2,bz-nz,ax+nx,y1,az+nz,bx-nx,y2,bz-nz,bx+nx,y2,bz+nz);
       /* v135 : lignes de rive continues sur les grands axes — deux fines lignes près des bords, PAS une bande pleine largeur */
-      const eo=half-.3;if(eo>.5&&!nearJunctionMark(ax,az,junctionZones)&&!nearJunctionMark(bx,bz,junctionZones)&&!markOnRoute(ax,az,bx,bz)){const fxn=-dz/len,fzn=dx/len,fy1=na.y+.075,fy2=nb.y+.075,w=.05;
+      const eo=half-.3;if(eo>.5){const fxn=-dz/len,fzn=dx/len,fy1=na.y+.075,fy2=nb.y+.075,w=.05;
         for(const s of[-1,1]){const o=s*eo,a1x=ax+fxn*(o-w),a1z=az+fzn*(o-w),a2x=ax+fxn*(o+w),a2z=az+fzn*(o+w),b1x=bx+fxn*(o-w),b1z=bz+fzn*(o-w),b2x=bx+fxn*(o+w),b2z=bz+fzn*(o+w);
           edgeMarks.push(a1x,fy1,a1z,a2x,fy1,a2z,b2x,fy2,b2z,a1x,fy1,a1z,b2x,fy2,b2z,b1x,fy2,b1z);}}}}}
     if((String(tags.junction||'').toLowerCase()==='roundabout' ||osmRingSignatures.has(osmRingSignature(raw)))&&osmClosed(raw)){const ring=raw.slice(0,-1);if(ring.length>=8){const cx=ring.reduce((sum,p)=>sum+p[0],0)/ring.length,cz=ring.reduce((sum,p)=>sum+p[1],0)/ring.length,near=nearestOnRoute(cx,cz),radius=ring.reduce((sum,p)=>sum+Math.hypot(p[0]-cx,p[1]-cz),0)/ring.length,inner=radius-half*.95;if(near&&near.dist2<190*190&&inner>1){const center=[cx,near.y-.055,cz];for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];islands.push(...center,a[0],near.y-.055,a[1],b[0],near.y-.055,b[1])}roundabouts++}}}
   }
-  addDrapedSurface(targetWorld,surface,0x5e6460,'road',.025);
-  addDrapedSurface(targetWorld,laneMarks,0x00ff00,'road',.039,false); /* DEBUG v179 tiretés annexe = vert */
-  addDrapedSurface(targetWorld,islands,0x789054,'ground',.045);
-  addDrapedSurface(targetWorld,edgeMarks,0xffa500,'road',.039,false); /* DEBUG v179 rives annexe = orange */
+  if(surface.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(surface,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x5e6460,side:THREE.DoubleSide})))}
+  if(laneMarks.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(laneMarks,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:0xe8e4cb,side:THREE.DoubleSide})))}
+  if(islands.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(islands,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x789054,side:THREE.DoubleSide})))}
+  if(edgeMarks.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(edgeMarks,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color:0xf2efe4,side:THREE.DoubleSide})))}
   return{drawn,roundabouts};
 }
 
@@ -6079,7 +5556,6 @@ function buildRoadNetwork(roadParts,targetWorld){
 /* ---------- Mini-carte vectorielle : mêmes données OSM que la scène ---------- */
 const mapState={overview:false,visible:true,last:0,lastTownS:0,noticed:new Set(),activeTown:null,threeD:false,signTimer:null,signToken:0,fitRoute:false,cameraSync:false,lastFollow:null};
 let rideMap2D=null,rideRoute2D=null,rideDone2D=null,rideRider2D=null,rideMap3D=null,rideMap3DReady=false,mapLibrePromise=null,rideFeatures=null;
-let rideRotateOk=false,rideRotateBanned=false,rideMapErrors=0; /* v173 : la rotation est optionnelle — une défaillance du greffon retombe sur une carte normale */
 function featureToLatLngs(points){if(!proj||!points)return[];const out=[];for(const p of points){const lat=proj.la-p[1]/proj.kz,lon=proj.lo+p[0]/proj.kx;if(Number.isFinite(lat)&&Number.isFinite(lon))out.push([lat,lon]);}return out;}
 function updateMapFeatures(){
   if(!rideFeatures||!rideMap2D||!proj||!window.osmMapFeatures)return;
@@ -6088,46 +5564,9 @@ function updateMapFeatures(){
   for(const k of Object.keys(byType)){const lines=byType[k].filter(l=>l&&l.length>1);if(k==='water'||k==='farmland'||k==='forest'){rideFeatures[k].setLatLngs(lines.map(l=>l.map(p=>[p[0],p[1]])));}else rideFeatures[k].setLatLngs(lines);}
 }
 function syncMapModeButton(){const button=$('mapMode');if(!button)return;button.textContent=mapState.overview?'Suivi':'Tout';button.title=mapState.overview?'Recentrer sur le cycliste':'Afficher tout le parcours';button.setAttribute('aria-label',button.title);}
-function rideDropMap2D(){try{if(rideMap2D)rideMap2D.remove();}catch(_){}rideMap2D=null;rideRoute2D=null;rideDone2D=null;rideRider2D=null;rideFeatures=null;}
-function rideFreshHost2D(){ /* conteneur vierge : un greffon qui échoue en cours de création laisse des panes et un identifiant Leaflet qui empêcheraient toute nouvelle carte */
-  const host=$('rideMap2D');if(!host)return null;const fresh=host.cloneNode(false);host.replaceWith(fresh);return fresh;
-}
-function rideMapFailed(error){
-  console.warn('Mini-carte 2D :',error&&error.message||String(error));
-  if(rideRotateOk&&++rideMapErrors>=2){ /* la rotation est la seule suspecte : on repart en carte simple, nord en haut */
-    rideRotateBanned=true;rideRotateOk=false;rideMapErrors=0;rideDropMap2D();rideFreshHost2D();mapState.fitRoute=true;mapState.lastFollow=null;
-    console.warn('Rotation de la mini-carte désactivée : carte remise au nord, le reste de l’application continue.');
-    try{drawMiniMap(performance.now(),true);}catch(_){}
-  }
-}
-function rideApplyBearing(bearing){
-  if(bearing==null||!Number.isFinite(bearing))return;
-  /* v173 : le greffon 2D tourne le contenu dans le sens inverse de son cap — on lui passe −cap
-     pour que la direction suivie pointe vers le haut ; MapLibre, lui, attend directement le cap. */
-  if(rideMap2D&&rideRotateOk&&typeof rideMap2D.setBearing==='function'){try{rideMap2D.setBearing(-bearing);}catch(error){rideMapFailed(error);}}
-  if(rideMap3DReady&&rideMap3D){try{rideMap3D.setBearing(bearing);}catch(_){}}
-}
 function initRideMap2D(){
   if(rideMap2D||!window.L||!$('rideMap2D'))return;
-  /* v173 : rotation « sens du cycliste » — tentative isolée, repli systématique sur une carte 2D normale */
-  const rideMapOptions={zoomControl:true,attributionControl:false,scrollWheelZoom:true,touchZoom:true};
-  rideMapErrors=0;
-  const rotateAvailable=!rideRotateBanned&&window.L.Map&&L.Map.prototype&&typeof L.Map.prototype.setBearing==='function';
-  if(rotateAvailable){
-    let rotated=null;
-    try{
-      rotated=L.map('rideMap2D',{...rideMapOptions,rotate:true,bearing:0,touchRotate:false});
-      rideMap2D=rotated;
-      rotated.setBearing(6);rotated.setBearing(0); /* essai réel : un greffon cassé échoue ici, pas au milieu d’une sortie */
-      rideRotateOk=true;
-    }catch(error){rideRotateOk=false;rideDropMap2D();rideFreshHost2D();console.warn('Rotation de la mini-carte indisponible, carte remise au nord :',error&&error.message||error);}
-  }
-  if(!rideMap2D){
-    rideRotateOk=false;
-    try{rideMap2D=L.map($('rideMap2D'),rideMapOptions);}catch(error){console.warn('Mini-carte 2D indisponible :',error&&error.message||error);return;}
-  }
-  try{
-  rideMap2D.setView([freeCenter.lat,freeCenter.lon],14);
+  rideMap2D=L.map('rideMap2D',{zoomControl:true,attributionControl:false,scrollWheelZoom:true,touchZoom:true}).setView([freeCenter.lat,freeCenter.lon],14);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(rideMap2D);
   L.control.scale({imperial:false,metric:true,position:'bottomleft',maxWidth:82}).addTo(rideMap2D);
   rideRoute2D=L.polyline([],{color:'#d94135',weight:4,opacity:.92,lineCap:'round',lineJoin:'round'}).addTo(rideMap2D);
@@ -6142,20 +5581,11 @@ function initRideMap2D(){
     railway:L.polyline([],{color:'#333',weight:2,opacity:.75,dashArray:'6 4'}).addTo(rideMap2D)
   };
   rideMap2D.on('dragstart zoomstart',()=>{if(!mapState.cameraSync){mapState.overview=true;syncMapModeButton();}});
-  }catch(error){rideMapFailed(error);}
   updateMapLabel();
 }
 function updateMapLabel(){const label=$('mapScale');if(label)label.textContent=mapState.threeD?'Vue 3D inclinée':mapState.overview?'Parcours complet':'Suivi du cycliste';const title=$('map3D');if(title){title.textContent=mapState.threeD?'2D':'3D';title.setAttribute('aria-pressed',mapState.threeD?'true':'false');title.title=mapState.threeD?'Revenir à la carte 2D':'Afficher la carte inclinée avec bâtiments 3D';}const panel=$('mapPanel'),enlarge=$('mapEnlarge');if(enlarge&&panel){const expanded=panel.classList.contains('expanded');enlarge.textContent=expanded?'⤢':'⛶';enlarge.setAttribute('aria-label',expanded?'Réduire la carte':'Agrandir la carte');enlarge.title=enlarge.getAttribute('aria-label');}syncMapModeButton();}
 function rideGeoAt(distance){if(!route||!proj||![proj.la,proj.lo,proj.kx,proj.kz].every(Number.isFinite)||!proj.kx||!proj.kz)return null;const p=at(distance);return[proj.lo+p[0]/proj.kx,proj.la-p[2]/proj.kz];}
 function rideGeoLine(endDistance=route?route.len:0,maxPoints=1400){if(!route||!proj)return[];const end=Math.max(0,Math.min(route.len,endDistance)),count=Math.max(1,Math.min(maxPoints,Math.ceil(route.n*end/Math.max(route.len,1)))),coords=[];for(let i=0;i<=count;i++){const coord=rideGeoAt(end*i/count);if(coord)coords.push(coord);}return coords;}
-function rideBearingDeg(){ /* v173 : cap suivi par le cycliste (0° = nord, sens horaire) */
-  if(!route||!proj)return null;
-  const a=rideGeoAt(s),b=rideGeoAt(Math.min(route.len,s+12));
-  if(!a||!b)return null;
-  const dx=(b[0]-a[0])*proj.kx,dz=(b[1]-a[1])*proj.kz;
-  if(!Number.isFinite(dx)||!Number.isFinite(dz)||Math.hypot(dx,dz)<1)return null;
-  return Math.atan2(dx,dz)*180/Math.PI;
-}
 function geoFeature(type,coordinates){return{type:'Feature',properties:{},geometry:{type,coordinates}};}
 function installRideMap3DLayers(){if(!rideMap3D||rideMap3DReady)return;const style=rideMap3D.getStyle(),before=style.layers.find(layer=>layer.type==='symbol')?.id;const empty={type:'FeatureCollection',features:[]};rideMap3D.addSource('velo-options',{type:'geojson',data:empty}); /* v161 : tracés colorés des options au carrefour */rideMap3D.addLayer({id:'velo-options-line',type:'line',source:'velo-options',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','color'],'line-width':5,'line-opacity':.85,'line-dasharray':[2,3]}},before);rideMap3D.addSource('velo-route',{type:'geojson',data:empty});rideMap3D.addSource('velo-ridden',{type:'geojson',data:empty});rideMap3D.addSource('velo-rider',{type:'geojson',data:empty});rideMap3D.addLayer({id:'velo-route-outline',type:'line',source:'velo-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':8,'line-opacity':.9}},before);rideMap3D.addLayer({id:'velo-route-line',type:'line',source:'velo-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#d94135','line-width':5}},before);rideMap3D.addLayer({id:'velo-ridden-line',type:'line',source:'velo-ridden',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#8d241f','line-width':5}},before);rideMap3D.addLayer({id:'velo-rider-dot',type:'circle',source:'velo-rider',paint:{'circle-radius':8,'circle-color':'#d74436','circle-stroke-color':'#fff','circle-stroke-width':2}},before);rideMap3DReady=true;}
 function ensureMapLibre(){if(window.maplibregl)return Promise.resolve(window.maplibregl);if(mapLibrePromise)return mapLibrePromise;mapLibrePromise=new Promise((resolve,reject)=>{if(!document.querySelector('link[data-velo-maplibre]')){const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css';css.dataset.veloMaplibre='1';document.head.appendChild(css);}const script=document.createElement('script');script.src='https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js';script.async=true;script.onload=()=>window.maplibregl?resolve(window.maplibregl):reject(new Error('MapLibre indisponible'));script.onerror=()=>reject(new Error('Bibliothèque 3D non chargée'));document.head.appendChild(script);});return mapLibrePromise;}
@@ -6167,12 +5597,12 @@ async function setRideMap3D(enabled){
     try{const gl=await ensureMapLibre();if(!rideMap3D){rideMap3D=new gl.Map({container:'rideMap3D',style:'https://tiles.openfreemap.org/styles/liberty',center:[center.lng,center.lat],zoom,pitch:48,bearing:0,maxPitch:70,attributionControl:{compact:true},canvasContextAttributes:{antialias:false}});rideMap3D.addControl(new gl.NavigationControl({showCompass:true,visualizePitch:true}),'top-left');rideMap3D.on('load',()=>{installRideMap3DLayers();mapState.fitRoute=true;drawMiniMap(performance.now(),true);});rideMap3D.on('dragstart',()=>{if(!mapState.cameraSync){mapState.overview=true;syncMapModeButton();}});rideMap3D.on('zoomstart',()=>{if(!mapState.cameraSync){mapState.overview=true;syncMapModeButton();}});rideMap3D.on('error',error=>console.warn('Carte 3D :',error&&error.error||error));setTimeout(()=>{if(mapState.threeD&&rideMap3D&&!rideMap3DReady){mapState.threeD=false;view3.classList.add('hide');view.classList.remove('hide');updateMapLabel();toast('Carte 3D indisponible · la carte 2D reste utilisable.');}},15000);}else rideMap3D.resize();setTimeout(()=>rideMap3D&&rideMap3D.resize(),100);}
     catch(error){mapState.threeD=false;view3.classList.add('hide');view.classList.remove('hide');updateMapLabel();toast('Carte 3D indisponible : '+(error.message||error));}
   }else{
-    if(rideMap3D&&rideMap2D){const center=rideMap3D.getCenter();mapState.cameraSync=true;try{rideMap2D.setView([center.lat,center.lng],rideMap3D.getZoom(),{animate:false});}catch(error){rideMapFailed(error);}setTimeout(()=>mapState.cameraSync=false,120);}
+    if(rideMap3D&&rideMap2D){const center=rideMap3D.getCenter();mapState.cameraSync=true;rideMap2D.setView([center.lat,center.lng],rideMap3D.getZoom(),{animate:false});setTimeout(()=>mapState.cameraSync=false,120);}
     $('rideMap3D')?.classList.add('hide');$('rideMap2D')?.classList.remove('hide');mapState.threeD=false;mapRefresh();updateMapLabel();
   }
 }
 function mapFitRoute(){const coords=rideGeoLine(route?route.len:0,1800);if(coords.length<2)return false;mapState.cameraSync=true;if(mapState.threeD&&rideMap3D){const bounds=new maplibregl.LngLatBounds(coords[0],coords[0]);for(const point of coords)bounds.extend(point);rideMap3D.fitBounds(bounds,{padding:36,maxZoom:16,duration:0});}else if(rideMap2D){rideMap2D.fitBounds(coords.map(point=>[point[1],point[0]]),{padding:[22,22],maxZoom:16,animate:false});}setTimeout(()=>mapState.cameraSync=false,150);mapState.lastFollow=null;return true;}
-function mapRefresh(){setTimeout(()=>{try{if(rideMap2D)rideMap2D.invalidateSize({pan:false});}catch(error){rideMapFailed(error);}try{if(rideMap3D)rideMap3D.resize();}catch(_){}drawMiniMap(performance.now(),true);},120);}
+function mapRefresh(){setTimeout(()=>{if(rideMap2D)rideMap2D.invalidateSize({pan:false});if(rideMap3D)rideMap3D.resize();drawMiniMap(performance.now(),true);},120);}
 $('mapMode').onclick=()=>{if(!mapState.overview){mapState.overview=true;mapState.fitRoute=true;}else{mapState.overview=false;mapState.fitRoute=false;}updateMapLabel();drawMiniMap(performance.now(),true);};
 $('map3D').onclick=()=>setRideMap3D(!mapState.threeD);
 $('mapEnlarge').onclick=()=>{$('mapPanel').classList.toggle('expanded');$('mapPanel').classList.remove('wide');mapRefresh();updateMapLabel();};
@@ -6188,17 +5618,12 @@ function showSettlementSign(name,state){const box=$('settlementSign');if(!box)re
 function drawMiniMap(t,force=false){
   if(!mapState.visible||(!force&&t-mapState.last<750))return;mapState.last=t;initRideMap2D();if(!rideMap2D)return;
   const noGps=!proj||!route,notice=$('mapNoGps');if(notice)notice.classList.toggle('hide',!noGps);if(noGps){updateMapLabel();return;}
-  if(window._freeNavigation&&window._freeNavigation.active)freePreloadAhead(window._freeNavigation); /* v172 : tracé au-delà du secteur */
-  const preview=freeChoiceGeo(window._freeNavigation),planned=rideGeoLine(preview?Math.min(route.len,preview.end):route.len,1400).concat(preview?preview.points:freeAheadGeo(window._freeNavigation)),ridden=rideGeoLine(Math.min(s,route.len),700),here=rideGeoAt(s);
-  try{ /* v173 : toute défaillance de la carte reste ici — le rendu du vélo continue quoi qu’il arrive */
+  const planned=rideGeoLine(route.len,1400),ridden=rideGeoLine(Math.min(s,route.len),700),here=rideGeoAt(s);
   if(rideRoute2D)rideRoute2D.setLatLngs(planned.map(point=>[point[1],point[0]]));if(rideDone2D)rideDone2D.setLatLngs(ridden.map(point=>[point[1],point[0]]));if(here&&rideRider2D)rideRider2D.setLatLng([here[1],here[0]]);
-  /* v173 : la mini-carte tourne avec le cycliste — la direction suivie pointe vers le haut */
-  rideApplyBearing(mapState.overview?0:rideBearingDeg());
   updateMapFeatures(); /* v135 : couches eau / voies ferrées / champs sur la minicarte */
   if(mapState.fitRoute){if(mapFitRoute())mapState.fitRoute=false;}
   if(!mapState.overview&&here){const prior=mapState.lastFollow,dx=prior?(here[0]-prior[0])*111320*Math.cos(here[1]*Math.PI/180):Infinity,dz=prior?(here[1]-prior[1])*110540:Infinity;if(!prior||Math.hypot(dx,dz)>7){mapState.cameraSync=true;if(mapState.threeD&&rideMap3D)rideMap3D.setCenter(here);else rideMap2D.panTo([here[1],here[0]],{animate:false});setTimeout(()=>mapState.cameraSync=false,80);mapState.lastFollow=here;}}
   if(rideMap3DReady&&rideMap3D){rideMap3D.getSource('velo-route')?.setData(geoFeature('LineString',planned));rideMap3D.getSource('velo-ridden')?.setData(geoFeature('LineString',ridden));rideMap3D.getSource('velo-rider')?.setData(here?geoFeature('Point',here):{type:'FeatureCollection',features:[]});}
-  }catch(error){rideMapFailed(error);}
   updateMapLabel();
 }
 setTimeout(initRideMap2D,450);
@@ -6240,58 +5665,32 @@ function parseGPX(txt){
   const P=[];
   for(const tag of['trkpt','rtept','wpt']){
     for(const ch of txt.split(new RegExp('<(?:\\w+:)?'+tag+'\\b')).slice(1)){
-      const head=ch.slice(0,ch.indexOf('>')+1),la=num(head,'lat'),lo=num(head,'lon');
-      const close=ch.search(new RegExp('</(?:\\w+:)?'+tag+'\\s*>'));
-      const e=head.endsWith('/>')||close<0?null:ch.slice(0,close).match(/<(?:\w+:)?ele>\s*([-+0-9.eE]+)/);
-      const ele=e?+e[1]:NaN;
-      if(isFinite(la)&&isFinite(lo)&&Math.abs(la)<=90&&Math.abs(lo)<=180)P.push({lat:la,lon:lo,ele:Number.isFinite(ele)?ele:null});
+      const head=ch.slice(0,ch.indexOf('>')+1),la=num(head,'lat'),lo=num(head,'lon'),e=ch.match(/<(?:\w+:)?ele>\s*([-+0-9.eE]+)/);
+      if(isFinite(la)&&isFinite(lo)&&Math.abs(la)<=90&&Math.abs(lo)<=180)P.push({lat:la,lon:lo,ele:e?+e[1]:0});
     }
     if(P.length>=2)break;
     P.length=0;
   }
   if(P.length<2)throw new Error('Aucun point de trace trouvé (texte de '+txt.length+' caractères, début : « '+txt.slice(0,50).replace(/\s+/g,' ')+' »).');
   const la=P[0].lat,lo=P[0].lon,kx=111320*Math.cos(la*Math.PI/180),kz=110540;
-  return {points:P,projection:{la,lo,kx,kz}};
-}
-let gpxLoadRevision=0;
-async function loadGpxTrace(txt,revision){
-  if(revision!==gpxLoadRevision)return false;
-  const {points,projection}=parseGPX(txt);
-  const missing=points.some(p=>!Number.isFinite(p.ele));
-  let note='altitudes du GPX';
-  if(missing||$('gpxRegrade').checked){
-    let metres=0;
-    for(let i=1;i<points.length;i++)metres+=freeDistance(points[i-1],points[i],projection);
-    if(metres>600000)throw new Error('Cette version accepte les traces jusqu’à 600 km.');
-    const loaded=await freeFetchElevations([points],projection,(f,source)=>{
-      if(revision===gpxLoadRevision&&f>=0)prog(f,'Recalcul altimétrique · '+source+'…');
-    });
-    if(revision!==gpxLoadRevision)return false;
-    if(!loaded&&missing)throw new Error('Altitudes manquantes et service altimétrique indisponible.');
-    note=loaded?'profil '+projection.elevationSource+(projection.elevationSource==='IGN'?'':' (estimé)'):'recalcul indisponible, altitudes du GPX conservées';
-  }
-  if(window._clearFreeNavigation)window._clearFreeNavigation();
-  proj=projection;
-  build(freeRaw(points,{...proj,center:{lat:proj.la,lon:proj.lo}}));
-  toast('Parcours chargé : '+(route.len/1000).toFixed(1)+' km · '+note+'.');
-  return true;
+  proj={la,lo,kx,kz};
+  return P.map(p=>({x:(p.lon-lo)*kx,z:-(p.lat-la)*kz,y:p.ele}));
 }
 $('gp').onclick=()=>{toast('Choisis ton fichier GPX…');$('fi').click()};
 $('fi').onchange=async e=>{
   const f=e.target.files[0];if(!f){toast('Aucun fichier reçu.');return}
-  const revision=++gpxLoadRevision;e.target.value='';
+  if(window._clearFreeNavigation)window._clearFreeNavigation();
   toast('Lecture de '+f.name+'…');
-  try{await loadGpxTrace(await f.text(),revision);}catch(err){if(revision===gpxLoadRevision)toast('GPX : '+err.message);}
+  try{build(parseGPX(await f.text()));toast('Parcours chargé : '+(route.len/1000).toFixed(1)+' km.')}catch(err){toast('GPX illisible : '+err.message)}
+  e.target.value='';
 };
 $('pg').onclick=()=>{$('pe').textContent='';$('pp').classList.remove('hide')};
-$('px').onclick=()=>{++gpxLoadRevision;$('pp').classList.add('hide');$('pl').disabled=false;};
-$('pl').onclick=async()=>{
-  const revision=++gpxLoadRevision;$('pl').disabled=true;$('pe').textContent='';
-  try{if(await loadGpxTrace($('pt').value,revision))$('pp').classList.add('hide');}
-  catch(err){if(revision===gpxLoadRevision)$('pe').textContent='GPX : '+err.message;}
-  finally{if(revision===gpxLoadRevision)$('pl').disabled=false;}
+$('px').onclick=()=>$('pp').classList.add('hide');
+$('pl').onclick=()=>{
+  try{if(window._clearFreeNavigation)window._clearFreeNavigation();build(parseGPX($('pt').value));$('pp').classList.add('hide');toast('Parcours chargé : '+(route.len/1000).toFixed(1)+' km.')}
+  catch(err){$('pe').textContent='GPX illisible : '+err.message}
 };
-$('dm').onclick=()=>{++gpxLoadRevision;$('exportPanel').classList.add('hide');demo();toast('Démonstration prête · lieux et haies fictifs.')};
+$('dm').onclick=()=>{$('exportPanel').classList.add('hide');demo();toast('Démonstration prête · lieux et haies fictifs.')};
 
 
 
@@ -6355,21 +5754,21 @@ $('hb').onclick=async()=>{
     await c.startNotifications();$('hb').classList.add('on');toast('Cardio connecté.');
   }catch(e){toast('Cardio : '+e.message)}
 };
-setInterval(()=>{if(route&&ctl&&running)sendGrade(at(s)[3]*(window._rideDir||1))},1500);
+setInterval(()=>{if(route&&ctl&&running)sendGrade(at(s)[3])},1500);
 
 
 /* ---------- Départ, pause, fin du parcours ---------- */
 $('go').onclick=()=>{if(!(freeNavigation&&freeNavigation.prompt))freeHideRouteArrows();if(freeNavigation&&freeNavigation.awaitingStart){$('stopDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();const nav=freeNavigation,dir=(nav.startOptions||[]).some(o=>o.direction===(window._freeStartDir>=0?1:-1))?(window._freeStartDir>=0?1:-1):((nav.startOptions&&nav.startOptions[0]&&nav.startOptions[0].direction)||1);freeSelectStart(dir);requestWakeLock();return;} /* v121 : départ direct dans le sens de la flèche, plus d'écran « choisir le sens » */$('stopDialog').classList.add('hide');$('freeStartDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();if(!proj&&Number($('pw').value)<=0){$('pw').value=150;$('pv').textContent='150';} /* v153 : en démo le cycliste avance tout seul (150 W) */
 running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();updateBarHeight()};
 $('mn').onclick=()=>{running=false;if($('routeArrows'))$('routeArrows').classList.add('hide');$('exportPanel').classList.add('hide');$('freeStartDialog').classList.add('hide');$('home').classList.remove('hide');syncBarPresentation();releaseWakeLock()};
-$('pause').onclick=()=>{if(!route)return;if(!running&&(s>=route.len&&(window._rideDir||1)>0||s<=0&&(window._rideDir||1)<0)){s=0;window._rideDir=1;v=0;totalDistance=0;resetMapState();place(true)}running=!running;$('pause').textContent=running?'Pause':'Reprendre';toast(running?'Sortie en cours.':'Sortie en pause.');buzz(15);if(ctl&&!running)sendGrade(0)};
+$('pause').onclick=()=>{if(!route)return;if(freeNavigation&&freeNavigation.awaitingChoice){toast('Choisis une flèche au carrefour pour repartir.');return;}if(s>=route.len){s=0;v=0;totalDistance=0;resetMapState();place(true)}running=!running;$('pause').textContent=running?'Pause':'Reprendre';toast(running?'Sortie en cours.':'Sortie en pause.');buzz(15);if(ctl&&!running)sendGrade(0)};
 
 /* ---------- Stop, FIT export, Strava, plein écran ---------- */
 $('stopBtn').onclick=()=>{
   if(!route)return; running=false; v=0;if($('routeArrows'))$('routeArrows').classList.add('hide'); $('pause').textContent='Repartir'; if(ctl)sendGrade(0);
   $('exportPanel').classList.add('hide');renderSessionSummary('stop');
 };
-$('resumeStop').onclick=()=>{$('stopDialog').classList.add('hide');$('exportPanel').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();if(freeNavigation&&freeNavigation.awaitingStart){const nav=freeNavigation,dir=(nav.startOptions||[]).some(o=>o.direction===(window._freeStartDir>=0?1:-1))?(window._freeStartDir>=0?1:-1):((nav.startOptions&&nav.startOptions[0]&&nav.startOptions[0].direction)||1);freeSelectStart(dir);return;} /* v121 : reprise directe dans le sens de la flèche */running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();if(freeNavigation&&freeNavigation.prompt)freeRenderRouteArrows(freeNavigation.prompt,freeNavigation);if(ctl)sendGrade(at(s)[3]*(window._rideDir||1));toast('Entraînement repris.');};
+$('resumeStop').onclick=()=>{$('stopDialog').classList.add('hide');$('exportPanel').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();if(freeNavigation&&freeNavigation.awaitingStart){const nav=freeNavigation,dir=(nav.startOptions||[]).some(o=>o.direction===(window._freeStartDir>=0?1:-1))?(window._freeStartDir>=0?1:-1):((nav.startOptions&&nav.startOptions[0]&&nav.startOptions[0].direction)||1);freeSelectStart(dir);return;} /* v121 : reprise directe dans le sens de la flèche */if(freeNavigation&&freeNavigation.awaitingChoice){running=false;if(freeNavigation.prompt){freePrepareJunctionPlans(freeNavigation.prompt,freeNavigation);freeRenderRouteArrows(freeNavigation.prompt,freeNavigation);}toast('Choisis une flèche au carrefour pour repartir.');return;}running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();if(typeof freeNavigation!=='undefined'&&freeNavigation&&freeNavigation.prompt)freeRenderRouteArrows(freeNavigation.prompt,freeNavigation);if(ctl)sendGrade(at(s)[3]);toast('Entraînement repris.');};
 $('quitStop').onclick=()=>{running=false;v=0;if(ctl)sendGrade(0);$('stopDialog').classList.add('hide');$('freeStartDialog').classList.add('hide');$('exportPanel').classList.add('hide');$('home').classList.remove('hide');syncBarPresentation();releaseWakeLock();toast('Entraînement quitté · retour à l’accueil.');if($('icuChip'))$('icuChip').classList.add('hide');if($('icuWarn'))$('icuWarn').classList.add('hide');if($('icuOverlay'))$('icuOverlay').classList.add('hide');if(window._icuPlan&&window._icuPlan.phase!=='done'&&window._icuPlan.phase!=='doneIdle')window._icuPlan.phase='armed';}; /* v144 : l'entraînement intervals.icu reste armé pour la prochaine sortie */
 if($('quitBtn'))$('quitBtn').onclick=()=>{running=false;v=0;if(ctl)sendGrade(0);releaseWakeLock();if(document.fullscreenElement)document.exitFullscreen();$('home').classList.remove('hide');syncBarPresentation();$('exportPanel').classList.add('hide');renderSessionSummary('quit');}; /* v121 : bouton ✕ retiré du bandeau — on quitte via ⏹️ puis « Fermer et revenir à l’accueil » */
 $('fsBtn').onclick=()=>{const el=document.documentElement; if(document.fullscreenElement)document.exitFullscreen(); else el.requestFullscreen&&el.requestFullscreen();};
@@ -6856,23 +6255,13 @@ function loop(t){
   requestAnimationFrame(loop);const dt=Math.max(0,Math.min((t-last)/1000,.1));last=t;
   updateSky(dt);
   if(route){
-    const dir=window._rideDir||1,power=ctl?lastP:Math.max(+$('pw').value,(proj?0:150)),grade=at(s)[3]*dir; /* v154 : en démo le cycliste avance même curseur à 0 (150 W min) */
+    const power=ctl?lastP:Math.max(+$('pw').value,(proj?0:150)),grade=at(s)[3]; /* v154 : en démo le cycliste avance même curseur à 0 (150 W min) */
     const _hasPower=power>0,_effRunning=running;
     /* v73 : la sortie ne démarre vraiment qu'au premier watt de puissance.
        Avant cela : vélo immobile et chrono à l'arrêt. Ensuite, la vitesse
        découle de la puissance et de la topographie (pente), jamais de la cadence. */
     if(_hasPower)window._powerStarted=true;
-    if(running&&window._powerStarted){
-      v=integrateRideSpeed(v,power,grade,dt);
-      const advance=dir<0?Math.max(-v*dt,-s):Math.min(v*dt,route.len-s);
-      s+=advance;totalDistance+=Math.abs(advance);
-      window._rideGain=(window._rideGain||0)+Math.max(0,grade)*Math.abs(advance);
-      if((dir>0?s>=route.len:s<=0)&&!(freeNavigation&&freeNavigation.active)){
-        running=false;v=0;$('pause').textContent='Repartir';
-        toast((s<=0?'Début du parcours atteint · ':'Parcours terminé · ')+(totalDistance/1000).toFixed(2)+' km. Cliquez sur Repartir pour recommencer.');
-        if(ctl)sendGrade(0);
-      }
-    }
+    if(running&&window._powerStarted){v=integrateRideSpeed(v,power,grade,dt);const _dir=window._rideDir||1;let advance=window._uTurn?0:v*dt*_dir; /* v128 : s gelé pendant le demi-tour animé, le vélo tourne sur son arc */if(_dir<0)advance=Math.max(advance,-s);else advance=Math.min(advance,route.len-s);s+=advance;if(advance>0)totalDistance+=advance;if(advance>0)window._rideGain=(window._rideGain||0)+Math.max(0,grade)*advance;if(s>=route.len||s<=0){s=Math.max(0,Math.min(route.len,s));const freeNav=window._freeNavigation;if(!(freeNav&&freeNav.active)){running=false;v=0;$('pause').textContent='Repartir';toast((s<=0?'Début du parcours atteint · ':'Parcours terminé · ')+(totalDistance/1000).toFixed(2)+' km. Cliquez sur Repartir pour recommencer.');if(ctl)sendGrade(0)}}}
     if(window._freeNavigation&&window._freeNavigation.active)freeAdvanceNavigation();
     if(_effRunning&&t-lastSampleT>1000){lastSampleT=t;if(!sessionStart)sessionStart=Date.now();const here=at(s),gps=proj?here:null,lat=gps?proj.la-gps[2]/proj.kz:null,lon=gps?proj.lo+gps[0]/proj.kx:null;sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power:ctl?lastP:+$('pw').value,hr,cad:rideCadence(v,power),lat,lon,alt:gps?gps[1]:null,spd:v,x:here[0],z:here[2]});}
     if(_effRunning&&window._powerStarted){window._rideElapsed+=dt;window._ridePwSum=(window._ridePwSum||0)+power*dt;} /* v155 : cumul puissance pour la moyenne */
@@ -6890,7 +6279,6 @@ function loop(t){
     if(t-(window._compTick||0)>400){window._compTick=t;updateBikeComputer(power,grade);} /* v162 : écran du compteur du vélo */
   }
   R.render(S,cam);
-  if(route)document.getElementById("c").setAttribute("data-scene-ready","true");
 }
 document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wakeLockWanted&&!document.hidden)requestWakeLock()});
 /* v71 : panneaux masqués sur l'accueil, HUD décalé, défilement des trois villes */
@@ -6903,11 +6291,9 @@ document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wak
   homeSync();
   setInterval(()=>{if(document.hidden)return;for(const box of document.querySelectorAll('#routeArrows .routeTowns')){const roll=box.firstElementChild,n=roll?roll.children.length:0;if(n<2)continue;box._i=((box._i||0)+1)%n;const h=box.getBoundingClientRect().height||13;roll.style.transition=box._i===0?'none':'transform .45s ease';roll.style.transform='translateY(-'+box._i*h+'px)'}},2600);
 })();
-/* v178 : le badge de version de l'écran d'accueil suit automatiquement le titre de la page */
-(function(){try{const m=document.title.match(/v(\d+)/),eb=document.getElementById('appEyebrow');if(m&&eb)eb.textContent=eb.textContent.replace(/v\d+$/,'v'+m[1]);}catch(e){}})();
 demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.lat,freeCenter.lon); /* v138 : météo du secteur par défaut */requestAnimationFrame(loop);
 
-
+/* TEST_HOOK */
 } catch(error) {
   console.error(error);
   document.getElementById('fatalText').textContent=error.message+' Si le problème persiste, essayez Chrome avec WebGL activé.';
@@ -6917,6 +6303,3 @@ demo();if(typeof freeCenter!=='undefined'&&freeCenter)fetchWeatherAt(freeCenter.
 </script>
 </body>
 </html>
-
-
-
