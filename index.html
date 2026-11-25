@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v183 — le braquet virtuel agit sur la résistance du home-trainer</title>
+<title>Vélo 3D v184 — la direction choisie emprunte la route OSM préchargée</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v183</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v184</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -1047,6 +1047,9 @@ function updateAspinRoadBed(terrain){
 function updateRouteShoulders(target,terrain){
   const old=target.userData.routeShoulders;
   if(old){target.remove(old);old.geometry.dispose();old.material.dispose();target.userData.routeShoulders=null;}
+  /* v184 : en navigation libre la chaussée n'a plus la largeur du ruban (elle suit la route OSM),
+     donc plus d'accotement à raccorder à 3,7 m — un talus resterait visible au milieu du pré. */
+  if(window._freeNavigation&&window._freeNavigation.active)return;
   const vertices=[],{X,Y,Z,n}=route;
   for(const side of [-1,1]){
     let previous=null;
@@ -4216,20 +4219,28 @@ function makeRouteRoad(target){
     const mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,map:texture||null,side:THREE.DoubleSide}));mesh.receiveShadow=true;return mesh;
   };
   if(!proj)road.add(ribbon(145,-.43,0x769b52));
-  road.add(ribbon(3.75,-.04,0xb9b199));road.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
-  // Light painted edge lines; no automatic invented centre-line/speed restrictions.
-  const edgePositions=[];
-  for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(junctionMarkCrosses(X[i],Z[i],X[i+1],Z[i+1],junctionZones)||nearJunctionDistance(i*step)||nearJunctionDistance((i+1)*step))continue;for(const side of[-1,1]){const pts=[
-    [X[i]+nx*2.93*side,Y[i]+.014,Z[i]+nz*2.93*side],[X[i]+nx*3.01*side,Y[i]+.014,Z[i]+nz*3.01*side],
-    [X[i+1]+bx*3.01*side,Y[i+1]+.014,Z[i+1]+bz*3.01*side],[X[i+1]+bx*2.93*side,Y[i+1]+.014,Z[i+1]+bz*2.93*side]];
-    for(const k of[0,1,2,0,2,3])edgePositions.push(...pts[k]);}}
-  const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePositions,3));edgeGeo.computeVertexNormals();road.add(new THREE.Mesh(edgeGeo,new THREE.MeshLambertMaterial({color:0xe8e5d7,side:THREE.DoubleSide})));
-  /* v78 : ligne médiane discontinue — trait de 3 m tous les 13 m */
-  const dashPositions=[];
-  for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3);if(junctionMarkCrosses(a2[0],a2[2],b2[0],b2[2],junctionZones)||nearJunctionDistance(d)||nearJunctionDistance(d+3))continue;const dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
-    const quad=[[a2[0]+nx2,a2[1]+.016,a2[2]+nz2],[b2[0]+nx2,b2[1]+.016,b2[2]+nz2],[b2[0]-nx2,b2[1]+.016,b2[2]-nz2],[a2[0]-nx2,a2[1]+.016,a2[2]-nz2]];
-    for(const k of[0,1,2,0,2,3])dashPositions.push(...quad[k]);}
-  if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();road.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0xefece0,side:THREE.DoubleSide})));}
+  /* v184 : en navigation libre, la chaussée suivie reprend exactement la couleur et la largeur des
+     routes OSM préchargées (0x5e6460, demi-largeur 2,2 m), sans accotement clair ni marquage inventé.
+     Le ruban beige et les rives blanches de la v183 dessinaient une « ligne blanche » sur la route
+     déjà chargée et barraient l'entrée des branches : à chaque direction choisie, on croyait qu'une
+     nouvelle route était tracée par-dessus au lieu d'emprunter celle qui existait. */
+  const preloadedRoad=!!(window._freeNavigation&&window._freeNavigation.active);
+  const edgePositions=[],dashPositions=[];
+  if(preloadedRoad){
+    road.add(ribbon(2.2,-.02,0x5e6460));
+  }else{
+    road.add(ribbon(3.75,-.04,0xb9b199));road.add(ribbon(3.2,0,0xffffff,getRoadTexture()));
+    for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(junctionMarkCrosses(X[i],Z[i],X[i+1],Z[i+1],junctionZones)||nearJunctionDistance(i*step)||nearJunctionDistance((i+1)*step))continue;for(const side of[-1,1]){const pts=[
+      [X[i]+nx*2.93*side,Y[i]+.014,Z[i]+nz*2.93*side],[X[i]+nx*3.01*side,Y[i]+.014,Z[i]+nz*3.01*side],
+      [X[i+1]+bx*3.01*side,Y[i+1]+.014,Z[i+1]+bz*3.01*side],[X[i+1]+bx*2.93*side,Y[i+1]+.014,Z[i+1]+bz*2.93*side]];
+      for(const k of[0,1,2,0,2,3])edgePositions.push(...pts[k]);}}
+    const edgeGeo=new THREE.BufferGeometry();edgeGeo.setAttribute('position',new THREE.Float32BufferAttribute(edgePositions,3));edgeGeo.computeVertexNormals();road.add(new THREE.Mesh(edgeGeo,new THREE.MeshLambertMaterial({color:0xe8e5d7,side:THREE.DoubleSide})));
+    /* v78 : ligne médiane discontinue — trait de 3 m tous les 13 m */
+    for(let d=0;d+3<route.len;d+=13){const a2=at(d),b2=at(d+3);if(junctionMarkCrosses(a2[0],a2[2],b2[0],b2[2],junctionZones)||nearJunctionDistance(d)||nearJunctionDistance(d+3))continue;const dx2=b2[0]-a2[0],dz2=b2[2]-a2[2],l2=Math.hypot(dx2,dz2)||1,nx2=-dz2/l2*.05,nz2=dx2/l2*.05;
+      const quad=[[a2[0]+nx2,a2[1]+.016,a2[2]+nz2],[b2[0]+nx2,b2[1]+.016,b2[2]+nz2],[b2[0]-nx2,b2[1]+.016,b2[2]-nz2],[a2[0]-nx2,a2[1]+.016,a2[2]-nz2]];
+      for(const k of[0,1,2,0,2,3])dashPositions.push(...quad[k]);}
+    if(dashPositions.length){const dashGeo=new THREE.BufferGeometry();dashGeo.setAttribute('position',new THREE.Float32BufferAttribute(dashPositions,3));dashGeo.computeVertexNormals();road.add(new THREE.Mesh(dashGeo,new THREE.MeshLambertMaterial({color:0xefece0,side:THREE.DoubleSide})));}
+  }
   target.add(road);
   return road;
 }
@@ -5956,7 +5967,8 @@ function osmRoadWidth(tags){const mapped=osmMetres(tags.width,NaN,1.5,20);if(isF
 function selectRoadsForScene(roadParts,maxWays=1200){
   if(!route)return[];const limit=Math.min(route.len,25000),binSize=500,binCount=Math.max(1,Math.ceil(limit/binSize)),bins=Array.from({length:binCount},()=>new Map());
   roadParts.forEach(([raw,tags],index)=>{if(raw.length<2)return;let total=0;for(let i=1;i<raw.length;i++)total+=Math.hypot(raw[i][0]-raw[i-1][0],raw[i][1]-raw[i-1][1]);const sampled=osmSampleLine(raw,Math.max(12,total/60)),bestByBin=new Map();let onRoutePts=0;
-    /* v180 : une voie qui SUIT le tracé (route déjà rendue par makeRouteRoad, ou branche doublée) est exclue — son doublon dessine une surface et des rives blanches qui flottent à quelques cm au-dessus de la vraie chaussée */
+    /* v184 : une voie qui SUIT le tracé reste exclue : le ruban de chaussée la remplace, désormais avec
+       la même couleur et la même largeur qu'elle, donc sans doublon ni rive claire visible. */
     for(const point of sampled){const site=nearestOnRoute(point[0],point[1]);if(site&&site.dist2<81)onRoutePts++;}
     if(sampled.length&&onRoutePts>=sampled.length*.85)return;
     for(const point of sampled){const site=nearestOnRoute(point[0],point[1]);if(!site||site.dist2>190*190||site.distance>limit)continue;const bin=Math.min(binCount-1,Math.floor(site.distance/binSize)),previous=bestByBin.get(bin);if(!previous||site.dist2<previous)bestByBin.set(bin,site.dist2)}
