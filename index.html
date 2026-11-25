@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v185 — la route libre garde sa largeur et ses tiretés, sans ligne blanche</title>
+<title>Vélo 3D v186 — l’entraînement valide chaque bloc, affiche un score et un résumé détaillé</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -294,6 +294,15 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #icuWarn.hide{display:none!important}
 #icuWarn.over{color:#ff7b7b}#icuWarn.under{color:#7db9ff}
 #po.over{color:#ff7b7b}#po.ok{color:#5fd98a}#po.under{color:#7db9ff}
+/* v186 : bandeau du haut (consigne de départ / consigne du bloc) */
+#icuBanner{position:fixed;z-index:45;left:6px;right:6px;top:calc(4px + env(safe-area-inset-top,0px));margin:0 auto;max-width:620px;padding:8px 12px;border-radius:12px;border:1px solid rgba(121,223,197,.6);background:rgba(8,26,30,.94);color:#fff;font-size:clamp(12px,3.2vw,16px);font-weight:800;line-height:1.25;text-align:center;box-shadow:0 6px 22px #000a;backdrop-filter:blur(8px);pointer-events:none}
+#icuBanner.hide{display:none!important}
+/* v186 : profil et score de l'entraînement dans le résumé */
+#stopWorkout{width:100%;margin:0 0 12px}
+#stopWorkout.hide{display:none!important}
+.stopWorkoutHead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:0 0 4px}
+#stopWorkoutScore{font-weight:900;color:var(--ac);font-size:15px;font-variant-numeric:tabular-nums}
+#stopWorkoutGraph{display:block;width:100%;height:124px;border-radius:10px;background:rgba(0,0,0,.18)}
 #stopBlocks{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
 #stopBlocks.hide{display:none!important}
 #stopBlocks div{padding:6px 4px;border:1px solid var(--bd);border-radius:10px;background:rgba(255,255,255,.04);font-size:11px;color:var(--muted)}
@@ -483,7 +492,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v185</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v186</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -619,10 +628,11 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="pp" class="hide"><label for="pt">Importer une trace GPX</label><textarea id="pt" spellcheck="false" placeholder="Collez ici le contenu complet du fichier GPX"></textarea><div id="pe" role="alert"></div><div class="row"><button id="pl" class="primary">Charger</button><button id="px">Annuler</button></div></div>
 <div id="freeStartDialog" class="hide" role="dialog" aria-modal="true" aria-labelledby="freeStartTitle"><section class="startCard"><h2 id="freeStartTitle">Dans quel sens partir ?</h2><p id="freeStartInfo">Le parcours et ses deux directions sont prêts.</p><div class="startCardActions"><button id="startForward" class="primary">Continuer dans ce sens</button><button id="startReverse">Partir dans l’autre sens</button></div></section></div>
 <div id="icuOverlay" class="hide" role="status"><div><div id="icuOverlayTitle"></div><div id="icuOverlaySub"></div><div id="icuOverlayCount"></div></div></div>
+<div id="icuBanner" class="hide" role="status" aria-live="polite"></div>
 <div id="icuWarn" class="hide" role="alert"></div>
 <div id="icuChip" class="hide"></div>
 <div id="icuTargets" class="hide"><span id="icuTargetsTxt"></span><button id="icuSkip" type="button" title="Passer à l’exercice suivant" aria-label="Passer à l’exercice suivant">⏭</button></div>
-<div id="stopDialog" class="hide" role="dialog" aria-modal="true" aria-labelledby="stopTitle"><section class="stopCard"><h2 id="stopTitle">Séance terminée</h2><p id="stopInfo"></p><div id="stopStats"></div><div id="stopBlocks" class="hide"></div><div id="stopMap" aria-label="Tracé effectué sur la carte" role="img"></div><div class="stopActions"><button id="exportFit" class="primary">⬇ FIT (Garmin, Strava)</button><button id="exportTcx">⬇ TCX (Garmin Connect)</button><button id="exportGpx">⬇ GPX (tracé)</button><button id="openStrava">Voir sur Strava ↗</button><button id="resumeStop" class="wideAction">▶ Reprendre l’entraînement</button><button id="quitStop" class="wideAction">⏹ Fermer et revenir à l’accueil</button></div><small id="stopHelp">Garmin Connect (ordinateur, ou Chrome en mode ordinateur) : Importer des données, puis choisis le .FIT ou le .TCX. Sur un compteur ou une montre : copie le .FIT dans le dossier Garmin/NewFiles par USB. Strava : Upload, Fichier.</small></section></div>
+<div id="stopDialog" class="hide" role="dialog" aria-modal="true" aria-labelledby="stopTitle"><section class="stopCard"><h2 id="stopTitle">Séance terminée</h2><p id="stopInfo"></p><div id="stopStats"></div><div id="stopBlocks" class="hide"></div><div id="stopWorkout" class="hide"><div class="stopWorkoutHead"><b id="stopWorkoutName"></b><span id="stopWorkoutScore"></span></div><canvas id="stopWorkoutGraph" aria-label="Profil de l'entraînement et puissance moyenne réalisée par bloc"></canvas></div><div id="stopMap" aria-label="Tracé effectué sur la carte" role="img"></div><div class="stopActions"><button id="exportFit" class="primary">⬇ FIT (Garmin, Strava)</button><button id="exportTcx">⬇ TCX (Garmin Connect)</button><button id="exportGpx">⬇ GPX (tracé)</button><button id="openStrava">Voir sur Strava ↗</button><button id="resumeStop" class="wideAction">▶ Reprendre l’entraînement</button><button id="quitStop" class="wideAction">⏹ Fermer et revenir à l’accueil</button></div><small id="stopHelp">Garmin Connect (ordinateur, ou Chrome en mode ordinateur) : Importer des données, puis choisis le .FIT ou le .TCX. Sur un compteur ou une montre : copie le .FIT dans le dossier Garmin/NewFiles par USB. Strava : Upload, Fichier.</small></section></div>
 <div id="fatal" class="hide" role="alert"><h2>La scène 3D ne peut pas démarrer</h2><p id="fatalText"></p></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
@@ -6394,7 +6404,7 @@ setInterval(()=>{if(route&&ctl&&running)sendGrade(at(s)[3]*(window._rideDir||1))
 
 
 /* ---------- Départ, pause, fin du parcours ---------- */
-$('go').onclick=()=>{if(!(freeNavigation&&freeNavigation.prompt))freeHideRouteArrows();if(freeNavigation&&freeNavigation.awaitingStart){$('stopDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();const nav=freeNavigation,dir=(nav.startOptions||[]).some(o=>o.direction===(window._freeStartDir>=0?1:-1))?(window._freeStartDir>=0?1:-1):((nav.startOptions&&nav.startOptions[0]&&nav.startOptions[0].direction)||1);freeSelectStart(dir);requestWakeLock();return;} /* v121 : départ direct dans le sens de la flèche, plus d'écran « choisir le sens » */$('stopDialog').classList.add('hide');$('freeStartDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();if(!proj&&Number($('pw').value)<=0){$('pw').value=150;$('pv').textContent='150';} /* v153 : en démo le cycliste avance tout seul (150 W) */
+$('go').onclick=()=>{if(window._icuPlan&&(window._icuPlan.phase==='done'||window._icuPlan.phase==='doneIdle')){window._icuPlan.phase='armed';window._icuPlan.blocks=[];window._icuPlan.score=0;window._icuPlan.curI=null} /* v186 : un nouvel entraînement peut repartir */if(!(freeNavigation&&freeNavigation.prompt))freeHideRouteArrows();if(freeNavigation&&freeNavigation.awaitingStart){$('stopDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();const nav=freeNavigation,dir=(nav.startOptions||[]).some(o=>o.direction===(window._freeStartDir>=0?1:-1))?(window._freeStartDir>=0?1:-1):((nav.startOptions&&nav.startOptions[0]&&nav.startOptions[0].direction)||1);freeSelectStart(dir);requestWakeLock();return;} /* v121 : départ direct dans le sens de la flèche, plus d'écran « choisir le sens » */$('stopDialog').classList.add('hide');$('freeStartDialog').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();if(!proj&&Number($('pw').value)<=0){$('pw').value=150;$('pv').textContent='150';} /* v153 : en démo le cycliste avance tout seul (150 W) */
 running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();updateBarHeight()};
 $('mn').onclick=()=>{running=false;if($('routeArrows'))$('routeArrows').classList.add('hide');$('exportPanel').classList.add('hide');$('freeStartDialog').classList.add('hide');$('home').classList.remove('hide');syncBarPresentation();releaseWakeLock()};
 $('pause').onclick=()=>{if(!route)return;if(!running&&(s>=route.len&&(window._rideDir||1)>0||s<=0&&(window._rideDir||1)<0)){s=0;window._rideDir=1;v=0;totalDistance=0;resetMapState();place(true)}running=!running;$('pause').textContent=running?'Pause':'Reprendre';toast(running?'Sortie en cours.':'Sortie en pause.');buzz(15);if(ctl&&!running)sendGrade(0)};
@@ -6405,7 +6415,7 @@ $('stopBtn').onclick=()=>{
   $('exportPanel').classList.add('hide');renderSessionSummary('stop');
 };
 $('resumeStop').onclick=()=>{$('stopDialog').classList.add('hide');$('exportPanel').classList.add('hide');$('home').classList.add('hide');syncBarPresentation();if(freeNavigation&&freeNavigation.awaitingStart){const nav=freeNavigation,dir=(nav.startOptions||[]).some(o=>o.direction===(window._freeStartDir>=0?1:-1))?(window._freeStartDir>=0?1:-1):((nav.startOptions&&nav.startOptions[0]&&nav.startOptions[0].direction)||1);freeSelectStart(dir);return;} /* v121 : reprise directe dans le sens de la flèche */running=true;$('pause').textContent='Pause';last=performance.now();requestWakeLock();if(freeNavigation&&freeNavigation.prompt)freeRenderRouteArrows(freeNavigation.prompt,freeNavigation);if(ctl)sendGrade(at(s)[3]*(window._rideDir||1));toast('Entraînement repris.');};
-$('quitStop').onclick=()=>{running=false;v=0;if(ctl)sendGrade(0);$('stopDialog').classList.add('hide');$('freeStartDialog').classList.add('hide');$('exportPanel').classList.add('hide');$('home').classList.remove('hide');syncBarPresentation();releaseWakeLock();toast('Entraînement quitté · retour à l’accueil.');if($('icuChip'))$('icuChip').classList.add('hide');if($('icuWarn'))$('icuWarn').classList.add('hide');if($('icuOverlay'))$('icuOverlay').classList.add('hide');if(window._icuPlan&&window._icuPlan.phase!=='done'&&window._icuPlan.phase!=='doneIdle')window._icuPlan.phase='armed';}; /* v144 : l'entraînement intervals.icu reste armé pour la prochaine sortie */
+$('quitStop').onclick=()=>{running=false;v=0;if(ctl)sendGrade(0);$('stopDialog').classList.add('hide');$('freeStartDialog').classList.add('hide');$('exportPanel').classList.add('hide');$('home').classList.remove('hide');syncBarPresentation();releaseWakeLock();toast('Entraînement quitté · retour à l’accueil.');if($('icuChip'))$('icuChip').classList.add('hide');if($('icuWarn'))$('icuWarn').classList.add('hide');if($('icuOverlay'))$('icuOverlay').classList.add('hide');if($('icuBanner'))$('icuBanner').classList.add('hide');if(window._icuPlan&&window._icuPlan.phase!=='done'&&window._icuPlan.phase!=='doneIdle')window._icuPlan.phase='armed';}; /* v144 : l'entraînement intervals.icu reste armé pour la prochaine sortie */
 if($('quitBtn'))$('quitBtn').onclick=()=>{running=false;v=0;if(ctl)sendGrade(0);releaseWakeLock();if(document.fullscreenElement)document.exitFullscreen();$('home').classList.remove('hide');syncBarPresentation();$('exportPanel').classList.add('hide');renderSessionSummary('quit');}; /* v121 : bouton ✕ retiré du bandeau — on quitte via ⏹️ puis « Fermer et revenir à l’accueil » */
 $('fsBtn').onclick=()=>{const el=document.documentElement; if(document.fullscreenElement)document.exitFullscreen(); else el.requestFullscreen&&el.requestFullscreen();};
 document.addEventListener('fullscreenchange',()=>{$('fsBtn').textContent=document.fullscreenElement?'⛶ Quitter plein écran':'⛶ Plein écran'});
@@ -6435,6 +6445,9 @@ function fitBytes(){
   if(!pts.length)pts.push({sec:0,dist:0,p:0,hr:0,cad:0,v:0});
   const b=v=>out.push(v&255),w=(v,n)=>{v=Math.round(v);for(let i=0;i<n;i++){out.push(v%256);v=Math.floor(v/256)}};
   const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,Math.round(v))),TS=ms=>Math.floor(ms/1000)-631065600,INV=0x7FFFFFFF;
+  const _enc=new TextEncoder();
+  const fitStr=(str,n)=>{const u=_enc.encode(String(str||'').replace(/[^ -~]/g,'')).slice(0,n-1);for(let k=0;k<n;k++)b(k<u.length?u[k]:0)}; /* v186 : champs texte FIT */
+  const distAtSec=sec=>{let d=0;for(const q of pts){if(q.sec<=sec)d=q.dist;else break}return d};
   const def=(loc,gm,f)=>{b(0x40|loc);b(0);b(0);w(gm,2);b(f.length);for(const x of f){b(x[0]);b(x[1]);b(x[2])}};
   const dat=(loc,f,vals)=>{b(loc);vals.forEach((val,i)=>w(val,f[i][1]))};
   const gps=pts.some(q=>Number.isFinite(q.lat)&&Number.isFinite(q.lon)),t0=TS(start),lastSec=pts[pts.length-1].sec,t1=t0+lastSec,ms=Math.max(1,lastSec)*1000,sub=gps?58:6;
@@ -6456,6 +6469,30 @@ function fitBytes(){
   def(1,21,F_EV);dat(1,F_EV,[t1,0,4]);
   const cm=clamp(st.dist*100,0,4294967294);
   def(3,19,F_LAP);dat(3,F_LAP,[t1,t0,ms,ms,cm,clamp(st.avgP,0,65534),clamp(st.maxP,0,65534),9,1,0]);
+  /* v186 : un tour FIT par bloc de l'entraînement + description du workout */
+  const _rep=icuBlocksReport(window._icuPlan);
+  if(_rep.length){
+    const F_LAPB=[[253,4,0x86],[2,4,0x86],[7,4,0x86],[8,4,0x86],[9,4,0x86],[19,2,0x84],[20,2,0x84],[0,1,0],[1,1,0],[254,2,0x84]];
+    def(8,19,F_LAPB);
+    _rep.forEach((rb,k)=>{
+      const s0=Math.max(0,Math.min(lastSec,rb.start||0)),s1=Math.max(s0,Math.min(lastSec,(rb.start||0)+(rb.actual||rb.dur)));
+      const dd=Math.max(0,distAtSec(s1)-distAtSec(s0));
+      dat(8,F_LAPB,[t0+s1,t0+s0,Math.max(1000,(s1-s0)*1000),Math.max(1000,(s1-s0)*1000),clamp(dd*100,0,4294967294),clamp(rb.avg,0,65534),clamp(rb.maxP,0,65534),9,1,Math.min(65534,k)]);
+    });
+  }
+  const _wk=window._icuPlan;
+  if(_wk&&_wk.steps&&_wk.steps.length){
+    const F_WKT=[[253,4,0x86],[4,1,0],[5,4,0x86],[6,2,0x84],[8,25,7]];
+    def(6,26,F_WKT);
+    b(6);w(t0,4);b(2);w(0,4);w(_wk.steps.length,2);fitStr(_wk.name||'Entrainement',25);
+    const F_WST=[[253,4,0x86],[0,2,0x84],[1,20,7],[2,1,0],[3,1,0],[4,4,0x86],[5,1,0],[6,4,0x86],[7,4,0x86],[8,4,0x86],[9,20,7]];
+    def(7,27,F_WST);
+    _wk.steps.forEach((ws,k)=>{
+      const lo=Math.round(icuStepLo(ws)),hi=Math.round(icuStepHi(ws)),md=icuStepMode(ws);
+      const nm=(md==='range'?'Entre '+lo+' et '+hi+' W':md==='ramp'?'De '+lo+' a '+hi+' W':lo+' W');
+      b(7);w(t0,4);w(Math.min(65534,k),2);fitStr(nm,20);b(0);b(0);w(Math.max(1000,Math.round(ws.dur*1000)),4);b(4);w(0,4);w(Math.max(0,lo),4);w(Math.max(0,hi),4);fitStr('',20);
+    });
+  }
   def(4,18,F_SES);dat(4,F_SES,[t1,t0,ms,ms,cm,2,sub,clamp(st.avgP,0,65534),clamp(st.maxP,0,65534),st.avgH?clamp(st.avgH,1,254):255,st.maxH?clamp(st.maxH,1,254):255,clamp(st.avgC,0,254),clamp(st.maxC,0,254),clamp(st.avgV*1000,0,65534),clamp(st.maxV*1000,0,65534),clamp(st.asc,0,65534),8,1,0,0,1]);
   def(5,34,F_ACT);dat(5,F_ACT,[t1,ms,1,0,26,1,t1-new Date(start).getTimezoneOffset()*60]);
   const body=out.slice(),hdr=[14,0x20,0x54,0x08];
@@ -6512,10 +6549,19 @@ function renderSessionSummary(mode){
   $('stopInfo').textContent=ok?d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'Séance trop courte pour être enregistrée (moins de 5 secondes).';
   const cells=[['Durée',fmtDur(st.dur)],['Distance',(st.dist/1000).toFixed(2)+' km'],['Vitesse moy.',(st.avgV*3.6).toFixed(1)+' km/h'],['Vitesse max',(st.maxV*3.6).toFixed(1)+' km/h'],['Dénivelé +',st.asc+' m'],['Puissance moy.',st.avgP+' W'],['Puissance max',st.maxP+' W'],['Énergie',st.kj+' kJ'],['FC moy.',st.avgH?st.avgH+' bpm':'–'],['FC max',st.maxH?st.maxH+' bpm':'–'],['Cadence moy.',st.avgC?st.avgC+' tr/min':'–'],['Cadence max',st.maxC?st.maxC+' tr/min':'–']];
   $('stopStats').innerHTML=ok?cells.map(([k,val])=>'<div>'+k+'<b>'+val+'</b></div>').join(''):'';
-  {const _p=window._icuPlan,_sb=$('stopBlocks');if(_sb){if(_p&&_p.blocks&&_p.blocks.length){_sb.innerHTML='<div style="grid-column:1/-1;font-weight:700;color:var(--fg);font-size:12px">Blocs réalisés · '+(_p.name||'intervals.icu')+'</div>'+_p.blocks.map(b=>'<div>'+b.n+'<b>'+fmtDur(b.dur)+' · moy '+b.avg+' W</b>cible '+b.target+' W</div>').join('');_sb.classList.remove('hide')}else _sb.classList.add('hide')}} /* v144 : détail des blocs intervals.icu dans le résumé */
+  {const _p=window._icuPlan,_blocks=icuBlocksReport(_p),_sb=$('stopBlocks');
+   if(_sb){
+     if(_blocks.length){
+       const _sc=icuScore({blocks:_blocks});
+       _sb.innerHTML='<div style="grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;font-weight:800;color:var(--fg);font-size:12px"><span>Blocs réalisés · '+((_p&&_p.name)||'Entraînement')+'</span><span>Score '+_sc+'/100</span></div>'+_blocks.map(b=>'<div>'+(b.done?'':'⏸ ')+b.n+'<b>'+fmtDur(b.actual||b.dur)+' · '+b.avg+' W</b>cible '+(b.lo===b.hi?b.lo:b.lo+'–'+b.hi)+' W · '+b.score+'/100</div>').join('');
+       _sb.classList.remove('hide');
+       drawStopWorkout(_p,_blocks);
+     } else {_sb.classList.add('hide');const _sw=$('stopWorkout');if(_sw)_sw.classList.add('hide')}
+   }} /* v186 : blocs, score et graphique de l'entraînement dans le résumé */
   $('resumeStop').classList.toggle('hide',mode==='quit');
   for(const id of['exportFit','exportTcx','stopMap'])$(id).classList.toggle('hide',!ok);
   $('exportGpx').classList.toggle('hide',!ok||!st.hasGps);
+  if($('icuOverlay'))$('icuOverlay').classList.add('hide');if($('icuWarn'))$('icuWarn').classList.add('hide');if($('icuBanner'))$('icuBanner').classList.add('hide'); /* v186 : le résumé masque le décompte en cours */
   $('stopDialog').classList.remove('hide');
   if(ok)drawSessionTrack();
 }
@@ -6594,7 +6640,7 @@ function icuParseZwo(txt,ftp){
   const toW=v=>{if(v==null)return NaN;const s=String(v).trim().replace('%','');const n=Number(s);if(!Number.isFinite(n))return NaN;return n>250?n:(n>1.5?n/100*ftp:n*ftp)}; /* v150 : fraction FTP, % ou watts absolus */
   const toDur=v=>{if(v==null)return NaN;v=String(v).trim();const m=v.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);if(m)return m[3]!=null?Number(m[1])*3600+Number(m[2])*60+Number(m[3]):Number(m[1])*60+Number(m[2]);return Number(v)}; /* v151 : accepte 300, 5:00 (mm:ss) ou 1:05:00 */
   const steps=[];
-  const push=(dur,low,high)=>{dur=toDur(dur);if(!(dur>0))return;const wl=toW(low),wh=toW(high);const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;steps.push({dur:dur,wLow:Math.round(l),wHigh:Math.round(h),ramp:l!==h})};
+  const push=(dur,low,high,isRamp)=>{dur=toDur(dur);if(!(dur>0))return;const wl=toW(low),wh=toW(high);const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;const lo=Math.round(l),hi=Math.round(h),rmp=!!isRamp;steps.push({dur:dur,wLow:lo,wHigh:hi,ramp:rmp,mode:rmp?'ramp':(lo===hi?'steady':'range')})}; /* v186 : low≠high = plage cible, pas une rampe */
   let nodes=null,lastDoc=null;
   try{
     const doc=new DOMParser().parseFromString(txt,'text/xml');lastDoc=doc;
@@ -6614,7 +6660,7 @@ function icuParseZwo(txt,ftp){
     const pw=st.querySelector('power')||st.querySelector('watts')||st.getElementsByTagName('power')[0]||st.getElementsByTagName('watts')[0];
     let low=null,high=null;
     if(pw){low=pw.getAttribute('low');high=pw.getAttribute('high');if(low==null&&high==null)low=high=pw.textContent;}
-    push(dur,low,high);
+    push(dur,low,high,/^(ramp)$/i.test(String(st.localName||st.nodeName||'')));
   });
   if(!steps.length&&lastDoc){ /* v152 : dialecte IntervalCoach/intervals.icu — <Warmup>/<SteadyState>/<Interval>/<Ramp>... en attributs */
     const names=/^(warmup|steadystate|interval|cooldown|ramp|freeride|rest)$/i;
@@ -6622,7 +6668,7 @@ function icuParseZwo(txt,ftp){
     const all=lastDoc.getElementsByTagName('*');
     for(let i=0;i<all.length;i++){const el=all[i];if(!names.test(String(el.localName||'')))continue;
       const pl=attrOf(el,'powerlow'),ph=attrOf(el,'powerhigh'),pp=attrOf(el,'power');
-      push(attrOf(el,'duration'),pl!=null?pl:pp,ph!=null?ph:pp);
+      push(attrOf(el,'duration'),pl!=null?pl:pp,ph!=null?ph:pp,/^(ramp|warmup)$/i.test(String(el.localName||el.nodeName||'')));
     }
   }
   if(!steps.length){ /* repli regex si le XML est illisible ou sans <step> */
@@ -6639,70 +6685,132 @@ function icuParseZwo(txt,ftp){
         high=((a.match(/high="([^"]*)"/i)||[])[1]);
         if(low==null&&high==null)low=high=pwM[2];
       }
-      push(dur,low,high);
+      push(dur,low,high,false);
     }
     const re2=/<(warmup|steadystate|interval|cooldown|ramp|freeride|rest)\b([^>]*?)\/?>/gi;let m2; /* v152 : même dialecte en repli regex */
     while((m2=re2.exec(txt))){
       const a=m2[2]||'';
       const at=n=>{const mm=a.match(new RegExp(n+'="([^"]*)"','i'));return mm?mm[1]:null};
       const pl=at('powerlow'),ph=at('powerhigh'),pp=at('power');
-      push(at('duration'),pl!=null?pl:pp,ph!=null?ph:pp);
+      push(at('duration'),pl!=null?pl:pp,ph!=null?ph:pp,/^(ramp|warmup)$/i.test(String(m2[1]||'')));
     }
   }
   return steps;
 }
-function icuStepsHtml(steps){return steps.slice(0,40).map((s,i)=>(i+1)+'. '+fmtDur(s.dur)+' · '+(s.ramp?s.wLow+'→'+s.wHigh+' W':s.wLow+' W')).join('<br>')+(steps.length>40?'<br>… ('+steps.length+' exercices au total)':'')}
+function icuStepsHtml(steps){return steps.slice(0,40).map((s,i)=>(i+1)+'. '+fmtDur(s.dur)+' · '+(icuStepMode(s)==='ramp'?s.wLow+'→'+s.wHigh+' W':icuStepMode(s)==='range'?icuStepLo(s)+'–'+icuStepHi(s)+' W':s.wLow+' W')).join('<br>')+(steps.length>40?'<br>… ('+steps.length+' exercices au total)':'')}
 function icuStepAt(p,t){let acc=0;for(let i=0;i<p.steps.length;i++){const st=p.steps[i];if(t<acc+st.dur)return{i:i,inT:t-acc,rem:acc+st.dur-t};acc+=st.dur}const last=Math.max(0,p.steps.length-1);return{i:last,inT:p.steps[last]?p.steps[last].dur:0,rem:0}}
-function icuTargetAt(p){if(!p||(p.phase!=='run'&&p.phase!=='next')||!p.cur)return 0;const st=p.steps[p.cur.i];if(!st||st.wLow<=0)return 0;if(st.ramp)return st.wLow+(st.wHigh-st.wLow)*Math.min(1,p.cur.inT/Math.max(.001,st.dur));return st.wLow}
 function icuOverlay(title,sub,count){const ov=$('icuOverlay');if(!ov)return;ov.classList.remove('hide');if(title!=null)$('icuOverlayTitle').textContent=title;if(sub!=null)$('icuOverlaySub').textContent=sub;if(count!=null)$('icuOverlayCount').textContent=count;else $('icuOverlayCount').textContent=''}
+function icuHideOverlay(){const ov=$('icuOverlay');if(ov)ov.classList.add('hide')}
 function icuSetWarn(mode,text){const w=$('icuWarn');if(!w)return;if(!mode){w.classList.add('hide');return}w.classList.remove('hide');w.className=mode;w.textContent=text}
+/* v186 : bandeau du haut — « Commencer à pédaler », puis consigne du bloc (3 s) */
+function icuBanner(html,secs){const el=$('icuBanner');if(!el)return;const p=window._icuPlan;if(!html){el.classList.add('hide');el.innerHTML='';if(p){p.bannerHold=false;p.bannerT=0}return}if(el.innerHTML!==html)el.innerHTML=html;el.classList.remove('hide');if(p){p.bannerHold=secs==null;p.bannerT=secs||0}}
+function fmtDurTxt(sec){sec=Math.max(0,Math.round(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;if(h)return h+' h '+String(m).padStart(2,'0');if(m&&s)return m+' min '+s+' s';if(m)return m+' min';return s+' s'}
+function icuStepMode(st){if(!st)return'steady';if(st.mode)return st.mode;return st.ramp?'ramp':(st.wHigh>st.wLow?'range':'steady')}
+function icuStepLo(st){return Math.min(st.wLow,st.wHigh)}
+function icuStepHi(st){return Math.max(st.wLow,st.wHigh)}
+function icuStepMid(st){return(st.wLow+st.wHigh)/2}
+function icuStepStart(p,i){let a=0;for(let k=0;k<i&&k<p.steps.length;k++)a+=p.steps[k].dur;return a}
+function icuTotalDur(p){return p.steps.reduce((a,x)=>a+x.dur,0)}
+function icuStepSentence(st){if(!st)return'';const m=icuStepMode(st),d=fmtDurTxt(st.dur),lo=Math.round(icuStepLo(st)),hi=Math.round(icuStepHi(st));if(m==='range')return'Rouler entre '+lo+' W et '+hi+' W pendant '+d;if(m==='ramp')return'Rouler de '+lo+' W à '+hi+' W pendant '+d;return'Rouler à '+lo+' W de moyenne pendant '+d}
+function icuNextSentence(st){if(!st)return'';const m=icuStepMode(st),d=fmtDurTxt(st.dur),lo=Math.round(icuStepLo(st)),hi=Math.round(icuStepHi(st));if(m==='range')return d+' entre '+lo+' W et '+hi+' W';if(m==='ramp')return d+' de '+lo+' W à '+hi+' W';return d+' à '+lo+' W de moyenne'}
+function icuTargetAt(p){if(!p||p.phase!=='run'||!p.cur)return 0;const st=p.steps[p.cur.i];if(!st||st.wLow<=0)return 0;if(icuStepMode(st)==='ramp')return st.wLow+(st.wHigh-st.wLow)*Math.min(1,p.cur.inT/Math.max(.001,st.dur));return icuStepMid(st)}
+/* v186 : bande de tolérance du bloc courant (plage cible ou ±5 % de la cible) */
+function icuBand(p){const st=p&&p.steps?(p.steps[p.cur?p.cur.i:0]):null;if(!st||!(st.wLow>0))return null;const m=icuStepMode(st);if(m==='range'){const lo=icuStepLo(st),hi=icuStepHi(st);return{lo:lo*0.98,hi:hi*1.02,lo0:lo,hi0:hi,ref:icuStepMid(st),mode:m}}const ref=icuTargetAt(p)||icuStepMid(st);return{lo:ref*0.95,hi:ref*1.05,lo0:ref*0.95,hi0:ref*1.05,ref:ref,mode:m}}
+function icuBlockScore(avg,ref,inRatio){const err=ref>0?Math.abs(avg-ref)/ref:0;const avgScore=Math.max(0,Math.min(100,100*(1-Math.max(0,err-0.05)/0.20)));return Math.round(.5*avgScore+.5*Math.max(0,Math.min(1,inRatio))*100)}
+function icuBlockRecord(p,i,accT,accP,okT,maxP,done){const st=p.steps[i],ref=icuStepMid(st),avg=accT>0?accP/accT:0;return{n:i+1,dur:Math.round(st.dur),actual:Math.round(accT),done:!!done,at:Math.round(icuStepStart(p,i)),start:Math.round((p.startElapsed||0)+icuStepStart(p,i)),avg:Math.round(avg),maxP:Math.round(maxP||0),target:Math.round(ref),lo:Math.round(icuStepLo(st)),hi:Math.round(icuStepHi(st)),mode:icuStepMode(st),ok:accT>0?Math.round(Math.min(1,okT/accT)*100):0,score:icuBlockScore(avg,ref,accT>0?okT/accT:0)}}
+function icuStopBlock(p,partial){const i=p.curI;if(i==null)return;p.blocks.push(icuBlockRecord(p,i,p.accT,p.accP,p.okT,p.maxP,!partial));p.curI=null}
+function icuStartBlock(p,i){p.curI=i;p.accP=0;p.accT=0;p.okT=0;p.maxP=0;icuHideOverlay();icuBanner('🏋️ '+icuStepSentence(p.steps[i]),3)}
+function icuScore(p){const bs=(p&&p.blocks)||[];let sw=0,ss=0;for(const b of bs){const w=Math.max(1,b.actual||b.dur);sw+=w;ss+=w*b.score}return sw?Math.round(ss/sw):0}
+function icuBlocksReport(p){if(!p||!p.steps||!p.steps.length)return[];const out=(p.blocks||[]).slice();if(p.phase==='run'&&p.curI!=null&&p.accT>=1)out.push(icuBlockRecord(p,p.curI,p.accT,p.accP,p.okT,p.maxP,false));return out}
+function icuFinish(p,skipped){icuStopBlock(p,false);p.phase='done';p.doneAt=performance.now();p.score=icuScore(p);icuSetWarn(null);icuBanner('');icuOverlay('Entraînement terminé','Score '+p.score+'/100',null);const chip=$('icuChip');if(chip){chip.classList.remove('hide');chip.textContent='🏁 Entraînement terminé · score '+p.score+'/100'}toast('🏁 Entraînement terminé · score '+p.score+'/100')}
 function updateIcuTargets(p){
   const el=$('icuTargets');if(!el)return;
-  const active=p.phase==='intro'||p.phase==='go'||p.phase==='run'||p.phase==='next'; /* v153 : masqué sur l'accueil (phase armed) */
+  const active=p.phase==='run';
   el.classList.toggle('hide',!active);
   if(!active)return;
-  const i=(p.phase==='run'||p.phase==='next')?p.cur.i:0;
-  const st=p.steps[i],nx=p.steps[i+1];
-  const fmt=s=>!s?'—':(s.ramp?s.wLow+'→'+s.wHigh+' W':s.wLow+' W');
-  const txt='🎯 cible '+fmt(st)+(nx?' · prochain '+fmt(nx):''); /* v153 : plus de « bloc i/N », déjà dans la puce Exercice x/y */
+  const i=p.cur?p.cur.i:0,st=p.steps[i],nx=p.steps[i+1];
+  const fmt=st=>!st?'—':(icuStepMode(st)==='range'?icuStepLo(st)+'–'+icuStepHi(st)+' W':icuStepMode(st)==='ramp'?icuStepLo(st)+'→'+icuStepHi(st)+' W':st.wLow+' W');
+  const txt='🎯 cible '+fmt(st)+(nx?' · prochain '+fmt(nx):'');
   const sp=$('icuTargetsTxt');
-  if(sp&&p._tTxt!==txt){p._tTxt=txt;sp.textContent=txt;}
+  if(sp&&p._tTxt!==txt){p._tTxt=txt;sp.textContent=txt}
 }
-function icuSkip(){ /* v153 : sauter l'exercice en cours et passer au suivant */
-  const p=window._icuPlan;if(!p||(p.phase!=='run'&&p.phase!=='next')||!p.steps.length)return;
-  const nx=p.steps[p.cur.i+1],chip=$('icuChip');
-  if(!nx){p.phase='done';p.doneAt=performance.now();icuSetWarn(null);icuOverlay('Entraînement fini',p.blocks.length+' bloc'+(p.blocks.length>1?'s':'')+' réalisé'+(p.blocks.length>1?'s':''),null);if(chip){chip.classList.remove('hide');chip.textContent='🏁 Entraînement terminé · '+p.blocks.length+' blocs'}toast('⏭ Dernier exercice passé · séance terminée.');return;}
-  let _tN=0;for(let k=0;k<=p.cur.i;k++)_tN+=p.steps[k].dur; /* v154 : on recale startElapsed au début de l'étape suivante, sinon p.t est recalculé à la frame suivante et le saut est annulé */
-  p.startElapsed=window._rideElapsed-_tN;p.t=_tN;p.cur=icuStepAt(p,_tN);p.accP=0;p.accT=0;p.phase='run';
-  toast('⏭ Exercice passé : '+(nx.label||('bloc '+(p.cur.i+1))));
+function icuSkip(){
+  const p=window._icuPlan;if(!p||p.phase!=='run'||!p.steps.length)return;
+  const last=p.cur.i>=p.steps.length-1;
+  icuStopBlock(p,true);
+  if(last){icuFinish(p,true);return}
+  const t1=icuStepStart(p,p.cur.i+1);
+  p.startElapsed=window._rideElapsed-t1;p.t=t1;p.cur=icuStepAt(p,t1);p.curI=null;
+  toast('⏭ Exercice passé');
 }
 function icuRefreshRemove(){const b=$('icuRemove');if(b)b.classList.toggle('hide',!window._icuPlan)}
-if($('icuRemove'))$('icuRemove').onclick=()=>{window._icuPlan=null;icuRefreshRemove();['icuChip','icuTargets','icuGraph','icuProposal'].forEach(id=>{const el=$(id);if(el)el.classList.add('hide')});const info=$('icuInfo');if(info)info.textContent='Entraînement retiré.';toast('🗑 Entraînement retiré — aucun exercice chargé.');};
+if($('icuRemove'))$('icuRemove').onclick=()=>{window._icuPlan=null;icuRefreshRemove();['icuChip','icuTargets','icuGraph','icuProposal'].forEach(id=>{const el=$(id);if(el)el.classList.add('hide')});icuBanner('');icuHideOverlay();icuSetWarn(null);const w=$('stopWorkout');if(w)w.classList.add('hide');const info=$('icuInfo');if(info)info.textContent='Entraînement retiré.';toast('🗑 Entraînement retiré — aucun exercice chargé.')};
 icuRefreshRemove();
 const _icuSkipBtn=$('icuSkip');if(_icuSkipBtn)_icuSkipBtn.onclick=()=>icuSkip();
 function drawIcuGraph(p){
   const cv=$('icuGraph');if(!cv)return;
-  const active=p.phase==='intro'||p.phase==='go'||p.phase==='run'||p.phase==='next'; /* v153 : masqué sur l'accueil */
+  const active=p.phase==='run';
   cv.classList.toggle('hide',!active);
   if(!active)return;
   const dpr=Math.min(devicePixelRatio||1,2),w=cv.clientWidth||300,h=64;
-  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
   const ctx=cv.getContext('2d');if(!ctx)return;
   ctx.clearRect(0,0,cv.width,cv.height);
-  const steps=p.steps,total=Math.max(1,steps.reduce((a,s)=>a+s.dur,0));
-  let maxW=100;for(const s of steps)maxW=Math.max(maxW,s.wHigh,s.wLow);
+  const steps=p.steps,total=Math.max(1,icuTotalDur(p));
+  let maxW=100;for(const st2 of steps)maxW=Math.max(maxW,icuStepHi(st2),icuStepLo(st2));
   const X=cv.width,Y=cv.height,pad=2;
-  const cur=(p.phase==='run'||p.phase==='next')?p.cur.i:-1;
+  const cur=p.cur?p.cur.i:-1;
   let acc=0;
   for(let i=0;i<steps.length;i++){
-    const s=steps[i],x0=pad+acc/total*(X-2*pad),x1=pad+(acc+s.dur)/total*(X-2*pad);acc+=s.dur;
-    const yL=Y-pad-(s.wLow/maxW)*(Y-2*pad),yH=Y-pad-(s.wHigh/maxW)*(Y-2*pad);
+    const st2=steps[i],x0=pad+acc/total*(X-2*pad),x1=pad+(acc+st2.dur)/total*(X-2*pad);acc+=st2.dur;
+    const lo=icuStepLo(st2),hi=icuStepHi(st2);
+    const yL=Y-pad-(lo/maxW)*(Y-2*pad),yH=Y-pad-(hi/maxW)*(Y-2*pad);
     ctx.fillStyle=i===cur?'#e8a33d':'rgba(121,223,197,.75)';
-    ctx.beginPath();ctx.moveTo(x0,Y-pad);ctx.lineTo(x0,yL);ctx.lineTo(x1,yH);ctx.lineTo(x1,Y-pad);ctx.closePath();ctx.fill();
+    ctx.beginPath();
+    if(icuStepMode(st2)==='ramp'){ctx.moveTo(x0,Y-pad);ctx.lineTo(x0,yL);ctx.lineTo(x1,yH);ctx.lineTo(x1,Y-pad)}
+    else ctx.rect(x0,yH,Math.max(1,x1-x0),Math.max(1,yL-yH));
+    ctx.closePath();ctx.fill();
   }
-  const t=(p.phase==='run'||p.phase==='next')?(p.t||0):0;
-  const lx=pad+Math.min(1,t/total)*(X-2*pad);
+  const t=p.t||0,lx=pad+Math.min(1,t/total)*(X-2*pad);
   ctx.strokeStyle='#fff';ctx.lineWidth=Math.max(1.5,dpr);ctx.beginPath();ctx.moveTo(lx,pad);ctx.lineTo(lx,Y-pad);ctx.stroke();
+}
+/* v186 : graphique du résumé — bandes cibles, puissance réelle et moyenne de chaque bloc */
+function drawStopWorkout(p,blocks){
+  const wrap=$('stopWorkout'),cv=$('stopWorkoutGraph');if(!wrap||!cv)return;
+  if(!p||!p.steps||!p.steps.length||!blocks||!blocks.length){wrap.classList.add('hide');return}
+  wrap.classList.remove('hide');
+  const nm=$('stopWorkoutName');if(nm)nm.textContent=p.name||'Entraînement';
+  const sc=$('stopWorkoutScore');if(sc)sc.textContent='Score '+icuScore({blocks:blocks})+'/100';
+  const dpr=Math.min(devicePixelRatio||1,2),W=Math.max(220,cv.clientWidth||300),H=124;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+  const g=cv.getContext('2d');if(!g)return;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const steps=p.steps,total=Math.max(1,icuTotalDur(p));
+  let maxW=100;for(const st2 of steps)maxW=Math.max(maxW,icuStepHi(st2),icuStepLo(st2));maxW*=1.12;
+  const padL=30,padR=8,padT=10,padB=18;
+  const X=t=>padL+t/total*(W-padL-padR),Y=w=>H-padB-w/maxW*(H-padT-padB);
+  g.font='9px system-ui,sans-serif';g.textAlign='left';g.fillStyle='rgba(255,255,255,.55)';
+  for(const f of [0,.5,1]){const y=Y(maxW*f);g.strokeStyle='rgba(255,255,255,.16)';g.lineWidth=1;g.beginPath();g.moveTo(padL,y);g.lineTo(W-padR,y);g.stroke();g.fillText(Math.round(maxW*f)+' W',2,y+3)}
+  let acc=0;
+  for(const st2 of steps){
+    const x0=X(acc),x1=X(acc+st2.dur);acc+=st2.dur;
+    const lo=icuStepLo(st2),hi=icuStepHi(st2),yH=Y(hi),yL=Y(lo);
+    g.fillStyle='rgba(121,223,197,.28)';g.strokeStyle='rgba(121,223,197,.85)';g.lineWidth=1;
+    if(icuStepMode(st2)==='ramp'){g.beginPath();g.moveTo(x0,Y(0));g.lineTo(x0,yL);g.lineTo(x1,yH);g.lineTo(x1,Y(0));g.closePath();g.fill();g.stroke()}
+    else {g.fillRect(x0,yH,Math.max(1,x1-x0),Math.max(1,yL-yH));g.strokeRect(x0,yH,Math.max(1,x1-x0),Math.max(1,yL-yH))}
+  }
+  const base=p.startElapsed||0,pts=sessionData().pts;
+  g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=1;g.beginPath();
+  let started=false;
+  for(const q of pts){const t=q.sec-base;if(t<0||t>total)continue;const x=X(t),y=Y(Math.min(maxW,q.p));if(!started){g.moveTo(x,y);started=true}else g.lineTo(x,y)}
+  if(started)g.stroke();
+  g.textAlign='center';
+  for(const b of blocks){
+    const x0=X(b.at),x1=X(b.at+(b.actual||b.dur)),y=Y(b.avg);
+    g.strokeStyle='#e8a33d';g.lineWidth=3;g.beginPath();g.moveTo(x0,y);g.lineTo(x1,y);g.stroke();
+    g.fillStyle='#ffd08a';g.font='bold 9px system-ui,sans-serif';g.fillText(String(b.avg),(x0+x1)/2,Math.max(9,y-4));
+  }
+  g.textAlign='left';g.fillStyle='rgba(255,255,255,.55)';g.font='9px system-ui,sans-serif';
+  g.fillText(fmtDurTxt(total),Math.max(padL,W-padR-30),H-5);
 }
 function updateIcuPlan(dt,power){
   const p=window._icuPlan;
@@ -6712,44 +6820,40 @@ function updateIcuPlan(dt,power){
   if(p._gKey!==_gKey){p._gKey=_gKey;drawIcuGraph(p)}
   const ov=$('icuOverlay'),chip=$('icuChip');
   if(p.phase==='done'||p.phase==='doneIdle'){
-    if(p.phase==='done'&&performance.now()-(p.doneAt||0)>5000){ov.classList.add('hide');p.phase='doneIdle';icuSetWarn(null);}
-    if(chip){chip.classList.remove('hide');chip.textContent='🏁 Entraînement terminé · '+p.blocks.length+' bloc'+(p.blocks.length>1?'s':'')}
+    if(p.phase==='done'&&performance.now()-(p.doneAt||0)>7000){ov.classList.add('hide');p.phase='doneIdle';icuSetWarn(null)}
+    if(chip){chip.classList.remove('hide');chip.textContent='🏁 Entraînement terminé · score '+(p.score||0)+'/100'}
     return;
   }
   if(p.phase==='armed'){
-    if(!(running&&window._powerStarted))return;
-    p.phase='intro';p.phaseT=3;p.accP=0;p.accT=0;p.blocks=[];p.cur=icuStepAt(p,0);
-    const st=p.steps[0];icuOverlay('Premier exercice',(st.ramp?st.wLow+' → '+st.wHigh+' W':st.wLow+' W')+' · '+fmtDur(st.dur),Math.ceil(p.phaseT));
+    if(chip)chip.classList.add('hide');
+    if(!running){icuBanner('');return}
+    if(!window._powerStarted){icuBanner('🚴 Commencer à pédaler pour débuter l’entraînement',null);icuSetWarn(null);icuHideOverlay();return}
+    p.phase='run';p.startElapsed=window._rideElapsed;p.t=0;p.blocks=[];p.score=0;p.curI=null;p.cur=icuStepAt(p,0);
+    icuSetWarn(null);icuStartBlock(p,0);
     return;
   }
-  if(p.phase==='intro'){
-    p.phaseT-=dt;const st=p.steps[0];
-    icuOverlay('Premier exercice',(st.ramp?st.wLow+' → '+st.wHigh+' W':st.wLow+' W')+' · '+fmtDur(st.dur),Math.max(0,Math.ceil(p.phaseT)));
-    if(p.phaseT<=0){p.phase='go';p.phaseT=1.6;icuOverlay("C'est parti !",p.name||'intervals.icu',null);}
-    return;
-  }
-  if(p.phase==='go'){p.phaseT-=dt;if(p.phaseT<=0){ov.classList.add('hide');p.phase='run';p.startElapsed=window._rideElapsed;p.cur=icuStepAt(p,0);p.accP=0;p.accT=0;}return;}
-  if(p.phase!=='run'&&p.phase!=='next')return;
+  if(p.phase!=='run')return;
   if(!(running&&window._powerStarted))return;
+  const total=icuTotalDur(p);
   p.t=window._rideElapsed-p.startElapsed;
-  if(p.t<0){p.startElapsed=window._rideElapsed;p.t=0;}
+  if(p.t<0){p.startElapsed=window._rideElapsed;p.t=0}
+  if(p.t>=total-0.001){p.t=total;icuFinish(p,false);return}
   p.cur=icuStepAt(p,p.t);
-  const st=p.steps[p.cur.i];if(!st)return;
-  p.accP+=power*dt;p.accT+=dt;
-  if(chip){chip.classList.remove('hide');const avg=p.accT>0?Math.round(p.accP/p.accT):0;chip.textContent='Exercice '+(p.cur.i+1)+'/'+p.steps.length+' · '+fmtDur(Math.max(0,p.cur.rem))+' restantes'+(st.wLow>0?' · moy '+avg+' W':'')}
-  if(st.wLow>0&&p.accT>10){const avg=p.accP/p.accT,tgt=icuTargetAt(p);if(tgt>0&&avg>tgt*1.05)icuSetWarn('over','Puissance moyenne trop élevée');else if(tgt>0&&avg<tgt*0.95)icuSetWarn('under','Puissance moyenne trop basse');else icuSetWarn(null)}else icuSetWarn(null);
-  if(p.phase==='run'&&p.cur.rem<=5)p.phase='next';
-  if(p.phase==='next'){
-    const last=p.cur.i>=p.steps.length-1,nx=p.steps[p.cur.i+1];
-    if(last||p.cur.rem<=3){const _ov=$('icuOverlay');if(_ov)_ov.classList.add('hide');} /* v153 : plus d'écriture centrée sur le dernier exercice / fin de bloc */
-    else icuOverlay(last?'Dernier exercice':'Prochain exercice',nx?(nx.ramp?nx.wLow+' → '+nx.wHigh+' W':nx.wLow+' W')+' · '+fmtDur(nx.dur):'',Math.max(0,Math.ceil(p.cur.rem)));
-    if(p.cur.rem<=0){
-      p.blocks.push({n:p.cur.i+1,dur:st.dur,target:st.wLow,avg:Math.round(p.accP/Math.max(.001,p.accT))});
-      p.accP=0;p.accT=0;
-      if(last){p.phase='done';p.doneAt=performance.now();icuSetWarn(null);icuOverlay('Entraînement fini',p.blocks.length+' bloc'+(p.blocks.length>1?'s':'')+' réalisé'+(p.blocks.length>1?'s':''),null);if(chip){chip.classList.remove('hide');chip.textContent='🏁 Entraînement terminé · '+p.blocks.length+' blocs'}}
-      else p.phase='run';
-    }
-  }
+  const i=p.cur.i;
+  if(p.curI!==i){if(p.curI!=null)icuStopBlock(p,false);icuStartBlock(p,i)} /* v186 : moyenne et score recalculés à chaque bloc */
+  const st=p.steps[i],band=icuBand(p);
+  p.accP+=power*dt;p.accT+=dt;p.maxP=Math.max(p.maxP,power);
+  if(band&&power>=band.lo&&power<=band.hi)p.okT+=dt;
+  if(!p.bannerHold&&p.bannerT>0){p.bannerT-=dt;if(p.bannerT<=0)icuBanner('')}
+  if(chip){const avg=p.accT>0?Math.round(p.accP/p.accT):0;chip.classList.remove('hide');chip.textContent='Exercice '+(i+1)+'/'+p.steps.length+' · '+fmtDur(Math.max(0,p.cur.rem))+' restantes'+(band?' · moy bloc '+avg+' W':'')}
+  if(band){
+    if(band.mode==='range'){if(power<band.lo0*0.98)icuSetWarn('under','Puissance trop basse');else if(power>band.hi0*1.02)icuSetWarn('over','Puissance trop haute');else icuSetWarn(null)}
+    else if(p.accT>5){const avg=p.accP/p.accT;if(avg>band.ref*1.06)icuSetWarn('over','Puissance trop haute');else if(avg<band.ref*0.94)icuSetWarn('under','Puissance trop basse');else icuSetWarn(null)}
+    else icuSetWarn(null);
+  } else icuSetWarn(null);
+  const rem=p.cur.rem,last=i>=p.steps.length-1;
+  if(rem>0&&rem<=3.2){icuOverlay(last?'Dernier exercice':'Exercice suivant',last?'Entraînement terminé dans':icuNextSentence(p.steps[i+1]),Math.max(1,Math.ceil(rem)))}
+  else if(!p.bannerHold&&p.bannerT<=0)icuHideOverlay();
 }
 if($('icuKey'))$('icuKey').addEventListener('change',icuSaveKey);
 if($('icuCheck'))$('icuCheck').onclick=async()=>{icuSaveKey();const info=$('icuInfo');info.textContent='Vérification de la connexion…';try{const a=await icuFetch('');info.textContent='Connecté à intervals.icu'+(a&&a.name?' · '+a.name:'');toast('Connexion intervals.icu OK.');}catch(e){info.textContent=String(e.message||e);toast('Échec de connexion intervals.icu.');}};
@@ -6921,7 +7025,7 @@ function loop(t){
     if(window._icuPlan&&(window._icuPlan.phase==='run'||window._icuPlan.phase==='next')&&!ctl&&performance.now()-(window._pwManualAt||0)>8000){const _it=icuTargetAt(window._icuPlan); /* v153 : 8 s de grâce après une saisie manuelle */if(_it>0&&$('pw')){$('pw').value=Math.round(_it);if($('pv'))$('pv').textContent=Math.round(_it);}} /* v144 : mode manuel, la cible règle le curseur de puissance */
     $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);
     if($('pwAvg')){const _ap=window._rideElapsed>0?(window._ridePwSum||0)/window._rideElapsed:0;const _ftp=Number(riderStyle.ftp)||0;$('pwAvg').textContent=_ap>0?('moy '+Math.round(_ap)+' W'+(_ftp>=50?' · '+Math.round(_ap/_ftp*100)+'% FTP':'')):'moy – W';if($('poMoy'))$('poMoy').textContent=_ap>0?('moy '+Math.round(_ap)+' W'):'moy – W';} /* v156+v161 : puissance moyenne sous le curseur et dans le HUD */$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
-    {const _it=(window._icuPlan&&running)?icuTargetAt(window._icuPlan):0,_po=$('po');if(_po){if(!_it)_po.className='';else if(power>_it*1.05)_po.className='over';else if(power<_it*0.95)_po.className='under';else _po.className='ok';}} /* v144 : puissance colorée selon la cible de l'exercice en cours */
+    {const _bd=(window._icuPlan&&running&&window._icuPlan.phase==='run')?icuBand(window._icuPlan):null,_po=$('po');if(_po){if(!_bd)_po.className='';else if(power>_bd.hi)_po.className='over';else if(power<_bd.lo)_po.className='under';else _po.className='ok';}} /* v186 : couleur selon la bande du bloc (plage ou moyenne) */
     if(t-(window._compTick||0)>400){window._compTick=t;updateBikeComputer(power,grade);} /* v162 : écran du compteur du vélo */
   }
   R.render(S,cam);
@@ -6931,7 +7035,7 @@ document.addEventListener('visibilitychange',()=>{last=performance.now();if(_wak
 /* v71 : panneaux masqués sur l'accueil, HUD décalé, défilement des trois villes */
 (function(){
   const home=$('home'),arrows=$('routeArrows');
-  const upd=()=>{const on=!!arrows&&!arrows.classList.contains('hide')&&!document.body.classList.contains('homeOpen');document.body.classList.toggle('arrowsOn',on);document.documentElement.style.setProperty('--arrowsH',on?(arrows.offsetHeight+8)+'px':'0px')};
+  const upd=()=>{const on=!!arrows&&!arrows.classList.contains('hide')&&!document.body.classList.contains('homeOpen');document.body.classList.toggle('arrowsOn',on);let sh=0;if(on){const hud=$('hud'),base=hud?(parseFloat(getComputedStyle(hud).top)||48):48;sh=Math.max(0,arrows.offsetHeight+8-base)}document.documentElement.style.setProperty('--arrowsH',sh+'px')}; /* v186 : le HUD ne descend plus que juste sous les panneaux de direction */
   const homeSync=()=>{document.body.classList.toggle('homeOpen',!!home&&!home.classList.contains('hide'));upd()};
   if(home){new MutationObserver(homeSync).observe(home,{attributes:true,attributeFilter:['class']})}
   if(arrows){new MutationObserver(upd).observe(arrows,{attributes:true,attributeFilter:['class'],childList:true});if(window.ResizeObserver)new ResizeObserver(upd).observe(arrows)}
