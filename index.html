@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v186 — l’entraînement valide chaque bloc, affiche un score et un résumé détaillé</title>
+<title>Vélo 3D v187 — les GPX chargés n’affichent plus de bandes blanches le long de la chaussée</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -492,7 +492,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v186</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v187</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -4231,15 +4231,19 @@ function makeRouteRoad(target){
      Seuls l'accotement beige et les rives claires sont retirés : ce sont eux qui dessinaient une
      « ligne blanche » par-dessus la route déjà chargée et barraient l'entrée des branches. */
   const preloadedRoad=!!(window._freeNavigation&&window._freeNavigation.active);
+  /* v187 : un GPX chargé n'a pas d'accotement OSM à raccorder — son ruban beige et ses deux rives
+     claires dessinaient de longues bandes blanches de part et d'autre de la chaussée et coupaient
+     les routes latérales qu'il traverse. On garde la seule chaussée, comme en navigation libre. */
+  const traceRoute=!preloadedRoad&&!!proj;
   const navTags=preloadedRoad?((window._freeNavigation.currentWay&&window._freeNavigation.currentWay.tags)||{}):{};
   const navHalf=3.2;
   /* v185 : un marquage axial seulement là où la voie en a un (grand axe, deux voies ou chaussée assez large) —
      les ruelles et chemins étroits restent sans tiretés. */
   const navMarked=!preloadedRoad||Number(navTags.lanes)>=2||osmRoadWidth(navTags)>=2.4;
   const edgePositions=[],dashPositions=[];
-  if(!preloadedRoad)road.add(ribbon(3.75,-.04,0xb9b199));
+  if(!preloadedRoad&&!traceRoute)road.add(ribbon(3.75,-.04,0xb9b199));
   road.add(ribbon(navHalf,0,0xffffff,getRoadTexture()));
-  if(!preloadedRoad){
+  if(!preloadedRoad&&!traceRoute){
     for(let i=0;i<n;i++){const [nx,nz]=tangent(i),[bx,bz]=tangent(i+1);if(junctionMarkCrosses(X[i],Z[i],X[i+1],Z[i+1],junctionZones)||nearJunctionDistance(i*step)||nearJunctionDistance((i+1)*step))continue;for(const side of[-1,1]){const pts=[
       [X[i]+nx*2.93*side,Y[i]+.014,Z[i]+nz*2.93*side],[X[i]+nx*3.01*side,Y[i]+.014,Z[i]+nz*3.01*side],
       [X[i+1]+bx*3.01*side,Y[i+1]+.014,Z[i+1]+bz*3.01*side],[X[i+1]+bx*2.93*side,Y[i+1]+.014,Z[i+1]+bz*2.93*side]];
