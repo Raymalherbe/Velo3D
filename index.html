@@ -6719,7 +6719,7 @@ function icuParseZwo(txt,ftp){
   const toDur=v=>{if(v==null)return NaN;v=String(v).trim();const m=v.match(/^(\d+):(\d{2})(?::(\d{2}))?$/);if(m)return m[3]!=null?Number(m[1])*3600+Number(m[2])*60+Number(m[3]):Number(m[1])*60+Number(m[2]);return Number(v)}; /* v151 : accepte 300, 5:00 (mm:ss) ou 1:05:00 */
   const steps=[];
   const INTENSITY={warmup:2,cooldown:3,recovery:4,interval:5,rest:1,other:6};
-  const push=(dur,low,high,isRamp,kind)=>{dur=toDur(dur);if(!(dur>0))return;const wl=toW(low),wh=toW(high);const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;const lo=Math.round(l),hi=Math.round(h),rmp=!!isRamp;steps.push({dur:dur,wLow:lo,wHigh:hi,ramp:rmp,mode:rmp?'ramp':(lo===hi?'steady':'range'),int:INTENSITY[String(kind||'').toLowerCase()]||0})}; /* v186 : low≠high = plage cible, pas une rampe */
+  const push=(dur,low,high,isRamp,kind)=>{dur=toDur(dur);if(!(dur>0))return;const wl=toW(low),wh=toW(high);const l=Number.isFinite(wl)?wl:0,h=Number.isFinite(wh)?wh:l;const lo=Math.round(l),hi=Math.round(h),rmp=!!isRamp&&lo!==hi;steps.push({dur:dur,wLow:lo,wHigh:hi,ramp:rmp,mode:rmp?'ramp':(lo===hi?'steady':'range'),int:INTENSITY[String(kind||'').toLowerCase()]||0})}; /* v186 : low≠high = plage cible, pas une rampe */
   let nodes=null,lastDoc=null;
   try{
     const doc=new DOMParser().parseFromString(txt,'text/xml');lastDoc=doc;
