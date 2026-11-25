@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v182 — plus de grosses lignes blanches au sol aux carrefours</title>
+<title>Vélo 3D v183 — le braquet virtuel agit sur la résistance du home-trainer</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -483,7 +483,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v182</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v183</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -6322,18 +6322,38 @@ function updateGearUI(){
   if(easier){easier.disabled=virtualRearIndex>=VIRTUAL_COGS.length-1;easier.title=easier.disabled?'Pignon 36 · braquet déjà le plus facile':'− · pignon '+VIRTUAL_COGS[Math.min(VIRTUAL_COGS.length-1,virtualRearIndex+1)]+' · plus facile'}
   if(harder){harder.disabled=virtualRearIndex<=0;harder.title=harder.disabled?'Pignon 10 · braquet déjà le plus dur':'+ · pignon '+VIRTUAL_COGS[Math.max(0,virtualRearIndex-1)]+' · plus dur'}
   try{localStorage.setItem('velo3d-virtual-gears',JSON.stringify({front:virtualFront,rearIndex:virtualRearIndex}))}catch(e){}
+  if(ctl&&running&&route)sendGrade(at(s)[3]*(window._rideDir||1)); /* v183 : le nouveau braquet est envoyé au trainer sans attendre le rafraîchissement de pente */
 }
 function onBike(e){
   const d=e.target.value;if(d.byteLength<2)return;try{const f=d.getUint16(0,true);let o=2;
   if(!(f&1))o+=2; if(f&2)o+=2; if(f&4){cad=d.getUint16(o,true)===65535?0:d.getUint16(o,true)/2;o+=2}
   if(f&8)o+=2; if(f&16)o+=3; if(f&32)o+=2; if(f&64)lastP=Math.max(0,d.getInt16(o,true));}catch(err){console.warn('Notification FTMS incomplète',err.message)}
 }
+/* v183 : le braquet virtuel module la résistance du home-trainer.
+   Le contrôleur FTMS (0x11) ne connaît pas les braquets : on convertit le
+   rapport de braquet en équivalent de pente à partir de la charge réelle
+   (roulement + pente + aéro) pour que chaque cran se sente comme sur la route. */
+const VIRTUAL_TRAINER_CW=51; /* coefficient aéro envoyé au trainer, 0.01 kg/m (0,51) */
+function virtualGearFactor(){
+  const ratio=virtualFront/Math.max(1,virtualRear());
+  return Math.max(.45,Math.min(2.2,ratio/(48/21))); /* référence : 48 × 21 */
+}
+function trainerGrade(g){
+  const factor=virtualGearFactor();if(Math.abs(factor-1)<.002)return g;
+  const speed=Math.max(0,Number(v)||0),aero=.5*RHO*(VIRTUAL_TRAINER_CW/100)*speed*speed/(MASS*G0);
+  const load=Math.max(.002,CRR+g+aero); /* pente négative : on garde une charge positive de référence */
+  return Math.max(-.25,Math.min(.25,g+(factor-1)*load));
+}
+let queuedGrade=null;
 async function sendGrade(g){
-  if(!ctl||busy)return;busy=true;
-  const b=new DataView(new ArrayBuffer(7));
-  b.setUint8(0,0x11);b.setInt16(1,0,true);b.setInt16(3,Math.round(g*10000),true);b.setUint8(5,40);b.setUint8(6,51);
+  if(!ctl)return;
+  if(busy){queuedGrade=g;return}
+  busy=true;
+  const eff=running?trainerGrade(g):g,b=new DataView(new ArrayBuffer(7)); /* v183 : à l’arrêt on relâche vraiment la résistance */
+  b.setUint8(0,0x11);b.setInt16(1,0,true);b.setInt16(3,Math.round(eff*10000),true);b.setUint8(5,40);b.setUint8(6,VIRTUAL_TRAINER_CW);
   try{await ctl.writeValueWithResponse(b)}catch(e){}
   busy=false;
+  if(queuedGrade!==null){const q=queuedGrade;queuedGrade=null;sendGrade(q)}
 }
 $('bt').onclick=async()=>{
   if(!navigator.bluetooth){toast('Bluetooth indisponible ici. Ouvre cette page dans Chrome sur Android.');return}
