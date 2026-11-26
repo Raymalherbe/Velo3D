@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v189 — Tour Eiffel et Seine à Paris, ponts simples, panneaux de col</title>
+<title>Vélo 3D v190 — maisons visibles même sans relief prêt, une seule Tour Eiffel</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -498,7 +498,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v189</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v190</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -4541,6 +4541,21 @@ function resetSceneryData(){
 }
 
 function osmSleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+/* v190 : le relief 3D (tuiles DEM) est construit en parallèle du décor OSM. Poser les maisons
+   avant lui revient à les poser sans relief connu — d'où le décor sans maisons. On attend le
+   maillage du monde courant, avec un délai maximal pour ne jamais bloquer le parcours. */
+function osmTerrainGround(target){const mesh=window._terrain;return !!(mesh&&mesh.parent===target&&mesh.userData&&mesh.userData.ground);}
+async function osmWaitTerrain(target,timeout){
+  if(osmTerrainGround(target))return true;
+  const limit=timeout||20000,start=performance.now();
+  try{osmProgress(.92,'Attente du relief 3D pour poser les maisons sur le terrain…');}catch(_){}
+  while(performance.now()-start<limit){
+    if(world!==target)return false;
+    await osmSleep(250);
+    if(osmTerrainGround(target))return true;
+  }
+  return false;
+}
 function osmCurrent(tok,target){return tok===osmTok&&world===target;}
 function osmSetStartEnabled(enabled){
   try{const b=typeof $==='function'&&$('go');if(b)b.disabled=!enabled;}catch(_){}}
@@ -5116,6 +5131,8 @@ async function loadOSM(){
       freeCache.preparedElements=null;freeCache.preparedFor=null;
       if(osmStopIfStale(token,targetWorld))return;
       osmProgress(.86,'Assemblage du décor préchargé · '+ready.length+' objets proches du parcours…');
+      await osmWaitTerrain(targetWorld);
+      if(osmStopIfStale(token,targetWorld))return;
       const result=ready.length?applyOSM(ready,targetWorld):{b:0,w:0,t:0,h:0,hm:0,he:0,r:0,roundabouts:0,c:0};
       if(osmStopIfStale(token,targetWorld))return;
       const note=freeCache.remark?' · la réponse du serveur était partielle':'';
@@ -5217,6 +5234,7 @@ async function loadOSM(){
     }
     osmProgress(1,'Construction du décor OpenStreetMap…');
     await osmSleep(30);
+    await osmWaitTerrain(targetWorld); /* v190 : maisons et eau posées sur le vrai relief */
     if(osmStopIfStale(token,targetWorld))return; // Check immediately before the only scene mutation.
     const result=applyOSM(elements,targetWorld);
     if(osmStopIfStale(token,targetWorld))return;
@@ -5268,8 +5286,11 @@ function buildings(buildingParts,targetWorld){
     for(const [sx,sz] of [[gx,gz],[bx0,bz0],[bx1,bz0],[bx0,bz1],[bx1,bz1]]){const g=terrainSample(window._terrain,sx,sz);if(Number.isFinite(g)){gmin=Math.min(gmin,g);gmax=Math.max(gmax,g)}}
     for(let i=0;i<points.length&&i<10;i++){const g=terrainSample(window._terrain,points[i][0],points[i][1]);if(Number.isFinite(g)){gmin=Math.min(gmin,g);gmax=Math.max(gmax,g)}} /* v189 : tout le pourtour, pas seulement cinq points */
     const grounded=Number.isFinite(gmin);
-    if(!grounded)continue; /* v189 : hors du relief connu, plus de maison suspendue à l'altitude de la route */
-    list.push({points,tags,y:grounded?gmin+(gmax-gmin)*.25-.35:(near?near.y:0)-.4,d:near?near.dist2:Infinity,dig:grounded?Math.max(1.5,gmax-gmin+1.8):1.5});
+    /* v190 : le maillage DEM arrive après le décor, donc « pas de relief connu » ne veut pas dire
+       « maison suspendue » — on ne jette plus le bâtiment, on le pose sur l'altitude de la route
+       voisine en attendant. Seuls les bâtiments trop loin de la route (altitude inconnue) sont écartés. */
+    if(!grounded&&(!near||near.dist2>260*260))continue;
+    list.push({points,tags,y:grounded?gmin+(gmax-gmin)*.25-.35:(near?near.y:0)-.4,d:near?near.dist2:Infinity,dig:grounded?Math.max(1.5,gmax-gmin+1.8):2.6});
   }
   list.sort((a,b)=>a.d-b.d);
   const wallPositions=[],wallUVs=[],wallColours=[],roofPositions=[],roofColours=[],doorPositions=[],doorColours=[];
@@ -5667,7 +5688,7 @@ function buildEiffelTower(requestedHeight){
   G.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
   return G;
 }
-function buildOSMLandmarks(items,targetWorld){let count=0;const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:350; /* v161 : stades visibles de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();
+function buildOSMLandmarks(items,targetWorld){let count=0,eiffelSpots=[];const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:350; /* v161 : stades visibles de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();
 const _ground=terrainSample(window._terrain,x,z); /* v188 : les monuments suivent le relief du lieu */
 g.position.set(x,Number.isFinite(_ground)?_ground-.05:near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=7.5+seed*3.5,d=12+seed*5,h=7.5+seed*2.5; /* v155 : églises beaucoup plus grandes */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,4+seed*1.2,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.8,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(2.6,9,2.6),matChurch);tower.position.set(0,4.5,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.8,4.6,8),matRoof);spire.position.set(0,11,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,.12),matDark);crossV.position.set(0,13.55,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.78,.14,.12),matDark);crossH.position.set(0,13.68,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.12),matDark);door.position.set(0,1.3,d/2+.05);g.add(door);const found=new THREE.Mesh(new THREE.BoxGeometry(w+1.4,3.4,d+1.4),matStone);found.position.y=-1.5;g.add(found); /* v188 : soubassement enterré — l'église tient sur la pente */for(const sideX of [-w/2-.02,w/2+.02])for(let k=-1;k<=1;k++){const win=new THREE.Mesh(new THREE.BoxGeometry(.1,2.4,1.1),matDark);win.position.set(sideX,h*.45,k*d*.26);g.add(win);}}
 else if(item.kind==='stadium'){ /* v140+v163 : tribunes sur les 4 côtés + terrain de foot coté (avant : simple bol rond sans tribunes ni lignes) */
@@ -5693,7 +5714,10 @@ else if(item.kind==='stadium'){ /* v140+v163 : tribunes sur les 4 côtés + terr
   }
 }else if(item.kind==='tower'){ /* v156 : tour générique ; v189 : la Tour Eiffel a son vrai treillis doré */
   const towerName=String((item.tags&&item.tags.name)||'').toLowerCase();
-  if(/eiffel/.test(towerName)){g.add(buildEiffelTower(osmMetres(item.tags&&item.tags.height,NaN,120,330)||300));}else{
+  /* v190 : OSM décrit la Tour Eiffel par plusieurs objets (la tour, son antenne, l'attraction) :
+     un seul monument est construit, et les mâts voisins du monument ne deviennent pas des tours de 300 m. */
+  if(eiffelSpots.some(spot=>Math.hypot(spot[0]-x,spot[1]-z)<170))continue;
+  if(/eiffel/.test(towerName)){eiffelSpots.push([x,z]);g.add(buildEiffelTower(osmMetres(item.tags&&item.tags.height,NaN,120,330)||300));}else{
   const th=Math.min(320,Math.max(60,osmMetres(item.tags&&item.tags.height,NaN,60,330)||330));
   for(const lp of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.5,1.6,th*.6,6),matStone);leg.position.set(lp[0]*4.4,th*.3,lp[1]*4.4);leg.rotation.z=lp[0]*-.17;leg.rotation.x=lp[1]*.17;g.add(leg);}
   const p1=new THREE.Mesh(new THREE.BoxGeometry(14,1.2,14),matStone);p1.position.y=th*.32;g.add(p1);
