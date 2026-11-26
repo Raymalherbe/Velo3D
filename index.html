@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v190 — maisons visibles même sans relief prêt, une seule Tour Eiffel</title>
+<title>Vélo 3D v191 — jardins, haies détaillées, parkings et lignes électriques</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -498,7 +498,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v190</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v191</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -4007,7 +4007,7 @@ async function freeFetchSector(center,radius,onProgress=()=>{}){
        les voies eau/rail/tunnel passent dans l'union du décor (avant, écrites hors union, leur résultat était perdu) ;
        quota de routes progressif selon le rayon pour éviter les réponses géantes en zone rurale élargie */
     const roadCap=r<=5000?30000:(r<=10000?20000:12000);
-    const q=`[out:json][timeout:60];(way[\"highway\"](around:${r},${center.lat},${center.lon}););out body geom ${roadCap};(way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});relation[\"natural\"=\"water\"](around:${r},${center.lat},${center.lon});relation[\"waterway\"=\"riverbank\"](around:${r},${center.lat},${center.lon}); /* v189 : la Seine est une relation, pas un chemin */way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});relation["leisure"="stadium"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 12000;(way[\"building\"](around:${r},${center.lat},${center.lon});relation[\"building\"][\"type\"=\"multipolygon\"](around:${r},${center.lat},${center.lon}););out body geom 20000; /* v168 : vrais bâtiments OSM, quota dédié */node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
+    const q=`[out:json][timeout:60];(way[\"highway\"](around:${r},${center.lat},${center.lon}););out body geom ${roadCap};(way[\"tunnel\"=\"yes\"][\"highway\"](around:${r},${center.lat},${center.lon});way[\"railway\"=\"rail\"](around:${r},${center.lat},${center.lon});way[\"waterway\"~\"^(river|stream|canal|drain|ditch)$\"](around:${r},${center.lat},${center.lon});way[\"building\"](around:${r},${center.lat},${center.lon});node[\"natural\"=\"tree\"](around:${r},${center.lat},${center.lon});way[\"natural\"~\"^(water|wood|hedge|tree_row)$\"](around:${r},${center.lat},${center.lon});relation[\"natural\"=\"water\"](around:${r},${center.lat},${center.lon});relation[\"waterway\"=\"riverbank\"](around:${r},${center.lat},${center.lon}); /* v189 : la Seine est une relation, pas un chemin */way[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"place_of_worship\"](around:${r},${center.lat},${center.lon});way[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});node[\"historic\"~\"^(monument|memorial|wayside_cross|wayside_shrine|castle|ruins)$\"](around:${r},${center.lat},${center.lon});way[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});node[\"tourism\"~\"^(museum|artwork|attraction)$\"](around:${r},${center.lat},${center.lon});way[\"landuse\"~\"^(forest|hedge|residential|farmland|meadow|orchard|grass)$\"](around:${r},${center.lat},${center.lon});way[\"barrier\"=\"hedge\"](around:${r},${center.lat},${center.lon});way[\"place\"~\"^(city|town|village)$\"](around:${r},${center.lat},${center.lon});way[\"traffic_sign\"](around:${r},${center.lat},${center.lon});node[\"traffic_sign\"](around:${r},${center.lat},${center.lon});way[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});node[\"leisure\"=\"stadium\"](around:${r},${center.lat},${center.lon});relation["leisure"="stadium"](around:${r},${center.lat},${center.lon});node[mountain_pass](around:${r},${center.lat},${center.lon});node[natural=peak](around:${r},${center.lat},${center.lon});way[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});node[\"man_made\"=\"tower\"](around:${r},${center.lat},${center.lon});way[\"amenity\"=\"parking\"](around:${r},${center.lat},${center.lon});node[\"amenity\"=\"parking\"](around:${r},${center.lat},${center.lon});way[\"power\"~\"^(line|minor_line|cable)$\"](around:${r},${center.lat},${center.lon});node[\"power\"~\"^(tower|pole|portal)$\"](around:${r},${center.lat},${center.lon});way[\"historic\"](around:${r},${center.lat},${center.lon});node[\"historic\"](around:${r},${center.lat},${center.lon}););out body geom 12000;(way[\"building\"](around:${r},${center.lat},${center.lon});relation[\"building\"][\"type\"=\"multipolygon\"](around:${r},${center.lat},${center.lon}););out body geom 20000; /* v168 : vrais bâtiments OSM, quota dédié */node[\"place\"~\"^(city|town|village)$\"][\"name\"](around:${localityRadius},${center.lat},${center.lon});out body;`;
     try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),45000); /* v155 : 45 s par serveur */let response;try{response=await fetch(server+'?data='+encodeURIComponent(q),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',signal:ctrl.signal});}finally{clearTimeout(timer);}if(!response.ok)throw new Error(host+' HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.elements))throw new Error(host+' réponse OSM invalide');const seenEls=new Set();const elements=data.elements.filter(e=>{if(!e||!['way','node','relation'].includes(e.type))return false; /* v189 : les relations multipolygon (Seine) arrivent aussi */const k=e.type+'/'+e.id;if(seenEls.has(k))return false;seenEls.add(k);return true;}); /* v159 : dédoublonnage (tunnelways présents dans les deux out) */onProgress(.58,elements.length+' objets OSM reçus · préparation des routes et intersections…');const graphData=freeMakeGraph(elements,center);if(!graphData.graph.length)throw new Error('aucune route cyclable dans ce secteur');onProgress(.68,graphData.graph.length+' routes indexées · recherche du départ…');return{elements,graphData,radius:r,remark:data.remark||''};}
     catch(error){last=error&&error.name==='AbortError'?host+' délai dépassé':(error.message||String(error));onProgress(Math.min(.12+attempt*.10,.42),'Serveur OSM indisponible · nouvel essai…');}
   }
@@ -5187,6 +5187,8 @@ async function loadOSM(){
         way["tourism"~"^(museum|artwork|attraction|viewpoint)$"](around:300,${corridor});node["tourism"~"^(museum|artwork|attraction|viewpoint)$"](around:300,${corridor});
         way["leisure"="stadium"](around:300,${corridor});node["leisure"="stadium"](around:300,${corridor});relation["leisure"="stadium"](around:300,${corridor}); /* v161 */
         way["man_made"="tower"](around:300,${corridor});node["man_made"="tower"](around:300,${corridor});
+        way["amenity"="parking"](around:120,${corridor});node["amenity"="parking"](around:120,${corridor});
+        way["power"~"^(line|minor_line|cable)$"](around:150,${corridor});node["power"~"^(tower|pole|portal)$"](around:120,${corridor});
         way["building"="tower"](around:300,${corridor});
         node["traffic_sign"](around:70,${corridor});
         node["highway"~"^(traffic_signals|stop|give_way)$"](around:70,${corridor});
@@ -5239,7 +5241,7 @@ async function loadOSM(){
     const result=applyOSM(elements,targetWorld);
     if(osmStopIfStale(token,targetWorld))return;
     const partial=remarks.length?' · réponse OSM partielle':'';
-    osmProgress(1,'Décor prêt : '+result.b+' bâtiments, '+(result.l||0)+' églises/monuments, '+result.t+' arbres, '+result.hm+' haies OSM + '+result.he+' estimées, '+result.r+' routes annexes, '+result.roundabouts+' ronds-points, '+result.c+' entrée(s)'+capNote+(missingChunks?' · '+missingChunks+' tranche(s) manquante(s)':'')+partial+'.');
+    osmProgress(1,'Décor prêt : '+result.b+' bâtiments, '+(result.l||0)+' églises/monuments, '+result.t+' arbres, '+result.hm+' haies OSM + '+result.he+' estimées, '+result.r+' routes annexes, '+result.roundabouts+' ronds-points, '+(result.pk||0)+' parkings, '+result.c+' entrée(s)'+capNote+(missingChunks?' · '+missingChunks+' tranche(s) manquante(s)':'')+partial+'.');
     osmSetStartEnabled(true);
     osmFinishLoading(token);
   }catch(error){
@@ -5294,7 +5296,7 @@ function buildings(buildingParts,targetWorld){
   }
   list.sort((a,b)=>a.d-b.d);
   const wallPositions=[],wallUVs=[],wallColours=[],roofPositions=[],roofColours=[],doorPositions=[],doorColours=[];
-  let count=0,seed=1;
+  let count=0,seed=1,gardenCount=0,windowCount=0;
   const random=()=>(seed=(seed*16807)%2147483647)/2147483647;
   const wall=(P,UV,colour)=>{for(let k=0;k<3;k++){wallPositions.push(P[k][0],P[k][1],P[k][2]);wallUVs.push(UV[k][0],UV[k][1]);wallColours.push(colour.r,colour.g,colour.b);}};
   const roof=(P,colour)=>{for(let k=0;k<3;k++){roofPositions.push(P[k][0],P[k][1],P[k][2]);roofColours.push(colour.r,colour.g,colour.b);}};
@@ -5322,9 +5324,8 @@ function buildings(buildingParts,targetWorld){
     const levels=parseFloat(t['building:levels']),mappedHeight=osmMetres(t.height,NaN,2.5,120);
     const height=isFinite(mappedHeight)?Math.max(2.5,mappedHeight-roofHeight):isFinite(levels)?levels*3:/^(garage|garages|shed|carport|hut|cabin|service|kiosk)$/.test(kind)?2.8:/^(barn|farm_auxiliary|greenhouse|stable|cowshed)$/.test(kind)?4.5:/^(church|cathedral|chapel)$/.test(kind)?9:area>1200?7:5.5;
     const y0=y-(item.dig||1.5),y1=y+height;
-    /* v188 : socle maçonné au pied des maisons, corniche en tête des immeubles */
-    if(!isImmeuble&&area<650)boxInto((minBX+maxBX)/2,y+.18,(minBZ+maxBZ)/2,(maxBX-minBX)/2+.14,.28,(maxBZ-minBZ)/2+.14,new THREE.Color(0x9c9a90));
-    else if(isImmeuble)boxInto((minBX+maxBX)/2,y1-.22,(minBZ+maxBZ)/2,(maxBX-minBX)/2+.18,.22,(maxBZ-minBZ)/2+.18,new THREE.Color(0x8e8b83));
+    /* v191 : plus de plaque grise sous les maisons — un jardin est dessiné autour d'elles (plus bas). */
+    if(isImmeuble)boxInto((minBX+maxBX)/2,y1-.22,(minBZ+maxBZ)/2,(maxBX-minBX)/2+.18,.22,(maxBZ-minBZ)/2+.18,new THREE.Color(0x8e8b83));
     let longest=-1,longestLength=0;
     for(let i=0;i<m;i++){
       const a=c[i],b=c[(i+1)%m],length=Math.hypot(b[0]-a[0],b[1]-a[1]);if(length<.3)continue;
@@ -5340,6 +5341,56 @@ function buildings(buildingParts,targetWorld){
         door([P[0],P[1],P[2]],colour);door([P[0],P[2],P[3]],colour);
       };
       quad(.62,2.25,.04,OSM_DOOR_FRAME);quad(.5,2.1,.07,new THREE.Color(OSM_DOOR_COLOURS[Math.floor(random()*OSM_DOOR_COLOURS.length)]));
+    }
+    /* v191 : jardin autour des maisons — pelouse, haie taillée, portail et allée. */
+    if(!isImmeuble&&area>=8&&area<650&&gardenCount<260&&isFinite(minBX)&&near&&near.dist2<200*200){
+      let fi=0,flen=0;
+      for(let i=0;i<m;i++){const a=c[i],b2=c[(i+1)%m],l=Math.hypot(b2[0]-a[0],b2[1]-a[1]);if(l>flen){flen=l;fi=i;}}
+      if(flen>3.2){
+        const a=c[fi],b2=c[(fi+1)%m],ux=(b2[0]-a[0])/flen,uz=(b2[1]-a[1])/flen,ox=uz*orientation,oz=-ux*orientation;
+        const pad=3.1,gy=y-.02,x0=minBX-pad,x1=maxBX+pad,z0=minBZ-pad,z1=maxBZ+pad;
+        const grass=new THREE.Color(SEASON_PALETTES[currentSeason()].grass);
+        roof([[x0,gy,z0],[x1,gy,z0],[x1,gy,z1]],grass);roof([[x0,gy,z0],[x1,gy,z1],[x0,gy,z1]],grass);
+        const hedgeColour=new THREE.Color().setHSL(.26,.36,.19+random()*.07),postColour=new THREE.Color(0xded6c4),gateColour=new THREE.Color(0x6d4a2f),pathColour=new THREE.Color(0xb3a893);
+        const fx=(minBX+maxBX)/2,fz=(minBZ+maxBZ)/2,gate=[fx+ox*pad,fz+oz*pad],frontAlongX=Math.abs(ox)>=Math.abs(oz);
+        const runHedge=(ax,az,bx2,bz2,skip)=>{
+          const len=Math.hypot(bx2-ax,bz2-az);if(len<2)return;
+          const n=Math.max(1,Math.round(len/2.3)),along=Math.abs(bx2-ax)>=Math.abs(bz2-az);
+          for(let i=0;i<n;i++){
+            const t=(i+.5)/n,px=ax+(bx2-ax)*t,pz=az+(bz2-az)*t;
+            if(skip&&Math.hypot(px-skip[0],pz-skip[1])<2.4)continue;
+            boxInto(px,gy+.5,pz,along?len/n*.44:.34,.5,along?.34:len/n*.44,hedgeColour);
+          }
+        };
+        if(frontAlongX){const ex=ox>0?x1:x0;runHedge(ex,z0,ex,z1,gate);runHedge(x0,z0,x1,z0,null);runHedge(x0,z1,x1,z1,null);}
+        else{const ez=oz>0?z1:z0;runHedge(x0,ez,x1,ez,gate);runHedge(x0,z0,x0,z1,null);runHedge(x1,z0,x1,z1,null);}
+        const tx2=frontAlongX?0:1,tz2=frontAlongX?1:0;
+        for(const sgn of [-1,1])boxInto(gate[0]+tx2*sgn*1.35,gy+.82,gate[1]+tz2*sgn*1.35,.15,.82,.15,postColour);
+        boxInto(gate[0],gy+.42,gate[1],frontAlongX?.06:1.25,.05,frontAlongX?1.25:.06,gateColour);
+        boxInto(gate[0],gy+1.08,gate[1],frontAlongX?.06:1.25,.05,frontAlongX?1.25:.06,gateColour);
+        for(let k=-2;k<=2;k++)boxInto(gate[0]+tx2*k*.55,gy+.72,gate[1]+tz2*k*.55,.045,.34,.045,gateColour);
+        const dn=frontAlongX?(maxBX-minBX)/2:(maxBZ-minBZ)/2;
+        const ex0=gate[0]-ox*.9,ez0=gate[1]-oz*.9,ex1=fx+ox*(dn+.1),ez1=fz+oz*(dn+.1);
+        door([[ex0-tx2*.55,gy+.035,ez0-tz2*.55],[ex1-tx2*.55,gy+.035,ez1-tz2*.55],[ex1+tx2*.55,gy+.035,ez1+tz2*.55]],pathColour);
+        door([[ex0-tx2*.55,gy+.035,ez0-tz2*.55],[ex1+tx2*.55,gy+.035,ez1+tz2*.55],[ex0+tx2*.55,gy+.035,ez0+tz2*.55]],pathColour);
+        if(flen>6&&height>3.2&&near.dist2<130*130&&windowCount<240){
+          const winColour=new THREE.Color(0x33434f),shutterColour=new THREE.Color().setHSL(.31,.30,.24);
+          const placeWin=s2=>{
+            const wx=fx+ux*s2+ox*(dn+.07),wz=fz+uz*s2+oz*(dn+.07);
+            door([[wx-ux*.62,y+1.12,wz-uz*.62],[wx+ux*.62,y+1.12,wz+uz*.62],[wx+ux*.62,y+2.45,wz+uz*.62]],OSM_DOOR_FRAME);
+            door([[wx-ux*.62,y+1.12,wz-uz*.62],[wx+ux*.62,y+2.45,wz+uz*.62],[wx-ux*.62,y+2.45,wz-uz*.62]],OSM_DOOR_FRAME);
+            door([[wx-ux*.48,y+1.26,wz-uz*.48],[wx+ux*.48,y+1.26,wz+uz*.48],[wx+ux*.48,y+2.31,wz+uz*.48]],winColour);
+            door([[wx-ux*.48,y+1.26,wz-uz*.48],[wx+ux*.48,y+2.31,wz+uz*.48],[wx-ux*.48,y+2.31,wz-uz*.48]],winColour);
+            for(const side of [-1,1]){
+              const sx2=wx+ux*side*.86+ox*.02,sz2=wz+uz*side*.86+oz*.02;
+              door([[sx2-ux*.21,y+1.18,sz2-uz*.21],[sx2-ux*.21,y+2.38,sz2-uz*.21],[sx2+ux*.21,y+2.38,sz2+uz*.21]],shutterColour);
+              door([[sx2-ux*.21,y+1.18,sz2-uz*.21],[sx2+ux*.21,y+2.38,sz2+uz*.21],[sx2+ux*.21,y+1.18,sz2+uz*.21]],shutterColour);
+            }
+          };
+          placeWin(-flen*.26);placeWin(flen*.26);windowCount++;
+        }
+      }
+      gardenCount++;
     }
     if(gable){
       const P=p=>[p[0],y1,p[1]],middle12=[(gable[1][0]+gable[2][0])/2,y1+roofHeight,(gable[1][1]+gable[2][1])/2],middle30=[(gable[3][0]+gable[0][0])/2,y1+roofHeight,(gable[3][1]+gable[0][1])/2];
@@ -5712,19 +5763,36 @@ else if(item.kind==='stadium'){ /* v140+v163 : tribunes sur les 4 côtés + terr
     st.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
     bowlG.add(st);
   }
-}else if(item.kind==='tower'){ /* v156 : tour générique ; v189 : la Tour Eiffel a son vrai treillis doré */
+}else if(item.kind==='tower'){ /* v191 : une seule Tour Eiffel, et des tours à taille humaine */
   const towerName=String((item.tags&&item.tags.name)||'').toLowerCase();
-  /* v190 : OSM décrit la Tour Eiffel par plusieurs objets (la tour, son antenne, l'attraction) :
-     un seul monument est construit, et les mâts voisins du monument ne deviennent pas des tours de 300 m. */
-  if(eiffelSpots.some(spot=>Math.hypot(spot[0]-x,spot[1]-z)<170))continue;
-  if(/eiffel/.test(towerName)){eiffelSpots.push([x,z]);g.add(buildEiffelTower(osmMetres(item.tags&&item.tags.height,NaN,120,330)||300));}else{
-  const th=Math.min(320,Math.max(60,osmMetres(item.tags&&item.tags.height,NaN,60,330)||330));
-  for(const lp of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.5,1.6,th*.6,6),matStone);leg.position.set(lp[0]*4.4,th*.3,lp[1]*4.4);leg.rotation.z=lp[0]*-.17;leg.rotation.x=lp[1]*.17;g.add(leg);}
-  const p1=new THREE.Mesh(new THREE.BoxGeometry(14,1.2,14),matStone);p1.position.y=th*.32;g.add(p1);
-  const p2=new THREE.Mesh(new THREE.BoxGeometry(8.5,1,8.5),matStone);p2.position.y=th*.64;g.add(p2);
-  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.8,3.2,th*.34,6),matStone);shaft.position.y=th*.83;g.add(shaft);
-  const p3=new THREE.Mesh(new THREE.BoxGeometry(4.2,.8,4.2),matStone);p3.position.y=th-1.4;g.add(p3);
-  const ant=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,th*.08,6),matDark);ant.position.y=th+th*.04;g.add(ant);
+  const towerType=String((item.tags&&item.tags['tower:type'])||'').toLowerCase();
+  /* v190/v191 : OSM décrit la Tour Eiffel par plusieurs objets (la tour, son antenne, l'attraction).
+     Tous les objets « eiffel » d'un même secteur sont donc fusionnés sur un seul monument. */
+  if(/eiffel/.test(towerName)){
+    if(eiffelSpots.some(spot=>Math.hypot(spot[0]-x,spot[1]-z)<900))continue;
+    eiffelSpots.push([x,z]);
+    g.add(buildEiffelTower(osmMetres(item.tags&&item.tags.height,NaN,120,330)||300));
+  }else{
+  /* v191 : une tour générique n'est pas une Tour Eiffel — 12 à 90 m, jamais 330 m.
+     Avant, tout man_made=tower sans hauteur devenait un monument de 330 m : c'étaient
+     les « plusieurs tours Eiffel » signalées à Paris. */
+  const tagged=osmMetres(item.tags&&item.tags.height,NaN,8,120);
+  const th=isFinite(tagged)?Math.max(8,Math.min(120,tagged)):(/^(communication|antenna|mast|lighting)$/.test(towerType)?30:22);
+  if(towerType==='water'||/château d'eau|water tower/.test(towerName)){
+    const tank=new THREE.Mesh(new THREE.CylinderGeometry(2.6,2.6,3.2,14),matStone);tank.position.y=th;g.add(tank);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(2.9,1.5,14),matRoof);roof.position.y=th+2.3;g.add(roof);
+    for(const lp of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.35,th,.35),matStone);leg.position.set(lp[0]*1.5,th/2,lp[1]*1.5);g.add(leg);}
+  }else if(/^(communication|antenna|mast|lighting)$/.test(towerType)){
+    const mast=new THREE.Mesh(new THREE.CylinderGeometry(.18,.5,th,6),matStone);mast.position.y=th/2;g.add(mast);
+    for(let k=1;k<=3;k++){const arm=new THREE.Mesh(new THREE.BoxGeometry(1.6-k*.3,.16,.16),matDark);arm.position.y=th*k/3.4;g.add(arm);}
+    const tip=new THREE.Mesh(new THREE.CylinderGeometry(.06,.10,th*.18,5),matDark);tip.position.y=th+th*.09;g.add(tip);
+  }else{
+    for(const lp of [[-1,-1],[1,-1],[-1,1],[1,1]]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.35,.9,th*.72,6),matStone);leg.position.set(lp[0]*2.2,th*.36,lp[1]*2.2);leg.rotation.z=lp[0]*-.12;leg.rotation.x=lp[1]*.12;g.add(leg);}
+    const p1=new THREE.Mesh(new THREE.BoxGeometry(6,1,6),matStone);p1.position.y=th*.28;g.add(p1);
+    const p2=new THREE.Mesh(new THREE.BoxGeometry(4,.8,4),matStone);p2.position.y=th*.58;g.add(p2);
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.5,1.6,th*.4,6),matStone);shaft.position.y=th*.8;g.add(shaft);
+    const cab=new THREE.Mesh(new THREE.BoxGeometry(2.4,.9,2.4),matDark);cab.position.y=th*.99;g.add(cab);
+  }
   }
 }else if(item.kind==='arch'){ /* v140 : Arc de Triomphe — deux piliers, entablement, attique */
   const w=16,d=12,h=17;
@@ -6005,15 +6073,149 @@ function buildTunnels(tunnelWays,targetWorld){
   return spans.length;
 }
 
+
+/* v191 : parkings OSM — enrobé, marquage des places et quelques voitures garées. */
+function buildParkings(parkingList,targetWorld){
+  if(!parkingList||!parkingList.length||!targetWorld||!route)return 0;
+  const surfPos=[],surfCol=[],paintPos=[],paintCol=[],carPos=[],carCol=[];
+  const asphalt=new THREE.Color(0x4b4c4f),white=new THREE.Color(0xe6e2d8);
+  const carPalette=[0xb9bdc3,0x33405b,0x8f2b28,0x2f4a35,0xdedad2,0x55585c].map(c=>new THREE.Color(c));
+  const tri=(pos,col,a,b,c,colour)=>{for(const v of [a,b,c]){pos.push(v[0],v[1],v[2]);col.push(colour.r,colour.g,colour.b);}};
+  const quad=(pos,col,a,b,c,d,colour)=>{tri(pos,col,a,b,c,colour);tri(pos,col,a,c,d,colour);};
+  const box=(pos,col,cx,cy,cz,sx,sy,sz,colour)=>{
+    const v=p=>[cx+p[0]*sx,cy+p[1]*sy,cz+p[2]*sz];
+    quad(pos,col,v([-1,-1,1]),v([1,-1,1]),v([1,1,1]),v([-1,1,1]),colour);
+    quad(pos,col,v([1,-1,-1]),v([-1,-1,-1]),v([-1,1,-1]),v([1,1,-1]),colour);
+    quad(pos,col,v([-1,-1,-1]),v([-1,-1,1]),v([-1,1,1]),v([-1,1,-1]),colour);
+    quad(pos,col,v([1,-1,1]),v([1,-1,-1]),v([1,1,-1]),v([1,1,1]),colour);
+    quad(pos,col,v([-1,1,-1]),v([-1,1,1]),v([1,1,1]),v([1,1,-1]),colour);
+  };
+  let count=0,cars=0;
+  for(const [raw,tags] of parkingList.slice(0,80)){
+    if(!osmClosed(raw))continue;
+    const ring=raw.slice(0,-1);if(ring.length<3)continue;
+    const near=nearestOnRoute(ring[0][0],ring[0][1]);if(!near||near.dist2>320*320)continue;
+    let area=0,minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+    for(let i=0;i<ring.length;i++){const a=ring[i],b=ring[(i+1)%ring.length];area+=a[0]*b[1]-b[0]*a[1];minX=Math.min(minX,a[0]);maxX=Math.max(maxX,a[0]);minZ=Math.min(minZ,a[1]);maxZ=Math.max(maxZ,a[1]);}
+    area=Math.abs(area)/2;if(area<24||area>26000)continue;
+    const yAt=(x,z)=>{const g=terrainSample(window._terrain,x,z);return Number.isFinite(g)?g+.07:near.y+.07;};
+    let faces=[];
+    try{faces=THREE.ShapeUtils.triangulateShape(ring.map(p=>new THREE.Vector2(p[0],p[1])),[]);}catch(_){faces=[];}
+    for(const f of faces){const A=ring[f[0]],B=ring[f[1]],C=ring[f[2]];tri(surfPos,surfCol,[A[0],yAt(A[0],A[1]),A[1]],[B[0],yAt(B[0],B[1]),B[1]],[C[0],yAt(C[0],C[1]),C[1]],asphalt);}
+    const alongX=(maxX-minX)>=(maxZ-minZ),span=alongX?maxX-minX:maxZ-minZ,depth=alongX?maxZ-minZ:maxX-minX;
+    if(span>4&&depth>3){
+      const bays=Math.min(18,Math.max(2,Math.round(span/2.7))),reach=Math.max(1.4,depth/2-1.2);
+      for(let i=1;i<bays;i++){
+        const t=i/bays,baseX=alongX?minX+span*t:(minX+maxX)/2,baseZ=alongX?(minZ+maxZ)/2:minZ+span*t;
+        for(const sgn of [-1,1]){
+          let prev=null;
+          for(let d=0;d<=reach;d+=1.1){
+            const x=baseX+(alongX?0:d*sgn),z=baseZ+(alongX?d*sgn:0),inside=osmPointInPolygon(raw,x,z);
+            if(inside&&prev){
+              const y1=yAt(prev[0],prev[1])+.02,y2=yAt(x,z)+.02,w=.06;
+              quad(paintPos,paintCol,[prev[0]-(alongX?0:w),y1,prev[1]-(alongX?w:0)],[x-(alongX?0:w),y2,z-(alongX?w:0)],[x+(alongX?0:w),y2,z+(alongX?w:0)],[prev[0]+(alongX?0:w),y1,prev[1]+(alongX?w:0)],white);
+            }
+            prev=inside?[x,z]:null;
+          }
+        }
+      }
+    }
+    if(area>60&&cars<80){
+      const carCount=Math.min(6,Math.max(2,Math.floor(area/140)));
+      for(let k=0;k<carCount&&cars<80;k++){
+        const t=.14+.72*(k+.5)/carCount;
+        const x=alongX?minX+span*t:minX+depth*(k%2?.3:.7),z=alongX?minZ+depth*(k%2?.3:.7):minZ+span*t;
+        if(!osmPointInPolygon(raw,x,z))continue;
+        const y=yAt(x,z),col=carPalette[(count+k)%carPalette.length],bw=alongX?.88:2.0,bd=alongX?2.0:.88;
+        box(carPos,carCol,x,y+.62,z,bw,.30,bd,col);
+        box(carPos,carCol,x,y+1.10,z,bw*.8,.26,bd*.55,new THREE.Color(0x2b3440));
+        box(carPos,carCol,x,y+.30,z,bw*1.02,.12,bd*1.01,new THREE.Color(0x16161a));
+        cars++;
+      }
+    }
+    count++;
+  }
+  const add=(pos,col,mat)=>{if(!pos.length)return;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();targetWorld.add(new THREE.Mesh(g,mat));};
+  add(surfPos,surfCol,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
+  add(paintPos,paintCol,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide}));
+  add(carPos,carCol,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
+  return count;
+}
+
+/* v191 : lignes électriques — poteaux, pylônes et câbles (catenaires) le long des routes. */
+function buildPowerNetwork(powerLines,powerPoles,targetWorld){
+  if(!targetWorld||!route)return 0;
+  const poleSpots=[],wires=[];
+  const ground=(x,z)=>{const g=terrainSample(window._terrain,x,z);if(Number.isFinite(g))return g;const n=nearestOnRoute(x,z);return n?n.y:0;};
+  const addPole=(x,z,big)=>{
+    const near=nearestOnRoute(x,z);if(!near||near.dist2>260*260)return null;
+    const pole={x,z,y:ground(x,z),h:big?22:8.5,big:!!big};poleSpots.push(pole);return pole;
+  };
+  for(const [pts,tags] of (powerLines||[]).slice(0,50)){
+    if(!pts||pts.length<2)continue;
+    const kind=String(tags.power||''),big=kind==='line';
+    const anchors=[];
+    for(const p of osmSampleLine(pts,big?52:40)){const pole=addPole(p[0],p[1],big);if(pole)anchors.push(pole);}
+    for(let i=1;i<anchors.length;i++){
+      const a=anchors[i-1],b=anchors[i],span=Math.hypot(b.x-a.x,b.z-a.z);
+      if(span<2||span>130)continue;
+      const sag=Math.min(4,span*.04)+.35,perpX=-(b.z-a.z)/span,perpZ=(b.x-a.x)/span;
+      for(const side of [-1.15,0,1.15]){
+        let prev=null;
+        for(let k=0;k<=8;k++){
+          const t=k/8,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;
+          const y=a.y+a.h+(b.y+b.h-(a.y+a.h))*t-sag*Math.sin(Math.PI*t);
+          const px=x+perpX*side,pz=z+perpZ*side;
+          if(prev)wires.push(prev[0],prev[1],prev[2],px,y,pz);
+          prev=[px,y,pz];
+        }
+      }
+    }
+  }
+  for(const p of (powerPoles||[]).slice(0,240))addPole(p.x,p.z,!!p.tower);
+  if(!poleSpots.length)return 0;
+  const trunkGeo=new THREE.CylinderGeometry(.16,.23,1,6);trunkGeo.translate(0,.5,0);
+  const trunkMesh=new THREE.InstancedMesh(trunkGeo,new THREE.MeshStandardMaterial({color:0x9b9080,roughness:.95}),poleSpots.length);
+  const arms=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.9}),poleSpots.length*8);
+  const m=new THREE.Matrix4(),armColour=new THREE.Color(0x8a8272);
+  let ai=0;
+  poleSpots.forEach((p,i)=>{
+    m.makeScale(p.big?1.9:1,p.h,p.big?1.9:1);m.setPosition(p.x,p.y,p.z);trunkMesh.setMatrixAt(i,m);
+    if(p.big){
+      for(const [dx,dz] of [[-1,-1],[1,-1],[1,1],[-1,1]]){m.makeScale(.26,p.h-.6,.26);m.setPosition(p.x+dx*1.2,p.y+(p.h-.6)/2,p.z+dz*1.2);arms.setMatrixAt(ai,m);arms.setColorAt(ai++,armColour);}
+      for(const [hh,w] of [[.55,4.0],[.74,5.4],[.9,3.6]]){m.makeScale(w,.22,.22);m.setPosition(p.x,p.y+p.h*hh,p.z);arms.setMatrixAt(ai,m);arms.setColorAt(ai++,armColour);}
+    }else{
+      m.makeScale(2.4,.16,.16);m.setPosition(p.x,p.y+p.h-.7,p.z);arms.setMatrixAt(ai,m);arms.setColorAt(ai++,armColour);
+    }
+  });
+  for(let k=ai;k<arms.count;k++){m.makeScale(.0001,.0001,.0001);m.setPosition(0,-99,0);arms.setMatrixAt(k,m);}
+  trunkMesh.instanceMatrix.needsUpdate=true;arms.instanceMatrix.needsUpdate=true;
+  if(arms.instanceColor)arms.instanceColor.needsUpdate=true;
+  targetWorld.add(trunkMesh,arms);
+  if(wires.length){
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(wires,3));
+    const lineMesh=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x2f2f31,transparent:true,opacity:.72}));
+    lineMesh.frustumCulled=false;targetWorld.add(lineMesh);
+  }
+  return poleSpots.length;
+}
+
 function applyOSM(elements,targetWorld){
   const target=targetWorld||world;
   if(!target||!route)return{b:0,w:0,t:0,h:0,r:0,c:0};
   resetSceneryData();
-  const buildingsList=[],waters=[],forests=[],roads=[],hedgeList=[],treeRows=[],treeNodes=[],residentialAreas=[],localities=[],landmarks=[],waterways=[],bridgeWays=[],railways=[],tunnelWays=[],farmlandList=[],mountainPasses=[],peaks=[]; /* v156 */
+  const buildingsList=[],waters=[],forests=[],roads=[],hedgeList=[],treeRows=[],treeNodes=[],residentialAreas=[],localities=[],landmarks=[],waterways=[],bridgeWays=[],railways=[],tunnelWays=[],farmlandList=[],mountainPasses=[],peaks=[],parkingList=[],powerLines=[],powerPoles=[]; /* v156 */
   for(const element of elements||[]){
     const tags=element.tags||{},points=osmElementPoints(element);
     if(element.type==='node'&&points.length&&/^(city|town|village|hamlet|suburb)$/.test(String(tags.place||''))&&String(tags.name||'').trim())localities.push({name:String(tags.name).trim(),place:tags.place,x:points[0][0],z:points[0][1]});
     if(element.type==='node'&&tags.natural==='tree'&&points.length){treeNodes.push(points[0]);continue;}
+    if(points.length&&tags.power&&/^(line|minor_line|cable|tower|pole|portal)$/.test(String(tags.power).toLowerCase())){ /* v191 : lignes et poteaux électriques */
+      const pk=String(tags.power).toLowerCase();
+      if(/^(line|minor_line|cable)$/.test(pk)){if(points.length>1)powerLines.push([points,tags]);}
+      else powerPoles.push({x:points[0][0],z:points[0][1],tower:pk!=='pole'});
+      continue;
+    }
+    if((String(tags.amenity||'')==='parking'||String(tags.landuse||'')==='garage')&&points.length>2&&osmClosed(points)){parkingList.push([points,tags]);continue;} /* v191 : parkings */
     if(element.type==='node'&&points.length&&tags.mountain_pass){mountainPasses.push({x:points[0][0],z:points[0][1],name:String(tags.name||''),ele:Number(tags.ele)||0});continue;} /* v156 : col OSM */
     if(element.type==='node'&&points.length&&tags.natural==='peak'){peaks.push({x:points[0][0],z:points[0][1],name:String(tags.name||''),ele:Number(tags.ele)||0});continue;} /* v156 : sommet OSM */
     const landmarkKind=osmLandmarkKind(tags);if(landmarkKind&&points.length){landmarks.push({kind:landmarkKind,points,tags});continue;} /* v147 : les églises/stades/tours sont dessinés en forme propre, pas en simple boîte */
@@ -6166,42 +6368,62 @@ function applyOSM(elements,targetWorld){
   for(const [points]of estimatedHedges)osmMapFeatures.push({type:'hedge-estimated',points:osmCopyPoints(points)});
   const hedgeCounts=hedges([...hedgeList,...estimatedHedges],target),hedgeCount=hedgeCounts.mapped+hedgeCounts.estimated;
   if(trees.length){
-    /* v81 : arbres variés — tailles, teintes de feuillage, conifères : plus de répétition au bord de la route */
-    const trunkGeo=new THREE.CylinderGeometry(0.18,0.28,3.2,7);trunkGeo.translate(0,1.6,0);
-    const trunkMesh=new THREE.InstancedMesh(trunkGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9}),trees.length),matrix=new THREE.Matrix4(),trunkColour=new THREE.Color();
-    const leafGeo=new THREE.SphereGeometry(1.9,10,8);
-    const leafMesh=new THREE.InstancedMesh(leafGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.85}),trees.length*4),m2=new THREE.Matrix4(),leafColour=new THREE.Color();
-    const sp=SEASON_PALETTES[currentSeason()]; /* v188 : feuillages de saison */
-    const coneGeo=new THREE.ConeGeometry(1.7,4.6,9);coneGeo.translate(0,2.3,0);
+    /* v191 : arbres détaillés — tronc, branches apparentes, houppier en facettes (feuilles),
+       conifères en étages. */
+    const sp=SEASON_PALETTES[currentSeason()];
+    const UP=new THREE.Vector3(0,1,0),q=new THREE.Quaternion(),pos=new THREE.Vector3(),scaleV=new THREE.Vector3();
+    const trunkGeo=new THREE.CylinderGeometry(0.17,0.30,3.4,7);trunkGeo.translate(0,1.7,0);
+    const trunkMesh=new THREE.InstancedMesh(trunkGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.95}),trees.length),matrix=new THREE.Matrix4(),trunkColour=new THREE.Color();
+    const branchGeo=new THREE.CylinderGeometry(.055,.15,2.2,5);branchGeo.translate(0,1.1,0);
+    const branchMesh=new THREE.InstancedMesh(branchGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.95}),trees.length*3),branchColour=new THREE.Color();
+    const leafGeo=new THREE.IcosahedronGeometry(1.25,0);
+    const leafMesh=new THREE.InstancedMesh(leafGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9,flatShading:true}),trees.length*5),leafColour=new THREE.Color();
+    const coneGeo=new THREE.ConeGeometry(1.55,3.0,8);coneGeo.translate(0,1.5,0);
     const coniferSet=new Set(trees.filter(point=>osmNoise(point[0]*7.3,point[1]*5.1)>.62));
-    const coniferCount=Math.max(1,coniferSet.size);
-    const coneMesh=new THREE.InstancedMesh(coneGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.85}),coniferCount),m3=new THREE.Matrix4(),coneColour=new THREE.Color();
-    let coneIndex=0;
+    const coneMesh=new THREE.InstancedMesh(coneGeo,new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.92,flatShading:true}),trees.length*3),coneColour=new THREE.Color();
+    let coneIndex=0,branchIndex=0;
     trees.forEach((point,i)=>{
       const twist=Math.abs(osmNoise(point[0]*2.2,point[1]*3.3));
-      const s=Math.random()<.18?.75+Math.random()*.45:(coniferSet.has(point)?.9:1.4)+Math.random()*1.2, big=s>1.5, y=heightAt(point[0],point[1])-.4, conifer=coniferSet.has(point);
-      matrix.makeScale(big?s*1.35:s,big?s*1.15:s,big?s*1.35:s);matrix.setPosition(point[0],y,point[1]);trunkMesh.setMatrixAt(i,matrix);
-      trunkMesh.setColorAt(i,trunkColour.setHSL(.07,.42,.16+twist*.14));
+      const conifer=coniferSet.has(point);
+      const s=(conifer?0.9:1.1)+twist*(conifer?0.5:0.9);
+      const y=heightAt(point[0],point[1])-.4;
+      matrix.makeScale(s,s,s);matrix.setPosition(point[0],y,point[1]);trunkMesh.setMatrixAt(i,matrix);
+      trunkMesh.setColorAt(i,trunkColour.setHSL(.07,.40,.17+twist*.12));
+      for(let k=0;k<5;k++){matrix.makeScale(.0001,.0001,.0001);matrix.setPosition(point[0],y,point[1]);leafMesh.setMatrixAt(i*5+k,matrix);}
       if(conifer){
-        m2.makeScale(.0001,.0001,.0001);m2.setPosition(point[0],y,point[1]);
-        for(let k=0;k<4;k++)leafMesh.setMatrixAt(i*4+k,m2);
-        m3.makeScale(s*1.15,s*(1.0+twist*.4),s*1.15);m3.setPosition(point[0],y,point[1]);coneMesh.setMatrixAt(coneIndex,m3);
-        coneMesh.setColorAt(coneIndex,coneColour.setHSL(sp.conifer[0]+twist*.05,sp.conifer[1],sp.conifer[2]+twist*.12));coneIndex++;
+        for(let k=0;k<3;k++){
+          const t=k/3,cs=s*(1.32-t*.5);
+          matrix.makeScale(cs,s*(1.25-t*.30),cs);matrix.setPosition(point[0],y+(1.9+t*2.7)*s,point[1]);
+          coneMesh.setMatrixAt(coneIndex,matrix);
+          coneMesh.setColorAt(coneIndex,coneColour.setHSL(sp.conifer[0]+twist*.04,sp.conifer[1],sp.conifer[2]+t*.05+twist*.06));coneIndex++;
+        }
+        for(let k=0;k<3;k++){matrix.makeScale(.0001,.0001,.0001);matrix.setPosition(0,-99,0);branchMesh.setMatrixAt(branchIndex++,matrix);}
       }else{
-        for(let k=0;k<4;k++){const a=Math.random()*Math.PI*2, r=k===0?0:0.85+Math.random()*0.7, ls=(big?1.1:0.95)+Math.random()*0.5; m2.makeScale(s*ls*0.72,s*ls*0.62,s*ls*0.72); m2.setPosition(point[0]+Math.cos(a)*r*s, y+(3.1+(k===0?0.35:0.4+Math.random()*0.5))*s, point[1]+Math.sin(a)*r*s); leafMesh.setMatrixAt(i*4+k,m2);}
-        for(let k=0;k<4;k++)leafMesh.setColorAt(i*4+k,leafColour.setHSL(sp.leafHue+twist*.10,sp.leafSat+twist*.18,sp.leafLight+((twist*4.1+k*.23)%1)*.18));
+        for(let k=0;k<3;k++){
+          const a=k*2.15+twist*3.1,tilt=.62+twist*.34,bx=Math.cos(a)*Math.sin(tilt),bz=Math.sin(a)*Math.sin(tilt),bs=s*(0.85+twist*.5);
+          q.setFromUnitVectors(UP,pos.set(bx,Math.cos(tilt),bz).normalize());
+          matrix.compose(pos.set(point[0],y+2.5*s,point[1]),q,scaleV.set(bs,bs,bs));
+          branchMesh.setMatrixAt(branchIndex,matrix);
+          branchMesh.setColorAt(branchIndex,branchColour.setHSL(.07,.38,.16+twist*.1));branchIndex++;
+        }
+        for(let k=0;k<5;k++){
+          const a=twist*6.28+k*1.9,r=(k===0?0.15:0.75+((twist*7.1+k*.37)%1)*0.6)*s,lift=(k===0?4.3:3.3+((twist*3.3+k*.61)%1)*0.9)*s,ls=(k===0?.95:.78)+((twist*4.7+k*.29)%1)*.38;
+          matrix.compose(pos.set(point[0]+Math.cos(a)*r,y+lift,point[1]+Math.sin(a)*r),q.identity(),scaleV.set(s*ls*1.15,s*ls*.92,s*ls*1.15));
+          leafMesh.setMatrixAt(i*5+k,matrix);
+          leafMesh.setColorAt(i*5+k,leafColour.setHSL(sp.leafHue+twist*.09,sp.leafSat+twist*.14,sp.leafLight+((twist*4.1+k*.23)%1)*.17));
+        }
       }
     });
-    for(let k=coneIndex;k<coniferCount;k++){m3.makeScale(.0001,.0001,.0001);m3.setPosition(0,-99,0);coneMesh.setMatrixAt(k,m3);}
-    trunkMesh.instanceMatrix.needsUpdate=true;leafMesh.instanceMatrix.needsUpdate=true;coneMesh.instanceMatrix.needsUpdate=true;
-    if(trunkMesh.instanceColor)trunkMesh.instanceColor.needsUpdate=true;if(leafMesh.instanceColor)leafMesh.instanceColor.needsUpdate=true;if(coneMesh.instanceColor)coneMesh.instanceColor.needsUpdate=true;
-    target.add(trunkMesh);target.add(leafMesh);target.add(coneMesh);
+    for(let k=coneIndex;k<coneMesh.count;k++){matrix.makeScale(.0001,.0001,.0001);matrix.setPosition(0,-99,0);coneMesh.setMatrixAt(k,matrix);}
+    for(let k=branchIndex;k<branchMesh.count;k++){matrix.makeScale(.0001,.0001,.0001);matrix.setPosition(0,-99,0);branchMesh.setMatrixAt(k,matrix);}
+    for(const inst of [trunkMesh,branchMesh,leafMesh,coneMesh]){inst.instanceMatrix.needsUpdate=true;if(inst.instanceColor)inst.instanceColor.needsUpdate=true;target.add(inst);}
     if(target.userData.rt)target.userData.rt.visible=false;
   }
   const roadStats=buildRoadNetwork(selectRoadsForScene(roads,1200),target); const furnCount=buildRoadFurniture(elements,target);
+  const parkingCount=buildParkings(parkingList,target);buildPowerNetwork(powerLines,powerPoles,target); /* v191 */
   makeTownEntries(elements,target);
   scheduleTerrainAlignment(target);
-  return{b:buildingCount,l:landmarkCount,w:Math.min(waters.length,150),t:trees.length,h:hedgeCount,hm:hedgeCounts.mapped,he:hedgeCounts.estimated,r:roadStats.drawn,roundabouts:roadStats.roundabouts,c:cityEntries.length,p:bridgeCount};
+  return{b:buildingCount,l:landmarkCount,w:Math.min(waters.length,150),t:trees.length,h:hedgeCount,hm:hedgeCounts.mapped,he:hedgeCounts.estimated,r:roadStats.drawn,roundabouts:roadStats.roundabouts,c:cityEntries.length,p:bridgeCount,pk:parkingCount};
 }
 
 osmPublishSceneryData();
@@ -6252,11 +6474,11 @@ function hedges(hedgeParts,targetWorld){
     for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=near.y-.38;strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
     const group=groups[item.estimated?'estimated':'mapped'];let used=false;
     for(let i=1;i<strip.length;i++){const a=strip[i-1],b=strip[i];if(!a||!b)continue;tri(group.base,a.l,b.l,b.lt);tri(group.base,a.l,b.lt,a.lt);tri(group.base,a.r,b.rt,b.r);tri(group.base,a.r,a.rt,b.rt);tri(group.base,a.lt,b.lt,b.rt);tri(group.base,a.lt,b.rt,a.rt);used=true}
-    if(used){if(item.estimated)estimated++;else mapped++;for(const point of strip)if(point&&group.leaves.length<6500)group.leaves.push({point,height,width});for(let i=0;i<strip.length;i+=3){const point=strip[i];if(point&&hedgeTrees.length<1100&&osmNoise(point.x*3.1,point.z*2.7)>.28)hedgeTrees.push({x:point.x,y:point.y,z:point.z,v:Math.abs(osmNoise(point.x*1.7,point.z*9.3)),conifer:Math.abs(osmNoise(point.x*11.3,point.z*5.7))>.78})}}
+    if(used){if(item.estimated)estimated++;else mapped++;for(const point of strip)if(point){if(group.leaves.length<7000)group.leaves.push({point,height,width});if(group.leaves.length<9000&&osmNoise(point.x*4.7,point.z*3.9)>.35)group.leaves.push({point,height,width,mid:true});}for(let i=0;i<strip.length;i+=3){const point=strip[i];if(point&&hedgeTrees.length<1100&&osmNoise(point.x*3.1,point.z*2.7)>.28)hedgeTrees.push({x:point.x,y:point.y,z:point.z,v:Math.abs(osmNoise(point.x*1.7,point.z*9.3)),conifer:Math.abs(osmNoise(point.x*11.3,point.z*5.7))>.78})}}
   }
   for(const [type,group]of Object.entries(groups)){
     if(group.base.length){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(group.base,3));geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:type==='estimated'?0x3a5a28:0x1e4d22,roughness:0.95,side:THREE.DoubleSide})))}
-    if(group.leaves.length){const geometry=new THREE.SphereGeometry(0.85,10,8),material=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9}),instances=new THREE.InstancedMesh(geometry,material,group.leaves.length),matrix=new THREE.Matrix4(),colour=new THREE.Color();group.leaves.forEach(({point,height,width},i)=>{const variation=Math.max(0,osmNoise(point.x,point.z)),sx=Math.max(.7,width*.85)*(.7+variation*.75),sy=.45+Math.min(1.7,height*.30)+variation*.5,sz=1.0+variation*1.1;matrix.makeScale(sx,sy,sz);matrix.setPosition(point.x+ (variation-.5)*0.8,point.y+height*.72+variation*.35,point.z+(variation-.5)*0.8);instances.setMatrixAt(i,matrix);instances.setColorAt(i,colour.setHSL(.24+variation*.10,.45,.30+((variation*3.7)%1)*.18))});instances.instanceMatrix.needsUpdate=true;if(instances.instanceColor)instances.instanceColor.needsUpdate=true;targetWorld.add(instances)}
+    if(group.leaves.length){const geometry=new THREE.IcosahedronGeometry(0.72,0),material=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9,flatShading:true}),instances=new THREE.InstancedMesh(geometry,material,group.leaves.length),matrix=new THREE.Matrix4(),colour=new THREE.Color();group.leaves.forEach(({point,height,width,mid},i)=>{const variation=Math.max(0,osmNoise(point.x,point.z)),sx=Math.max(.7,width*.85)*(.7+variation*.75)*(mid?.82:1),sy=(.45+Math.min(1.7,height*.30)+variation*.5)*(mid?.85:1),sz=(1.0+variation*1.1)*(mid?.82:1);matrix.makeScale(sx,sy,sz);matrix.setPosition(point.x+(variation-.5)*(mid?1.3:0.8),point.y+height*(mid?.42:.78)+variation*.35,point.z+(variation-.5)*(mid?1.3:0.8));instances.setMatrixAt(i,matrix);instances.setColorAt(i,colour.setHSL(.24+variation*.10,.45,.30+((variation*3.7)%1)*.18))});instances.instanceMatrix.needsUpdate=true;if(instances.instanceColor)instances.instanceColor.needsUpdate=true;targetWorld.add(instances)}
     /* v78 : arbres dans les haies, feuillages variés */
     if(hedgeTrees.length){const trunkGeometry=new THREE.CylinderGeometry(.17,.26,2.7,7),crownGeometry=new THREE.IcosahedronGeometry(1.25,1),trunkMaterial=new THREE.MeshStandardMaterial({color:0x6b4f36,roughness:.95}),crownMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.9}),trunks=new THREE.InstancedMesh(trunkGeometry,trunkMaterial,hedgeTrees.length),crowns=new THREE.InstancedMesh(crownGeometry,crownMaterial,hedgeTrees.length),coneGeometry=new THREE.ConeGeometry(1.2,3.7,8),cones=new THREE.InstancedMesh(coneGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.92}),hedgeTrees.length),matrix=new THREE.Matrix4(),colour=new THREE.Color();
       hedgeTrees.forEach((t,i)=>{const scale=.8+t.v*.9;matrix.makeScale(scale,scale,scale);matrix.setPosition(t.x,t.y+1.35*scale,t.z);trunks.setMatrixAt(i,matrix);if(t.conifer){matrix.makeScale(scale*1.35,scale*2.35,scale*1.35);matrix.setPosition(t.x,t.y+2.85*scale,t.z);cones.setMatrixAt(i,matrix);cones.setColorAt(i,colour.setHSL(sp.conifer[0]+t.v*.05,sp.conifer[1],sp.conifer[2]+t.v*.10));matrix.makeScale(.0001,.0001,.0001);matrix.setPosition(t.x,-99,t.z);crowns.setMatrixAt(i,matrix);}else{matrix.makeScale(scale*(1.6+t.v*.8),scale*(2.1+t.v*1.3),scale*(1.5+t.v*.7));matrix.setPosition(t.x,t.y+2.5*scale+t.v,t.z);crowns.setMatrixAt(i,matrix);crowns.setColorAt(i,colour.setHSL(sp.leafHue+t.v*.10,sp.leafSat+t.v*.16,sp.leafLight+((t.v*3.7)%1)*.16));matrix.makeScale(.0001,.0001,.0001);matrix.setPosition(t.x,-99,t.z);cones.setMatrixAt(i,matrix);}});
