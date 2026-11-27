@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v193 — jardins propres, haies hors chaussée</title>
+<title>Vélo 3D v194 — capteur de cadence, puissance estimée</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -491,14 +491,14 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
     <output id="gearReadout" aria-live="polite">48 × 21</output>
     <div id="cassetteAssembly"><div class="cassetteHeader"><span>Cassette <b>10–36</b></span></div><div class="cassetteScale"><button id="gearEasier" type="button" aria-label="Moins : passer vers un pignon plus grand" title="− · vers 36 dents, braquet plus facile">−</button><div class="cassetteDiagram"><svg id="cassetteTeeth" viewBox="0 0 136 136" role="group" aria-label="Cassette 10–36, choisir un pignon; le pignon sélectionné est coloré"></svg><output id="rearGearReadout" aria-live="polite">21</output></div><button id="gearHarder" type="button" aria-label="Plus : passer vers un pignon plus petit" title="+ · vers 10 dents, braquet plus dur">+</button></div></div>
   </div>
-  <div class="row" id="actionControls"><button id="pause" aria-label="Mettre en pause">Pause</button><button id="stopBtn" aria-label="Arrêter l'entraînement" title="Arrêter l'entraînement">⏹️</button><button id="turnAround" disabled aria-label="Faire demi-tour">↶ Demi-tour</button><button id="fsBtn" aria-label="Plein écran">⛶ Plein écran</button><button id="bt">Trainer</button><button id="hb">Cardio</button><button id="mn">Menu</button></div>  <canvas id="icuGraph" class="hide" aria-label="Graphique de l'entraînement en cours"></canvas>
+  <div class="row" id="actionControls"><button id="pause" aria-label="Mettre en pause">Pause</button><button id="stopBtn" aria-label="Arrêter l'entraînement" title="Arrêter l'entraînement">⏹️</button><button id="turnAround" disabled aria-label="Faire demi-tour">↶ Demi-tour</button><button id="fsBtn" aria-label="Plein écran">⛶ Plein écran</button><button id="bt">Trainer</button><button id="cd" aria-label="Connecter un capteur de cadence">Cadence</button><button id="hb">Cardio</button><button id="mn">Menu</button></div>  <canvas id="icuGraph" class="hide" aria-label="Graphique de l'entraînement en cours"></canvas>
 <button id="barHide" type="button" title="Replier le bandeau du bas" aria-label="Replier le bandeau inférieur">▾</button><div id="exportPanel" class="hide"><b>Entraînement arrêté</b><br><span id="exportInfo"></span></div>
 </div>
 <button id="barShow" type="button" title="Faire réapparaître le bandeau du bas">▴</button><button id="cameraToggle" type="button" aria-label="Changer de vue caméra" title="Changer de vue caméra (suivi · paysage · profil · cintre)">📹</button><button id="turnAroundFloat" type="button" class="hide" title="Faire demi-tour" aria-label="Faire demi-tour">↶</button><div id="gearDock" class="hide" aria-label="Changement de vitesse virtuelle"></div>
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v193</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v194</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -628,7 +628,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
     <label style="display:flex;gap:8px;align-items:center;font-size:12px;margin-top:6px;color:var(--muted)"><input id="liveWeather" type="checkbox" style="min-height:22px;min-width:22px;accent-color:var(--ac)"> Météo réelle en roulant (relevée toutes les 10 min à ta position GPS)</label>
     <button id="go" class="wide primary" disabled>Lancer le parcours</button>
     <button id="skipScenery" class="wide hide">Lancer sans attendre le décor</button>
-    <details><summary>Caméra, données et connexion</summary><p>Glissez un doigt sur la scène pour regarder autour de vous. Pincez à deux doigts pour zoomer (le pincement repasse en vue suivi). L’icône 📷 en haut change de vue à chaque appui : suivi, paysage, profil, puis cintre — en vue cintre vous êtes à la place du cycliste, comme sur le vélo.</p><p>Rouler libre télécharge dans le rayon choisi les routes et objets OSM utilisés par le décor. Le secteur est préparé dans les deux sens disponibles ; la flèche sur la carte indique le sens de départ (touche-la pour l’inverser), puis appuie sur Lancer. Les villes affichées sous les flèches sont des indications tirées des noms OSM proches, pas une garantie d’itinéraire jusqu’à la ville.</p><p>Le relief libre est estimé à partir du modèle tuiles d’altitude <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles (Terrarium)</a> pour les versants ; Open-Meteo reste utilisé pour le profil de la route. La précision dépend des données disponibles dans la région. Si le service est inaccessible, le parcours reste utilisable mais la pente peut être incomplète.</p><p>Les haies cartographiées sont complétées par des haies estimées sur les portions rurales sans bâtiments voisins. Routes annexes et ronds-points suivent les données OpenStreetMap ; leurs alentours peuvent être incomplets.</p><p>Hébergez ce fichier en HTTPS (GitHub Pages convient). Pour le trainer et le cardio : Chrome Android ou navigateur compatible Web Bluetooth. La démonstration fonctionne sans capteur.</p></details>
+    <details><summary>Caméra, données et connexion</summary><p>Glissez un doigt sur la scène pour regarder autour de vous. Pincez à deux doigts pour zoomer (le pincement repasse en vue suivi). L’icône 📷 en haut change de vue à chaque appui : suivi, paysage, profil, puis cintre — en vue cintre vous êtes à la place du cycliste, comme sur le vélo.</p><p>Rouler libre télécharge dans le rayon choisi les routes et objets OSM utilisés par le décor. Le secteur est préparé dans les deux sens disponibles ; la flèche sur la carte indique le sens de départ (touche-la pour l’inverser), puis appuie sur Lancer. Les villes affichées sous les flèches sont des indications tirées des noms OSM proches, pas une garantie d’itinéraire jusqu’à la ville.</p><p>Le relief libre est estimé à partir du modèle tuiles d’altitude <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles (Terrarium)</a> pour les versants ; Open-Meteo reste utilisé pour le profil de la route. La précision dépend des données disponibles dans la région. Si le service est inaccessible, le parcours reste utilisable mais la pente peut être incomplète.</p><p>Les haies cartographiées sont complétées par des haies estimées sur les portions rurales sans bâtiments voisins. Routes annexes et ronds-points suivent les données OpenStreetMap ; leurs alentours peuvent être incomplets.</p><p>Hébergez ce fichier en HTTPS (GitHub Pages convient). Pour le trainer, le capteur de cadence et le cardio : Chrome Android ou navigateur compatible Web Bluetooth. Un capteur de cadence seul suffit à faire avancer l’avatar : la puissance est alors estimée à partir de la cadence, du braquet virtuel et de la pente. La démonstration fonctionne sans capteur.</p></details>
   </div>
 </div>
 <div id="pp" class="hide"><label for="pt">Importer une trace GPX</label><textarea id="pt" spellcheck="false" placeholder="Collez ici le contenu complet du fichier GPX"></textarea><div id="pe" role="alert"></div><div class="row"><button id="pl" class="primary">Charger</button><button id="px">Annuler</button></div></div>
@@ -2042,7 +2042,7 @@ function animRider(dt) {
   }
 
   const speed = Math.max(0, Number(v) || 0);
-  const power = ctl ? Math.max(0,Number(lastP)||0) : Math.max(0,Number($('pw') ? $('pw').value : 0)||0);
+  const power = ctl ? Math.max(0,Number(lastP)||0) : (cadSensor ? Math.max(0,Number(window._estPower)||0) : Math.max(0,Number($('pw') ? $('pw').value : 0)||0)); /* v194 : puissance estimée du capteur de cadence */
   for (const wheel of data.wheels) wheel.rotation.x += speed * dt / data.wheelRadius;
   if(window._importedWheels) for(const pivot of window._importedWheels) pivot.rotation.x += speed * dt / 0.35;
 
@@ -6918,7 +6918,22 @@ function gearCadence(speed,front=virtualFront,rear=virtualRear()){
   return Math.min(160,wheelRpm*rear/front);
 }
 let ctl=null,lastP=0,hr=0,cad=0,busy=false;let sessionSamples=[],lastSampleT=0,sessionStart=0;
-function rideCadence(speed,power){return ctl&&cad>0?Math.min(180,cad):(power>0?gearCadence(speed):0)}
+/* v194 : un capteur de cadence seul (service CSC 0x1816) suffit à faire avancer l’avatar.
+   La vitesse cible découle de la cadence et du braquet virtuel ; la puissance affichée
+   est celle qu’il faut développer pour tenir cette vitesse sur la pente réelle. */
+let cadSensor=null,lastCadAt=0,cscLast=null;
+function cadenceNow(){return cadSensor&&performance.now()-lastCadAt>3000?0:cad}
+function estimatedPower(grade,dt){
+  const rpm=cadenceNow(),wheelRadius=(rider&&rider.userData&&rider.userData.wheelRadius)||.35;
+  const target=rpm>0?rpm/60*virtualFront/Math.max(1,virtualRear())*2*Math.PI*wheelRadius:0;
+  const slope=Math.atan(Number(grade)||0);
+  const force=MASS*G0*(CRR*Math.cos(slope)+Math.sin(slope))+.5*RHO*CDA*target*target; /* roulement + pente + aéro */
+  const raw=target>.2?Math.max(0,Math.min(1500,force*target/.975)):0;
+  const k=Math.min(1,Math.max(0,Number(dt)||0)/1.2); /* lissage : le capteur n’envoie qu’une fois par tour */
+  window._estPower=Math.max(0,(window._estPower||0)+(raw-(window._estPower||0))*k);
+  return Math.round(window._estPower);
+}
+function rideCadence(speed,power){const c=cadenceNow();if(c>0)return Math.min(180,c);if(cadSensor)return 0; /* v194 : capteur muet = jambes à l’arrêt, pas de cadence inventée */return power>0?gearCadence(speed):0}
 function updateGearUI(){
   const readout=$('gearReadout'),frontBtn=$('frontGear'),frontValue=$('frontGearValue'),rearReadout=$('rearGearReadout'),teeth=$('cassetteTeeth'),easier=$('gearEasier'),harder=$('gearHarder');
   if(readout)readout.textContent=virtualFront+' × '+virtualRear();
@@ -6986,6 +7001,34 @@ $('hb').onclick=async()=>{
     c.addEventListener('characteristicvaluechanged',e=>{const d=e.target.value;hr=(d.getUint8(0)&1)?d.getUint16(1,true):d.getUint8(1)});
     await c.startNotifications();$('hb').classList.add('on');toast('Cardio connecté.');
   }catch(e){toast('Cardio : '+e.message)}
+};
+/* v194 : capteur de cadence seul — Cycling Speed and Cadence (0x1816 / 0x2A5B).
+   Les révolutions de roue sont ignorées : la vitesse reste calculée par la physique. */
+function onCadence(e){
+  const d=e.target.value;if(!d||d.byteLength<1)return;
+  try{
+    const flags=d.getUint8(0);let o=1;
+    if(flags&1)o+=6;
+    if(!(flags&2)||d.byteLength<o+4)return;
+    const revs=d.getUint16(o,true),time=d.getUint16(o+2,true); /* temps en 1/1024 s */
+    if(cscLast){
+      const dRev=(revs-cscLast.revs+65536)%65536,dT=((time-cscLast.time+65536)%65536)/1024;
+      if(dRev>0&&dT>0.05&&dT<8){cad=Math.min(220,dRev/dT*60);lastCadAt=performance.now()}
+    }
+    cscLast={revs:revs,time:time};
+  }catch(err){console.warn('Notification de cadence incomplète',err.message)}
+}
+$('cd').onclick=async()=>{
+  if(!navigator.bluetooth){toast('Bluetooth indisponible ici. Ouvre cette page dans Chrome sur Android.');return}
+  try{
+    const dev=await navigator.bluetooth.requestDevice({filters:[{services:[0x1816]}]});
+    dev.addEventListener('gattserverdisconnected',()=>{cadSensor=null;cad=0;cscLast=null;window._estPower=0;$('cd').classList.remove('on');if(!ctl)$('sl').classList.remove('hide');toast('Capteur de cadence déconnecté.')});
+    const sv=await (await dev.gatt.connect()).getPrimaryService(0x1816),c=await sv.getCharacteristic(0x2A5B);
+    c.addEventListener('characteristicvaluechanged',onCadence);await c.startNotifications();
+    cadSensor=c;cad=0;cscLast=null;lastCadAt=performance.now();window._estPower=0;
+    $('cd').classList.add('on');if(!ctl)$('sl').classList.add('hide');
+    toast('Capteur de cadence connecté : pédale pour avancer (puissance estimée).');
+  }catch(e){toast('Cadence : '+e.message)}
 };
 setInterval(()=>{if(route&&ctl&&running)sendGrade(at(s)[3]*(window._rideDir||1))},1500);
 
@@ -7653,7 +7696,9 @@ function loop(t){
   requestAnimationFrame(loop);const dt=Math.max(0,Math.min((t-last)/1000,.1));last=t;
   updateSky(dt);
   if(route){
-    const dir=window._rideDir||1,power=ctl?lastP:Math.max(+$('pw').value,(proj?0:150)),grade=at(s)[3]*dir; /* v154 : en démo le cycliste avance même curseur à 0 (150 W min) */
+    const dir=window._rideDir||1,grade=at(s)[3]*dir;
+    /* v194 : sans capteur de puissance, un capteur de cadence suffit — la puissance est estimée depuis la cadence, le braquet et la pente. */
+    const power=ctl?Math.max(0,Number(lastP)||0):(cadSensor?estimatedPower(grade,dt):Math.max(+$('pw').value,(proj?0:150))); /* v154 : en démo le cycliste avance même curseur à 0 (150 W min) */
     const _hasPower=power>0,_effRunning=running;
     /* v73 : la sortie ne démarre vraiment qu'au premier watt de puissance.
        Avant cela : vélo immobile et chrono à l'arrêt. Ensuite, la vitesse
@@ -7671,7 +7716,7 @@ function loop(t){
       }
     }
     if(window._freeNavigation&&window._freeNavigation.active)freeAdvanceNavigation();
-    if(_effRunning&&t-lastSampleT>1000){lastSampleT=t;if(!sessionStart)sessionStart=Date.now();const here=at(s),gps=proj?here:null,lat=gps?proj.la-gps[2]/proj.kz:null,lon=gps?proj.lo+gps[0]/proj.kx:null;sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power:ctl?lastP:+$('pw').value,hr,cad:rideCadence(v,power),lat,lon,alt:gps?gps[1]:null,spd:v,x:here[0],z:here[2]});}
+    if(_effRunning&&t-lastSampleT>1000){lastSampleT=t;if(!sessionStart)sessionStart=Date.now();const here=at(s),gps=proj?here:null,lat=gps?proj.la-gps[2]/proj.kz:null,lon=gps?proj.lo+gps[0]/proj.kx:null;sessionSamples.push({t:window._rideElapsed,dist:totalDistance,power:power,hr,cad:rideCadence(v,power),lat,lon,alt:gps?gps[1]:null,spd:v,x:here[0],z:here[2]});}
     if(_effRunning&&window._powerStarted){window._rideElapsed+=dt;window._ridePwSum=(window._ridePwSum||0)+power*dt;} /* v155 : cumul puissance pour la moyenne */
     place(false,dt);
     if(_effRunning&&(power<=0||rideCadence(v,power)<=0)&&v>2.5){window._fw=(window._fw||0)+v*dt*2.4;if(window._fw>=1){window._fw%=1;tick(3000+Math.random()*900,.03,.045,'highpass');}} /* v139/v141 : clics de roue libre quand on cesse de pédaler (cadence à zéro) */if(window._levelCrossings)updateLevelCrossings(s,dt); /* v133 : animation des passages à niveau */
@@ -7681,8 +7726,8 @@ function loop(t){
     if(window._liveWeather&&proj&&route&&t-(window._lastWeatherFetch||0)>600000){window._lastWeatherFetch=t;const p=at(s);fetchWeatherAt(proj.la-p[2]/proj.kz,proj.lo+p[0]/proj.kx);} /* v138 : météo réelle en roulant, toutes les 10 min */if(running&&window._powerStarted)animRider(dt);drawMiniMap(t);updateTownUI(t);
     if(window._icuPlan)updateIcuPlan(dt,power); /* v144 : déroulement de l'entraînement intervals.icu */
     if(window._icuPlan&&(window._icuPlan.phase==='run'||window._icuPlan.phase==='next')&&!ctl&&performance.now()-(window._pwManualAt||0)>8000){const _it=icuTargetAt(window._icuPlan); /* v153 : 8 s de grâce après une saisie manuelle */if(_it>0&&$('pw')){$('pw').value=Math.round(_it);if($('pv'))$('pv').textContent=Math.round(_it);}} /* v144 : mode manuel, la cible règle le curseur de puissance */
-    $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0;$('poLabel').textContent=(ftpNow>=50&&power>3)?'W · '+Math.round(power/ftpNow*100)+'% FTP':'watts';}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);
-    if($('pwAvg')){const _ap=window._rideElapsed>0?(window._ridePwSum||0)/window._rideElapsed:0;const _ftp=Number(riderStyle.ftp)||0;$('pwAvg').textContent=_ap>0?('moy '+Math.round(_ap)+' W'+(_ftp>=50?' · '+Math.round(_ap/_ftp*100)+'% FTP':'')):'moy – W';if($('poMoy'))$('poMoy').textContent=_ap>0?('moy '+Math.round(_ap)+' W'):'moy – W';} /* v156+v161 : puissance moyenne sous le curseur et dans le HUD */$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=ctl&&cad>0?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
+    $('sp').textContent=Math.round((running?v:0)*3.6);$('po').textContent=Math.round(power);if($('poLabel')){const ftpNow=Number(riderStyle.ftp)||0,_estP=!ctl&&!!cadSensor;$('poLabel').textContent=(ftpNow>=50&&power>3)?(_estP?'W estimés · ':'W · ')+Math.round(power/ftpNow*100)+'% FTP':(_estP?'W estimés':'watts');}$('gr').textContent=(grade*100).toFixed(1);$('di').textContent=(totalDistance/1000).toFixed(1);if($('du'))$('du').textContent=String(Math.floor(window._rideElapsed/60)).padStart(2,'0')+':'+String(Math.floor(window._rideElapsed)%60).padStart(2,'0');if($('avgSpeed'))$('avgSpeed').textContent=(window._rideElapsed>0?totalDistance/window._rideElapsed*3.6:0).toFixed(1);
+    if($('pwAvg')){const _ap=window._rideElapsed>0?(window._ridePwSum||0)/window._rideElapsed:0;const _ftp=Number(riderStyle.ftp)||0;$('pwAvg').textContent=_ap>0?('moy '+Math.round(_ap)+' W'+(_ftp>=50?' · '+Math.round(_ap/_ftp*100)+'% FTP':'')):'moy – W';if($('poMoy'))$('poMoy').textContent=_ap>0?('moy '+Math.round(_ap)+' W'):'moy – W';} /* v156+v161 : puissance moyenne sous le curseur et dans le HUD */$('hr').textContent=hr||'–';const shownCadence=running?rideCadence(v,power):0;$('ca').textContent=shownCadence?Math.round(shownCadence):'–';if($('cadenceType'))$('cadenceType').textContent=(cadenceNow()>0||cadSensor)?'tr/min réels':'tr/min virtuels';if($('dp'))$('dp').textContent='+'+Math.round(window._rideGain||0);
     {const _bd=(window._icuPlan&&running&&window._icuPlan.phase==='run')?icuBand(window._icuPlan):null,_po=$('po');if(_po){if(!_bd)_po.className='';else if(power>_bd.hi)_po.className='over';else if(power<_bd.lo)_po.className='under';else _po.className='ok';}} /* v186 : couleur selon la bande du bloc (plage ou moyenne) */
     if(t-(window._compTick||0)>400){window._compTick=t;updateBikeComputer(power,grade);} /* v162 : écran du compteur du vélo */
   }
