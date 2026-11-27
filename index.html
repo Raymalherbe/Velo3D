@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v195 — CdA, CRR et poids total réglables</title>
+<title>Vélo 3D v196 — estimation en direct dans les réglages</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -498,7 +498,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v195</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v196</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -524,7 +524,9 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
         <label class="choice" style="grid-column:1/-1">Poids total roulant <input id="physMass" type="number" inputmode="numeric" min="40" max="200" step="1" value="85"> kg</label>
         <label class="choice wrapRow" style="grid-column:1/-1">Aéro CdA <b id="physCdaVal">0,32 m²</b><input id="physCda" type="range" min="0.2" max="0.6" step="0.01" value="0.32" style="flex:1 1 100%;min-width:0"></label>
         <label class="choice wrapRow" style="grid-column:1/-1">Roulement CRR <b id="physCrrVal">0,0040</b><input id="physCrr" type="range" min="0.002" max="0.014" step="0.0005" value="0.004" style="flex:1 1 100%;min-width:0"></label>
+        <div id="physPreview" style="grid-column:1/-1;padding:7px 9px;border-radius:9px;border:1px solid rgba(121,223,197,.28);background:rgba(121,223,197,.09);font-size:12px;line-height:1.45">≈ 625 W à 90 tr/min en 48×21 sur 8 %</div>
         <small style="grid-column:1/-1;font-size:10px;color:var(--muted);line-height:1.4">Poids total = toi + vélo + équipement. CdA : ≈ 0,22 position aéro, 0,32 mains aux cocottes, 0,42 buste relevé. CRR : ≈ 0,003 piste, 0,004 route, 0,008 gravier. Ces trois valeurs entrent dans la puissance estimée du capteur de cadence et dans la résistance du home-trainer.</small>
+        <small style="grid-column:1/-1;font-size:10px;color:var(--muted);line-height:1.4">Le poids total suit le poids cycliste : quand tu changes ton poids, le total se décale du même écart, donc le vélo et l’équipement restent comptés à l’identique.</small>
         <label class="choice wrapRow"><input id="shAuto" type="checkbox" checked> Morphologie automatique — la silhouette se calcule du poids et de la taille</label>
         <small style="font-size:10px;color:var(--muted);line-height:1.4">Case cochée : le corps se règle tout seul quand tu changes le poids ou la taille. Touche un curseur pour régler à la main (la case se décoche toute seule).</small>
         <label class="choice">Jambes<input id="shLegs" type="range" min="0.75" max="1.35" step="0.01" value="1"></label>
@@ -652,7 +654,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 'use strict';
 try {
 const $=id=>document.getElementById(id),ST=8,RHO=1.2,G0=9.81;/* v195 : masse, CdA et CRR viennent des réglages (Personnalisation → Cycliste) */
-var MASS=85,CDA=.32,CRR=.004;
+var MASS=85,CDA=.32,CRR=.004;let physPreviewOn=false; /* v196 : l’aperçu des watts n’est calculé qu’une fois les braquets connus */
 const toast=text=>{$('msg').textContent=text;$('hs').textContent=text};
 const setFilePickStatus=(id,file,state,detail='')=>{const el=$(id);if(!el)return;el.textContent=file?`${file.name}${detail?' — '+detail:''}`:'Aucun fichier sélectionné';el.dataset.state=state||'idle'};
 /* v73 : retour haptique léger sur mobile (silencieux si non supporté) */
@@ -2132,6 +2134,7 @@ function applyPhysics(){
   if($('physMass'))$('physMass').value=physics.mass;
   if($('physCdaVal'))$('physCdaVal').textContent=physics.cda.toFixed(2).replace('.',',')+' m²';
   if($('physCrrVal'))$('physCrrVal').textContent=physics.crr.toFixed(4).replace('.',',');
+  if(physPreviewOn)updatePhysPreview(); /* v196 */
 }
 function syncPhysicsInputs(){if($('physMass'))$('physMass').value=physics.mass;if($('physCda'))$('physCda').value=physics.cda;if($('physCrr'))$('physCrr').value=physics.crr;applyPhysics()}
 applyPhysics();
@@ -6961,6 +6964,22 @@ function estimatedPower(grade,dt){
   window._estPower=Math.max(0,(window._estPower||0)+(raw-(window._estPower||0))*k);
   return Math.round(window._estPower);
 }
+/* v196 : même formule, mais à cadence et braquet imposés — sert à l’aperçu des réglages */
+function physEstimate(grade,rpm,front,rear){
+  const wheelRadius=(rider&&rider.userData&&rider.userData.wheelRadius)||.35;
+  const speed=rpm/60*Math.max(1,front)/Math.max(1,rear)*2*Math.PI*wheelRadius;
+  const slope=Math.atan(Number(grade)||0);
+  const force=MASS*G0*(CRR*Math.cos(slope)+Math.sin(slope))+.5*RHO*CDA*speed*speed;
+  return {speed:speed,power:Math.max(0,Math.min(1500,force*speed/.975))};
+}
+function updatePhysPreview(){
+  const el=$('physPreview');if(!el)return;
+  const front=virtualFront,rear=virtualRear();
+  const climb=physEstimate(.08,90,front,rear),flat=physEstimate(0,90,front,rear);
+  const w=Math.round(climb.power/5)*5,f=Math.round(flat.power/5)*5;
+  el.innerHTML='≈ <b>'+w+' W</b> à 90 tr/min en '+front+'×'+rear+' sur 8 %'+
+    '<span style="display:block;font-weight:400;font-size:10px;color:var(--muted);margin-top:2px">'+f+' W à plat · '+(climb.speed*3.6).toFixed(1).replace('.',',')+' km/h à 8 % · plafond 1500 W</span>';
+}
 function rideCadence(speed,power){const c=cadenceNow();if(c>0)return Math.min(180,c);if(cadSensor)return 0; /* v194 : capteur muet = jambes à l’arrêt, pas de cadence inventée */return power>0?gearCadence(speed):0}
 function updateGearUI(){
   const readout=$('gearReadout'),frontBtn=$('frontGear'),frontValue=$('frontGearValue'),rearReadout=$('rearGearReadout'),teeth=$('cassetteTeeth'),easier=$('gearEasier'),harder=$('gearHarder');
@@ -6975,6 +6994,7 @@ function updateGearUI(){
   if(easier){easier.disabled=virtualRearIndex>=VIRTUAL_COGS.length-1;easier.title=easier.disabled?'Pignon 36 · braquet déjà le plus facile':'− · pignon '+VIRTUAL_COGS[Math.min(VIRTUAL_COGS.length-1,virtualRearIndex+1)]+' · plus facile'}
   if(harder){harder.disabled=virtualRearIndex<=0;harder.title=harder.disabled?'Pignon 10 · braquet déjà le plus dur':'+ · pignon '+VIRTUAL_COGS[Math.max(0,virtualRearIndex-1)]+' · plus dur'}
   try{localStorage.setItem('velo3d-virtual-gears',JSON.stringify({front:virtualFront,rearIndex:virtualRearIndex}))}catch(e){}
+  updatePhysPreview(); /* v196 : l’aperçu des watts suit le braquet */
   if(ctl&&running&&route)sendGrade(at(s)[3]*(window._rideDir||1)); /* v183 : le nouveau braquet est envoyé au trainer sans attendre le rafraîchissement de pente */
 }
 function onBike(e){
@@ -7256,6 +7276,7 @@ bindCocotte('cocotteLeft','left');bindCocotte('cocotteRight','right');
 $('cassetteTeeth').addEventListener('click',e=>{const cog=e.target.closest('[data-cog-index]');if(!cog)return;virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();shiftClack(); /* v139 */});
 $('cassetteTeeth').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const cog=e.target.closest('[data-cog-index]');if(cog){e.preventDefault();virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();shiftClack(); /* v139 */;}}});
 updateGearUI();
+physPreviewOn=true;updatePhysPreview(); /* v196 : braquets connus, l’aperçu peut tourner */
 /* v138 : bouton manuel jour/nuit + météo réelle */
 (function(){
   const btn=$('dayNightBtn'),cb=$('liveWeather');
