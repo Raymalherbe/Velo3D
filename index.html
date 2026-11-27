@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v194 — capteur de cadence, puissance estimée</title>
+<title>Vélo 3D v195 — CdA, CRR et poids total réglables</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -498,7 +498,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v194</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v195</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -518,8 +518,13 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
       </div>
       <div id="gridRider" class="customGrid hide">
         <label class="choice">FTP <input id="ftp" type="number" inputmode="numeric" min="50" max="500" step="5" value="200"> W</label>
-        <label class="choice">Poids <input id="riderWeight" type="number" inputmode="numeric" min="40" max="200" step="1" value="85"> kg</label>
+        <label class="choice">Poids cycliste <input id="riderWeight" type="number" inputmode="numeric" min="40" max="200" step="1" value="85"> kg</label>
         <label class="choice">Taille <input id="riderHeight" type="number" inputmode="numeric" min="130" max="225" step="1" value="175"> cm</label>
+        <div style="grid-column:1/-1;display:flex;align-items:baseline;gap:6px;margin-top:4px;font-size:11px;font-weight:700;color:var(--muted)">⚙️ Physique de la sortie <span style="font-weight:400">— puissance estimée et résistance</span></div>
+        <label class="choice" style="grid-column:1/-1">Poids total roulant <input id="physMass" type="number" inputmode="numeric" min="40" max="200" step="1" value="85"> kg</label>
+        <label class="choice wrapRow" style="grid-column:1/-1">Aéro CdA <b id="physCdaVal">0,32 m²</b><input id="physCda" type="range" min="0.2" max="0.6" step="0.01" value="0.32" style="flex:1 1 100%;min-width:0"></label>
+        <label class="choice wrapRow" style="grid-column:1/-1">Roulement CRR <b id="physCrrVal">0,0040</b><input id="physCrr" type="range" min="0.002" max="0.014" step="0.0005" value="0.004" style="flex:1 1 100%;min-width:0"></label>
+        <small style="grid-column:1/-1;font-size:10px;color:var(--muted);line-height:1.4">Poids total = toi + vélo + équipement. CdA : ≈ 0,22 position aéro, 0,32 mains aux cocottes, 0,42 buste relevé. CRR : ≈ 0,003 piste, 0,004 route, 0,008 gravier. Ces trois valeurs entrent dans la puissance estimée du capteur de cadence et dans la résistance du home-trainer.</small>
         <label class="choice wrapRow"><input id="shAuto" type="checkbox" checked> Morphologie automatique — la silhouette se calcule du poids et de la taille</label>
         <small style="font-size:10px;color:var(--muted);line-height:1.4">Case cochée : le corps se règle tout seul quand tu changes le poids ou la taille. Touche un curseur pour régler à la main (la case se décoche toute seule).</small>
         <label class="choice">Jambes<input id="shLegs" type="range" min="0.75" max="1.35" step="0.01" value="1"></label>
@@ -628,7 +633,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
     <label style="display:flex;gap:8px;align-items:center;font-size:12px;margin-top:6px;color:var(--muted)"><input id="liveWeather" type="checkbox" style="min-height:22px;min-width:22px;accent-color:var(--ac)"> Météo réelle en roulant (relevée toutes les 10 min à ta position GPS)</label>
     <button id="go" class="wide primary" disabled>Lancer le parcours</button>
     <button id="skipScenery" class="wide hide">Lancer sans attendre le décor</button>
-    <details><summary>Caméra, données et connexion</summary><p>Glissez un doigt sur la scène pour regarder autour de vous. Pincez à deux doigts pour zoomer (le pincement repasse en vue suivi). L’icône 📷 en haut change de vue à chaque appui : suivi, paysage, profil, puis cintre — en vue cintre vous êtes à la place du cycliste, comme sur le vélo.</p><p>Rouler libre télécharge dans le rayon choisi les routes et objets OSM utilisés par le décor. Le secteur est préparé dans les deux sens disponibles ; la flèche sur la carte indique le sens de départ (touche-la pour l’inverser), puis appuie sur Lancer. Les villes affichées sous les flèches sont des indications tirées des noms OSM proches, pas une garantie d’itinéraire jusqu’à la ville.</p><p>Le relief libre est estimé à partir du modèle tuiles d’altitude <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles (Terrarium)</a> pour les versants ; Open-Meteo reste utilisé pour le profil de la route. La précision dépend des données disponibles dans la région. Si le service est inaccessible, le parcours reste utilisable mais la pente peut être incomplète.</p><p>Les haies cartographiées sont complétées par des haies estimées sur les portions rurales sans bâtiments voisins. Routes annexes et ronds-points suivent les données OpenStreetMap ; leurs alentours peuvent être incomplets.</p><p>Hébergez ce fichier en HTTPS (GitHub Pages convient). Pour le trainer, le capteur de cadence et le cardio : Chrome Android ou navigateur compatible Web Bluetooth. Un capteur de cadence seul suffit à faire avancer l’avatar : la puissance est alors estimée à partir de la cadence, du braquet virtuel et de la pente. La démonstration fonctionne sans capteur.</p></details>
+    <details><summary>Caméra, données et connexion</summary><p>Glissez un doigt sur la scène pour regarder autour de vous. Pincez à deux doigts pour zoomer (le pincement repasse en vue suivi). L’icône 📷 en haut change de vue à chaque appui : suivi, paysage, profil, puis cintre — en vue cintre vous êtes à la place du cycliste, comme sur le vélo.</p><p>Rouler libre télécharge dans le rayon choisi les routes et objets OSM utilisés par le décor. Le secteur est préparé dans les deux sens disponibles ; la flèche sur la carte indique le sens de départ (touche-la pour l’inverser), puis appuie sur Lancer. Les villes affichées sous les flèches sont des indications tirées des noms OSM proches, pas une garantie d’itinéraire jusqu’à la ville.</p><p>Le relief libre est estimé à partir du modèle tuiles d’altitude <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles (Terrarium)</a> pour les versants ; Open-Meteo reste utilisé pour le profil de la route. La précision dépend des données disponibles dans la région. Si le service est inaccessible, le parcours reste utilisable mais la pente peut être incomplète.</p><p>Les haies cartographiées sont complétées par des haies estimées sur les portions rurales sans bâtiments voisins. Routes annexes et ronds-points suivent les données OpenStreetMap ; leurs alentours peuvent être incomplets.</p><p>Hébergez ce fichier en HTTPS (GitHub Pages convient). Pour le trainer, le capteur de cadence et le cardio : Chrome Android ou navigateur compatible Web Bluetooth. Un capteur de cadence seul suffit à faire avancer l’avatar : la puissance est alors estimée à partir de la cadence, du braquet virtuel, de la pente, du poids total, du CdA et du CRR — ces trois derniers se règlent dans Personnalisation → Cycliste. La démonstration fonctionne sans capteur.</p></details>
   </div>
 </div>
 <div id="pp" class="hide"><label for="pt">Importer une trace GPX</label><textarea id="pt" spellcheck="false" placeholder="Collez ici le contenu complet du fichier GPX"></textarea><div id="pe" role="alert"></div><div class="row"><button id="pl" class="primary">Charger</button><button id="px">Annuler</button></div></div>
@@ -646,7 +651,8 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 (() => {
 'use strict';
 try {
-const $=id=>document.getElementById(id),ST=8,CDA=.32,RHO=1.2,CRR=.004,G0=9.81;var MASS=85;/* v80 : poids du cycliste réglable */
+const $=id=>document.getElementById(id),ST=8,RHO=1.2,G0=9.81;/* v195 : masse, CdA et CRR viennent des réglages (Personnalisation → Cycliste) */
+var MASS=85,CDA=.32,CRR=.004;
 const toast=text=>{$('msg').textContent=text;$('hs').textContent=text};
 const setFilePickStatus=(id,file,state,detail='')=>{const el=$(id);if(!el)return;el.textContent=file?`${file.name}${detail?' — '+detail:''}`:'Aucun fichier sélectionné';el.dataset.state=state||'idle'};
 /* v73 : retour haptique léger sur mobile (silencieux si non supporté) */
@@ -2113,11 +2119,29 @@ for(const sd of[-1,1]){const hz=new THREE.Mesh(new THREE.SphereGeometry(0.095,10
 const defaultRiderStyle={bikeModel:'classic',riderWeight:85,riderHeight:175,ftp:200,frameColor:'#2b2f33',rimColor:'#5b6670',rimDepth:50,helmetColor:'#e8e8e8',jerseyColor:'#eef1f0',shortColor:'#13171c',shoeColor:'#e6e9e7',sockColor:'#e7ecea',sunglassesColor:'#111a22',sunglassesStyle:'dark',hairColor:'#2e1f14',beardColor:'#2b1a10',beardOn:false}; /* v113 : cheveux, barbe et lunettes photo */
 const riderStyle={...defaultRiderStyle};
 try{const saved=JSON.parse(localStorage.getItem('velo3d-rider-style')||'null');if(saved&&typeof saved==='object')for(const key of Object.keys(defaultRiderStyle))if(saved[key]!=null){if(key==='rimDepth'){const n=Number(saved[key]);if([50,60,80].includes(n))riderStyle[key]=n}else if(key==='bikeModel'){if(['classic','modern'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='riderWeight'){const n=Number(saved[key]);if(n>=40&&n<=200)riderStyle[key]=n}else if(key==='riderHeight'){const n=Number(saved[key]);if(n>=130&&n<=225)riderStyle[key]=n}else if(key==='ftp'){const n=Number(saved[key]);if(n>=50&&n<=500)riderStyle[key]=n}else if(key==='sunglassesStyle'){if(['dark','blue','red','yellow','none'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='beardOn'){riderStyle[key]=!!saved[key]}else if(/^#[0-9a-f]{6}$/i.test(String(saved[key])))riderStyle[key]=String(saved[key])}}catch(e){}
+/* v195 : physique de la sortie — poids total roulant, CdA et CRR réglables.
+   La puissance estimée (capteur de cadence), l’intégration de vitesse et la
+   résistance du home-trainer lisent directement ces trois valeurs ; la formule
+   reste celle de la v194, seules les constantes deviennent réglables. */
+const defaultPhysics={mass:85,cda:.32,crr:.004};
+const physics={...defaultPhysics};
+try{const savedPhysics=JSON.parse(localStorage.getItem('velo3d-physics')||'null');if(savedPhysics&&typeof savedPhysics==='object'){const m=Number(savedPhysics.mass);if(m>=40&&m<=200)physics.mass=m;const c=Number(savedPhysics.cda);if(c>=.2&&c<=.6)physics.cda=c;const r=Number(savedPhysics.crr);if(r>=.002&&r<=.014)physics.crr=r;}}catch(e){}
+function savePhysics(){try{localStorage.setItem('velo3d-physics',JSON.stringify(physics))}catch(e){}}
+function applyPhysics(){
+  MASS=physics.mass;CDA=physics.cda;CRR=physics.crr;
+  if($('physMass'))$('physMass').value=physics.mass;
+  if($('physCdaVal'))$('physCdaVal').textContent=physics.cda.toFixed(2).replace('.',',')+' m²';
+  if($('physCrrVal'))$('physCrrVal').textContent=physics.crr.toFixed(4).replace('.',',');
+}
+function syncPhysicsInputs(){if($('physMass'))$('physMass').value=physics.mass;if($('physCda'))$('physCda').value=physics.cda;if($('physCrr'))$('physCrr').value=physics.crr;applyPhysics()}
+applyPhysics();
 function applyRiderStyleToInputs(){for(const key of Object.keys(defaultRiderStyle)){const input=$(key);if(!input)continue;if(input.type==='checkbox')input.checked=!!riderStyle[key];else input.value=riderStyle[key]}}
 function updateRiderStyle(key,value,save=true){
   if(!(key in defaultRiderStyle))return;
+  const weightBefore=Number(riderStyle.riderWeight)||85;
   riderStyle[key]=(key==='rimDepth'||key==='riderWeight'||key==='riderHeight'||key==='ftp')?Number(value):(key==='beardOn'?!!value:String(value));
-  if(key==='riderWeight'&&Number(value)>=40&&Number(value)<=200){MASS=Number(value);}
+  /* v195 : le poids total roulant suit l’écart du poids du cycliste, pour garder l’écart vélo + équipement déjà saisi */
+  if(key==='riderWeight'&&Number(value)>=40&&Number(value)<=200){physics.mass=Math.max(40,Math.min(200,physics.mass+(Number(value)-weightBefore)));applyPhysics();savePhysics();}
   if(key==='bikeModel'){r4SetBikeModel(rider.userData,riderStyle.bikeModel);if(typeof previewRider!=='undefined'&&previewRider&&previewRider.userData)r4SetBikeModel(previewRider.userData,riderStyle.bikeModel);}
   r4ApplyCyclistStyle(rider.userData,riderStyle);
   if(save)try{localStorage.setItem('velo3d-rider-style',JSON.stringify(riderStyle))}catch(e){}
@@ -4065,7 +4089,7 @@ function doTurnAround(){
 }
 if($('turnAround'))$('turnAround').onclick=()=>{doTurnAround()};
 window._freeNavTest={freeMakeGraph,freeBuildOptionsAt,freeStartArms,freeStartingDirections,freeExtendPathFromOption,freeFetchElevations,freeRaw,freeRouteEvents,freeAdvanceNavigation,freeRenderRouteArrows,freeRoundJunctionMeters,freeSeedElevation,freeTownAhead,freeTownAheadInfo,freeSetTownHint,freeCarryLocalities,freeElementNearPath,freePrepareScenery,freeReverseCurrent,freeReloadSectorAtCurrent,freeSelectStart,freeChooseStraight,freeApplyChoiceImmediately,freeArmHasContinuation,freeOptionHasContinuation,freeHeading,freeArrivalHeading,freePreloadAhead,freeAheadInfo:()=>({busy:freeAheadBusy,retry:freeAheadRetry,error:freeAheadError,current:!!freeAhead&&freeAhead.nav===window._freeNavigation,count:freeAhead?freeAhead.points.length:0,last:freeAhead?freeAhead.points[freeAhead.points.length-1]:null,endsAtJunction:freeAhead?freeAhead.endsAtJunction:null,endsAtChoice:freeAhead?freeAhead.endsAtChoice:null})};
-applyRiderStyleToInputs();r4ApplyCyclistStyle(rider.userData,riderStyle);r4SetBikeModel(rider.userData,riderStyle.bikeModel||'classic');if(riderStyle.riderWeight>=40&&riderStyle.riderWeight<=200)MASS=riderStyle.riderWeight; const cust=$('customize'); if(cust)cust.addEventListener('toggle',()=>{if(cust.open)setTimeout(drawPreview,50)});
+applyRiderStyleToInputs();r4ApplyCyclistStyle(rider.userData,riderStyle);r4SetBikeModel(rider.userData,riderStyle.bikeModel||'classic');syncPhysicsInputs(); /* v195 : masse, CdA et CRR rechargés depuis les réglages */ const cust=$('customize'); if(cust)cust.addEventListener('toggle',()=>{if(cust.open)setTimeout(drawPreview,50)});
 
 /* ---------- Aperçu 3D réel sur la page paramètres ---------- */
 let previewRenderer=null, previewScene=null, previewCam=null, previewRider=null, previewAnim=0;
@@ -4127,6 +4151,10 @@ function applyAutoMorphology(){
   if(c.checked)applyAutoMorphology();
 })();
 ['riderWeight','riderHeight'].forEach(id=>{const el=$(id);if(el)el.addEventListener('input',()=>{const c=$('shAuto');if(c&&c.checked)applyAutoMorphology();});});
+/* v195 : réglages de physique — poids total roulant, CdA, CRR */
+if($('physMass'))$('physMass').addEventListener('input',()=>{const n=Number($('physMass').value);if(n>=40&&n<=200){physics.mass=n;applyPhysics();savePhysics()}});
+if($('physCda'))$('physCda').addEventListener('input',()=>{const n=Number($('physCda').value);if(n>=.2&&n<=.6){physics.cda=n;applyPhysics();savePhysics()}});
+if($('physCrr'))$('physCrr').addEventListener('input',()=>{const n=Number($('physCrr').value);if(n>=.002&&n<=.014){physics.crr=n;applyPhysics();savePhysics()}});
 $('resetStyle').onclick=()=>{for(const key of Object.keys(defaultRiderStyle))updateRiderStyle(key,defaultRiderStyle[key],false);try{localStorage.setItem('velo3d-rider-style',JSON.stringify(defaultRiderStyle))}catch(e){}applyRiderStyleToInputs()};
 
 
