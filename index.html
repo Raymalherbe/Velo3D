@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v192 — maisons de retour, jardins et haies</title>
+<title>Vélo 3D v193 — jardins propres, haies hors chaussée</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -498,7 +498,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v192</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v193</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -5295,10 +5295,12 @@ function buildings(buildingParts,targetWorld){
     list.push({points,tags,y:grounded?gmin+(gmax-gmin)*.25-.35:(near?near.y:0)-.4,d:near?near.dist2:Infinity,dig:grounded?Math.max(1.5,gmax-gmin+1.8):2.6});
   }
   list.sort((a,b)=>a.d-b.d);
-  const wallPositions=[],wallUVs=[],wallColours=[],roofPositions=[],roofColours=[],doorPositions=[],doorColours=[];
-  let count=0,seed=1,gardenCount=0,windowCount=0;
+  const wallPositions=[],wallUVs=[],wallColours=[],houseWallPositions=[],houseWallColours=[],roofPositions=[],roofColours=[],doorPositions=[],doorColours=[];
+  let count=0,seed=1,gardenCount=0,windowCount=0,sideWindowCount=0;
   const random=()=>(seed=(seed*16807)%2147483647)/2147483647;
-  const wall=(P,UV,colour)=>{for(let k=0;k<3;k++){wallPositions.push(P[k][0],P[k][1],P[k][2]);wallUVs.push(UV[k][0],UV[k][1]);wallColours.push(colour.r,colour.g,colour.b);}};
+  /* v193 : le mur des maisons individuelles est en enduit uni. La texture à fenêtres repeignait une
+     fenêtre tous les 3 m de haut sous les vraies fenêtres à volets, d'où les « doubles fenêtres ». */
+  const wall=(P,UV,colour,plain)=>{const pos=plain?houseWallPositions:wallPositions,col=plain?houseWallColours:wallColours;for(let k=0;k<3;k++){pos.push(P[k][0],P[k][1],P[k][2]);col.push(colour.r,colour.g,colour.b);if(!plain)wallUVs.push(UV[k][0],UV[k][1]);}};
   const roof=(P,colour)=>{for(let k=0;k<3;k++){roofPositions.push(P[k][0],P[k][1],P[k][2]);roofColours.push(colour.r,colour.g,colour.b);}};
   const door=(P,colour)=>{for(const v of P){doorPositions.push(v[0],v[1],v[2]);doorColours.push(colour.r,colour.g,colour.b);}};
   const boxInto=(cx,cy,cz,sx,sy,sz,colour)=>{const v=p=>[cx+p[0]*sx,cy+p[1]*sy,cz+p[2]*sz];for(const f of [[[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,-1,-1],[1,1,-1],[-1,1,-1]],[[1,-1,1],[-1,-1,1],[-1,1,1],[1,-1,1],[-1,1,1],[1,1,1]],[[-1,-1,-1],[-1,1,-1],[-1,1,1],[-1,-1,-1],[-1,1,1],[-1,-1,1]],[[1,-1,-1],[1,1,-1],[1,1,1],[1,-1,-1],[1,1,1],[1,-1,1]],[[-1,1,-1],[-1,1,1],[1,1,1],[-1,1,-1],[1,1,1],[1,1,-1]],[[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,-1],[1,-1,1],[-1,-1,1]]])door([v(f[0]),v(f[1]),v(f[2])],colour);};
@@ -5313,6 +5315,7 @@ function buildings(buildingParts,targetWorld){
     const isImmeuble=/^(apartments|flats|office|hotel|public|civic|government|industrial|warehouse|commercial|retail|train_station|transportation|parking|church|cathedral|chapel|museum|stadium|school|university|hospital|supermarket)$/i.test(kind)||(isFinite(levelsTag)&&levelsTag>=4)||area>1500;
     let gable=null,roofHeight=0,pyramid=false,minBX=Infinity,maxBX=-Infinity,minBZ=Infinity,maxBZ=-Infinity;
     for(const p of c){minBX=Math.min(minBX,p[0]);maxBX=Math.max(maxBX,p[0]);minBZ=Math.min(minBZ,p[1]);maxBZ=Math.max(maxBZ,p[1]);}
+    const detailed=!isImmeuble&&area<650&&item.d<200*200&&gardenCount<260; /* v193 : maison avec jardin et fenêtres dessinées */
     if(!isImmeuble&&t['roof:shape']!=='flat'&&area>=8){
       if(m===4&&area<900){
         const edges=[0,1,2,3].map(i=>{const a=c[i],b=c[(i+1)%4];return[b[0]-a[0],b[1]-a[1]];}),lengths=edges.map(v=>Math.hypot(v[0],v[1]));
@@ -5331,8 +5334,8 @@ function buildings(buildingParts,targetWorld){
       const a=c[i],b=c[(i+1)%m],length=Math.hypot(b[0]-a[0],b[1]-a[1]);if(length<.3)continue;
       if(length>longestLength){longestLength=length;longest=i;}
       const u=length<2.5?.15:Math.max(1,Math.round(length/7)),bottom=-.5,top=height/3;
-      wall([[a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]]],[[0,bottom],[u,bottom],[u,top]],facadeColour);
-      wall([[a[0],y0,a[1]],[b[0],y1,b[1]],[a[0],y1,a[1]]],[[0,bottom],[u,top],[0,top]],facadeColour);
+      wall([[a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]]],[[0,bottom],[u,bottom],[u,top]],facadeColour,detailed);
+      wall([[a[0],y0,a[1]],[b[0],y1,b[1]],[a[0],y1,a[1]]],[[0,bottom],[u,top],[0,top]],facadeColour,detailed);
     }
     if(longest>=0&&longestLength>=4.5&&height>=2.6&&!/^(garage|garages|shed|carport|greenhouse|hut|cabin|service|kiosk|barn|stable|cowshed|farm_auxiliary|roof)$/.test(kind)){
       const a=c[longest],b=c[(longest+1)%m],dx=(b[0]-a[0])/longestLength,dz=(b[1]-a[1])/longestLength,nx=dz*orientation,nz=-dx*orientation,slots=Math.max(1,Math.round(longestLength/7)),atSlot=slots>=2?Math.floor(slots/2)/slots:(random()<.5?.25:.75),cx=a[0]+(b[0]-a[0])*atSlot,cz=a[1]+(b[1]-a[1])*atSlot;
@@ -5343,51 +5346,96 @@ function buildings(buildingParts,targetWorld){
       quad(.62,2.25,.04,OSM_DOOR_FRAME);quad(.5,2.1,.07,new THREE.Color(OSM_DOOR_COLOURS[Math.floor(random()*OSM_DOOR_COLOURS.length)]));
     }
     /* v191 : jardin autour des maisons — pelouse, haie taillée, portail et allée. */
-    if(!isImmeuble&&area>=8&&area<650&&gardenCount<260&&isFinite(minBX)&&item.d<200*200){
+    if(detailed&&isFinite(minBX)){
       let fi=0,flen=0;
       for(let i=0;i<m;i++){const a=c[i],b2=c[(i+1)%m],l=Math.hypot(b2[0]-a[0],b2[1]-a[1]);if(l>flen){flen=l;fi=i;}}
       if(flen>3.2){
         const a=c[fi],b2=c[(fi+1)%m],ux=(b2[0]-a[0])/flen,uz=(b2[1]-a[1])/flen,ox=uz*orientation,oz=-ux*orientation;
-        const pad=3.1,gy=y-.02,x0=minBX-pad,x1=maxBX+pad,z0=minBZ-pad,z1=maxBZ+pad;
-        const grass=new THREE.Color(SEASON_PALETTES[currentSeason()].grass);
-        roof([[x0,gy,z0],[x1,gy,z0],[x1,gy,z1]],grass);roof([[x0,gy,z0],[x1,gy,z1],[x0,gy,z1]],grass);
+        const frontAlongX=Math.abs(ox)>=Math.abs(oz),fx=(minBX+maxBX)/2,fz=(minBZ+maxBZ)/2;
+        const pad=3.1,along=frontAlongX?(maxBX-minBX)/2:(maxBZ-minBZ)/2,dn=along;
+        let x0=minBX-pad,x1=maxBX+pad,z0=minBZ-pad,z1=maxBZ+pad;
+        /* v193 : le gazon était posé 35 cm sous le relief, donc invisible ; il suit maintenant le sol. */
+        const flatGround=terrainSample(window._terrain,fx,fz),gy=(Number.isFinite(flatGround)?flatGround:y+.35)+.05;
+        /* v193 : pelouse, haies et portail suivent le relief au lieu de flotter sur une dalle plate. */
+        const groundAt=(xx,zz)=>{const h=terrainSample(window._terrain,xx,zz);return Number.isFinite(h)?h:gy;};
+        /* v193 : jamais de pelouse sur la chaussée — la bordure côté route recule juste ce qu'il faut. */
+        const frontSite=nearestOnRoute(fx+ox*(along+pad),fz+oz*(along+pad));
+        if(frontSite&&frontSite.dist2<6.4*6.4){
+          const shrink=6.4-Math.sqrt(frontSite.dist2);
+          if(frontAlongX){if(ox>0)x1=Math.max(minBX+.3,x1-shrink);else x0=Math.min(maxBX-.3,x0+shrink);}
+          else{if(oz>0)z1=Math.max(minBZ+.3,z1-shrink);else z0=Math.min(maxBZ-.3,z0+shrink);}
+        }
+        const grass=new THREE.Color(0x41601f);
+        const lx0=Math.min(x0,x1),lx1=Math.max(x0,x1),lz0=Math.min(z0,z1),lz1=Math.max(z0,z1);
+        for(let ix=0;ix<3;ix++)for(let iz=0;iz<3;iz++){
+          const ax=lx0+(lx1-lx0)*ix/3,bx3=lx0+(lx1-lx0)*(ix+1)/3,az=lz0+(lz1-lz0)*iz/3,bz3=lz0+(lz1-lz0)*(iz+1)/3;
+          const p00=[ax,groundAt(ax,az)+.04,az],p10=[bx3,groundAt(bx3,az)+.04,az],p11=[bx3,groundAt(bx3,bz3)+.04,bz3],p01=[ax,groundAt(ax,bz3)+.04,bz3];
+          roof([p00,p10,p11],grass);roof([p00,p11,p01],grass);
+        }
         const hedgeColour=new THREE.Color().setHSL(.26,.36,.19+random()*.07),postColour=new THREE.Color(0xded6c4),gateColour=new THREE.Color(0x6d4a2f),pathColour=new THREE.Color(0xb3a893);
-        const fx=(minBX+maxBX)/2,fz=(minBZ+maxBZ)/2,gate=[fx+ox*pad,fz+oz*pad],frontAlongX=Math.abs(ox)>=Math.abs(oz);
+        const gateX=frontAlongX?(ox>0?x1:x0):fx,gateZ=frontAlongX?fz:(oz>0?z1:z0),gate=[gateX,gateZ],gateSite=nearestOnRoute(gateX,gateZ),gateOK=!gateSite||gateSite.dist2>7*7;
         const runHedge=(ax,az,bx2,bz2,skip)=>{
           const len=Math.hypot(bx2-ax,bz2-az);if(len<2)return;
-          const n=Math.max(1,Math.round(len/2.3)),along=Math.abs(bx2-ax)>=Math.abs(bz2-az);
+          const n=Math.max(1,Math.round(len/4.2)),alongEdge=Math.abs(bx2-ax)>=Math.abs(bz2-az); /* v193 : segments plus longs = haie continue, sans dents de scie */
           for(let i=0;i<n;i++){
             const t=(i+.5)/n,px=ax+(bx2-ax)*t,pz=az+(bz2-az)*t;
             if(skip&&Math.hypot(px-skip[0],pz-skip[1])<2.4)continue;
-            boxInto(px,gy+.5,pz,along?len/n*.44:.34,.5,along?.34:len/n*.44,hedgeColour);
+            const site=nearestOnRoute(px,pz);
+            if(site&&site.dist2<6.4*6.4)continue; /* v193 : plus de haie coupant la route */
+            if(inSideRoad(px,pz))continue; /* v193 : ni sur une rue voisine */
+            const hg=groundAt(px,pz);boxInto(px,hg+.5,pz,alongEdge?len/n*.52:.36,.5,alongEdge?.36:len/n*.52,hedgeColour);
           }
         };
-        if(frontAlongX){const ex=ox>0?x1:x0;runHedge(ex,z0,ex,z1,gate);runHedge(x0,z0,x1,z0,null);runHedge(x0,z1,x1,z1,null);}
-        else{const ez=oz>0?z1:z0;runHedge(x0,ez,x1,ez,gate);runHedge(x0,z0,x0,z1,null);runHedge(x1,z0,x1,z1,null);}
-        const tx2=frontAlongX?0:1,tz2=frontAlongX?1:0;
-        for(const sgn of [-1,1])boxInto(gate[0]+tx2*sgn*1.35,gy+.82,gate[1]+tz2*sgn*1.35,.15,.82,.15,postColour);
-        boxInto(gate[0],gy+.42,gate[1],frontAlongX?.06:1.25,.05,frontAlongX?1.25:.06,gateColour);
-        boxInto(gate[0],gy+1.08,gate[1],frontAlongX?.06:1.25,.05,frontAlongX?1.25:.06,gateColour);
-        for(let k=-2;k<=2;k++)boxInto(gate[0]+tx2*k*.55,gy+.72,gate[1]+tz2*k*.55,.045,.34,.045,gateColour);
-        const dn=frontAlongX?(maxBX-minBX)/2:(maxBZ-minBZ)/2;
-        const ex0=gate[0]-ox*.9,ez0=gate[1]-oz*.9,ex1=fx+ox*(dn+.1),ez1=fz+oz*(dn+.1);
-        door([[ex0-tx2*.55,gy+.035,ez0-tz2*.55],[ex1-tx2*.55,gy+.035,ez1-tz2*.55],[ex1+tx2*.55,gy+.035,ez1+tz2*.55]],pathColour);
-        door([[ex0-tx2*.55,gy+.035,ez0-tz2*.55],[ex1+tx2*.55,gy+.035,ez1+tz2*.55],[ex0+tx2*.55,gy+.035,ez0+tz2*.55]],pathColour);
+        if(frontAlongX){const ex=ox>0?x1:x0;runHedge(ex,z0,ex,z1,gateOK?gate:null);runHedge(x0,z0,x1,z0,null);runHedge(x0,z1,x1,z1,null);}
+        else{const ez=oz>0?z1:z0;runHedge(x0,ez,x1,ez,gateOK?gate:null);runHedge(x0,z0,x0,z1,null);runHedge(x1,z0,x1,z1,null);}
+        if(gateOK){
+          const tx2=frontAlongX?0:1,tz2=frontAlongX?1:0;
+          const gg=groundAt(gate[0],gate[1]);
+          for(const sgn of [-1,1]){const gp=groundAt(gate[0]+tx2*sgn*1.35,gate[1]+tz2*sgn*1.35);boxInto(gate[0]+tx2*sgn*1.35,gp+.82,gate[1]+tz2*sgn*1.35,.15,.82,.15,postColour);}
+          boxInto(gate[0],gg+.42,gate[1],frontAlongX?.06:1.25,.05,frontAlongX?1.25:.06,gateColour);
+          boxInto(gate[0],gg+1.08,gate[1],frontAlongX?.06:1.25,.05,frontAlongX?1.25:.06,gateColour);
+          for(let k=-2;k<=2;k++)boxInto(gate[0]+tx2*k*.55,gg+.72,gate[1]+tz2*k*.55,.045,.34,.045,gateColour);
+          const ex0=gate[0]-ox*.9,ez0=gate[1]-oz*.9,ex1=(a[0]+b2[0])/2+ox*.1,ez1=(a[1]+b2[1])/2+oz*.1;
+          door([[ex0-tx2*.55,groundAt(ex0,ez0)+.05,ez0-tz2*.55],[ex1-tx2*.55,groundAt(ex1,ez1)+.05,ez1-tz2*.55],[ex1+tx2*.55,groundAt(ex1,ez1)+.05,ez1+tz2*.55]],pathColour);
+          door([[ex0-tx2*.55,groundAt(ex0,ez0)+.05,ez0-tz2*.55],[ex1+tx2*.55,groundAt(ex1,ez1)+.05,ez1+tz2*.55],[ex0+tx2*.55,groundAt(ex0,ez0)+.05,ez0+tz2*.55]],pathColour);
+        }
         if(flen>6&&height>3.2&&item.d<130*130&&windowCount<240){
           const winColour=new THREE.Color(0x33434f),shutterColour=new THREE.Color().setHSL(.31,.30,.24);
+          const mx=(a[0]+b2[0])/2,mz=(a[1]+b2[1])/2; /* v193 : milieu de la façade réelle (une maison en L a sa façade décalée dans la boîte englobante) */
+          /* v193 : chaque élément est décalé d'un pas différent vers l'extérieur, sinon le cadre et le
+             vitrage coplanaires clignotent (moiré / z-fighting). */
+          const facadeQuad=(bx2,bz2,halfW,y0,y1,off,colour)=>{
+            const wx=bx2+ox*off,wz=bz2+oz*off;
+            door([[wx-ux*halfW,y0,wz-uz*halfW],[wx+ux*halfW,y0,wz+uz*halfW],[wx+ux*halfW,y1,wz+uz*halfW]],colour);
+            door([[wx-ux*halfW,y0,wz-uz*halfW],[wx+ux*halfW,y1,wz+uz*halfW],[wx-ux*halfW,y1,wz-uz*halfW]],colour);
+          };
           const placeWin=s2=>{
-            const wx=fx+ux*s2+ox*(dn+.07),wz=fz+uz*s2+oz*(dn+.07);
-            door([[wx-ux*.62,y+1.12,wz-uz*.62],[wx+ux*.62,y+1.12,wz+uz*.62],[wx+ux*.62,y+2.45,wz+uz*.62]],OSM_DOOR_FRAME);
-            door([[wx-ux*.62,y+1.12,wz-uz*.62],[wx+ux*.62,y+2.45,wz+uz*.62],[wx-ux*.62,y+2.45,wz-uz*.62]],OSM_DOOR_FRAME);
-            door([[wx-ux*.48,y+1.26,wz-uz*.48],[wx+ux*.48,y+1.26,wz+uz*.48],[wx+ux*.48,y+2.31,wz+uz*.48]],winColour);
-            door([[wx-ux*.48,y+1.26,wz-uz*.48],[wx+ux*.48,y+2.31,wz+uz*.48],[wx-ux*.48,y+2.31,wz-uz*.48]],winColour);
-            for(const side of [-1,1]){
-              const sx2=wx+ux*side*.86+ox*.02,sz2=wz+uz*side*.86+oz*.02;
-              door([[sx2-ux*.21,y+1.18,sz2-uz*.21],[sx2-ux*.21,y+2.38,sz2-uz*.21],[sx2+ux*.21,y+2.38,sz2+uz*.21]],shutterColour);
-              door([[sx2-ux*.21,y+1.18,sz2-uz*.21],[sx2+ux*.21,y+2.38,sz2+uz*.21],[sx2+ux*.21,y+1.18,sz2+uz*.21]],shutterColour);
-            }
+            const sc=Math.max(-flen/2+1.1,Math.min(flen/2-1.1,s2)),wx=mx+ux*sc,wz=mz+uz*sc;
+            facadeQuad(wx,wz,.62,y+1.12,y+2.45,.05,OSM_DOOR_FRAME);
+            facadeQuad(wx,wz,.48,y+1.26,y+2.31,.09,winColour);
+            for(const side of [-1,1])facadeQuad(wx+ux*side*.86,wz+uz*side*.86,.21,y+1.18,y+2.38,.07,shutterColour);
           };
           placeWin(-flen*.26);placeWin(flen*.26);windowCount++;
+        }
+        /* v193 : les façades latérales et arrière gardent des fenêtres simples, le mur étant désormais uni. */
+        if(height>3.2&&sideWindowCount<900){
+          const winColour=new THREE.Color(0x33434f);
+          for(let i=0;i<m;i++){
+            if(i===fi)continue;
+            const a2=c[i],b3=c[(i+1)%m],len2=Math.hypot(b3[0]-a2[0],b3[1]-a2[1]);
+            if(len2<4||len2>26)continue;
+            const ux2=(b3[0]-a2[0])/len2,uz2=(b3[1]-a2[1])/len2,nx2=uz2*orientation,nz2=-ux2*orientation;
+            for(const t of len2>9?[.32,.68]:[.5]){
+              if(sideWindowCount>=900)break;
+              const bx2=a2[0]+(b3[0]-a2[0])*t,bz2=a2[1]+(b3[1]-a2[1])*t;
+              for(const [halfW,y0,y1,off,colour] of [[.61,y+.98,y+2.28,.05,OSM_DOOR_FRAME],[.48,y+1.1,y+2.16,.09,winColour]]){
+                const wx=bx2+nx2*off,wz=bz2+nz2*off;
+                door([[wx-ux2*halfW,y0,wz-uz2*halfW],[wx+ux2*halfW,y0,wz+uz2*halfW],[wx+ux2*halfW,y1,wz+uz2*halfW]],colour);
+                door([[wx-ux2*halfW,y0,wz-uz2*halfW],[wx+ux2*halfW,y1,wz+uz2*halfW],[wx-ux2*halfW,y1,wz-uz2*halfW]],colour);
+              }
+              sideWindowCount++;
+            }
+          }
         }
       }
       gardenCount++;
@@ -5436,6 +5484,7 @@ function buildings(buildingParts,targetWorld){
     geometry.computeVertexNormals();targetWorld.add(new THREE.Mesh(geometry,material));
   };
   mesh(wallPositions,wallColours,wallUVs,new THREE.MeshLambertMaterial({map:facade(),vertexColors:true,side:THREE.DoubleSide}));
+  mesh(houseWallPositions,houseWallColours,null,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
   mesh(roofPositions,roofColours,null,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
   mesh(doorPositions,doorColours,null,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
   return count;
@@ -6471,7 +6520,8 @@ function hedges(hedgeParts,targetWorld){
   const groups={mapped:{base:[],leaves:[]},estimated:{base:[],leaves:[]}};let mapped=0,estimated=0;
   const tri=(out,a,b,c)=>out.push(...a,...b,...c);
   for(const item of sorted){const height=osmMetres(item.tags.height,2.6,.8,7.5),width=osmMetres(item.tags.width,1.6,.4,5.5),line=osmSampleLine(item.points,3);if(line.length<2)continue;const strip=[];
-    for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=near.y-.38;strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
+    for(let i=0;i<line.length;i++){const prev=line[Math.max(0,i-1)],next=line[Math.min(line.length-1,i+1)],dx=next[0]-prev[0],dz=next[1]-prev[1],length=Math.hypot(dx,dz)||1,near=nearestOnRoute(line[i][0],line[i][1]);if(!near||near.dist2>220*220){strip.push(null);continue}if(near.dist2<4.8*4.8||inSideRoad(line[i][0],line[i][1])){strip.push(null);continue} /* v193 : une haie OSM ne coupe ni la route suivie ni une rue voisine */
+      const nx=-dz/length*width*.5,nz=dx/length*width*.5,y=near.y-.38;strip.push({l:[line[i][0]+nx,y,line[i][1]+nz],r:[line[i][0]-nx,y,line[i][1]-nz],lt:[line[i][0]+nx,y+height*.28,line[i][1]+nz],rt:[line[i][0]-nx,y+height*.28,line[i][1]-nz],x:line[i][0],z:line[i][1],y})}
     const group=groups[item.estimated?'estimated':'mapped'];let used=false;
     for(let i=1;i<strip.length;i++){const a=strip[i-1],b=strip[i];if(!a||!b)continue;tri(group.base,a.l,b.l,b.lt);tri(group.base,a.l,b.lt,a.lt);tri(group.base,a.r,b.rt,b.r);tri(group.base,a.r,a.rt,b.rt);tri(group.base,a.lt,b.lt,b.rt);tri(group.base,a.lt,b.rt,a.rt);used=true}
     if(used){if(item.estimated)estimated++;else mapped++;for(const point of strip)if(point){if(group.leaves.length<7000)group.leaves.push({point,height,width});if(group.leaves.length<9000&&osmNoise(point.x*4.7,point.z*3.9)>.35)group.leaves.push({point,height,width,mid:true});}for(let i=0;i<strip.length;i+=3){const point=strip[i];if(point&&hedgeTrees.length<1100&&osmNoise(point.x*3.1,point.z*2.7)>.28)hedgeTrees.push({x:point.x,y:point.y,z:point.z,v:Math.abs(osmNoise(point.x*1.7,point.z*9.3)),conifer:Math.abs(osmNoise(point.x*11.3,point.z*5.7))>.78})}}
@@ -6500,7 +6550,7 @@ function osmPrepareHedgeBlockers(hedgeList){return hedgeList.map(([line])=>{let 
 function estimateRuralHedges(buildingsList,hedgeList,residentialAreas,localities){
   if(!route)return[];const blockers=osmPrepareBuildingBlockers(buildingsList),hedgeBlockers=osmPrepareHedgeBlockers(hedgeList),limit=Math.min(route.len,25000),spacing=12,lines=[[],[]],ways=[];
   for(let d=18;d<limit-8;d+=spacing){const p=at(d),a=at(Math.max(0,d-3)),b=at(Math.min(route.len,d+3)),dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz)||1,tx=dx/length,tz=dz/length;
-    for(let index=0;index<2;index++){const side=index===0?-1:1,nx=tz*side,nz=-tx*side,x=p[0]+nx*5.6,z=p[2]+nz*5.6;
+    for(let index=0;index<2;index++){const side=index===0?-1:1,nx=tz*side,nz=-tx*side,x=p[0]+nx*7.4,z=p[2]+nz*7.4; /* v193 : haies estimées un peu plus loin de la chaussée */
       let blocked=localities.some(place=>Math.hypot(place.x-x,place.z-z)<180)||inRoundabout(x,z)||inSideRoad(x,z);
       if(!blocked&&osmPointNearPolygon(x,z,residentialAreas,14))blocked=true;
       if(!blocked&&osmPointNearBuilding(x,z,blockers,16))blocked=true;
