@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v199 — cheveux, barbe et casques au choix</title>
+<title>Vélo 3D v200 — champs multicolores et plus grandes églises</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -498,7 +498,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v199</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v200</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -922,6 +922,30 @@ const SEASON_PALETTES={
   automne:{forest:0x8a5a2b,grass:0xa89a5e,rock:0x8f8478,snow:0xeff1f2,snowLine:2300,rockLine:1650,field:0xc19447,meadow:0x9e8f4d,orchard:0xa86a33,residential:0x9b968c,leafHue:.085,leafSat:.55,leafLight:.33,conifer:[.29,.34,.19]},
   hiver:{forest:0x4a5a48,grass:0x9aa08c,rock:0x8b8d86,snow:0xf2f5f7,snowLine:750,rockLine:1100,field:0xa9a894,meadow:0x9fa88e,orchard:0x8a9078,residential:0x9a9a94,leafHue:.10,leafSat:.14,leafLight:.40,conifer:[.30,.22,.16]}
 };
+/* v200 : palette de cultures — chaque parcelle de champ prend sa propre teinte (blé, colza, labour,
+   maïs, prairie…). Ces couleurs ne suivent plus la saison : seule la neige d'hiver les grise un peu. */
+const FIELD_CROP_TONES=[0x6f9a4c,0x5c8f42,0x8f9c52,0xa8b45c,0xd8c05e,0xd9c94a,0x9b7748,0xc7a352,0x7fa85a,0x8a7a52];
+const FIELD_MEADOW_TONES=[0x8dba60,0x7fb057,0x9cc16b,0x86b45c,0x74a251,0x93b96a];
+function fieldHash(x,z,salt){const n=Math.sin(x*(12.9898+salt)+z*(78.233-salt))*43758.5453;return n-Math.floor(n)}
+/* une couleur stable par parcelle : même champ, même teinte à chaque chargement */
+function fieldParcelColour(sp,landuse,ring){
+  let cx=0,cz=0;for(const p of ring){cx+=p[0];cz+=p[1]}if(ring.length){cx/=ring.length;cz/=ring.length}
+  const green=(landuse==='meadow'||landuse==='grass'||landuse==='orchard'),tones=green?FIELD_MEADOW_TONES:FIELD_CROP_TONES;
+  const base=new THREE.Color(tones[Math.floor(fieldHash(cx,cz,green?4.7:1.3)*tones.length)%tones.length]);
+  base.offsetHSL(0,0,(fieldHash(cz,cx,2.2)-.5)*.06); /* v200 : légère variation de luminosité d'une parcelle à l'autre */
+  /* v200 : les cultures gardent leurs couleurs toute l'année ; seule la neige d'hiver les éclaircit */
+  if(currentSeason()==='hiver')base.lerp(new THREE.Color(0xd8d6c6),.45);
+  return base;
+}
+/* v200 : teinte de culture procédurale par cellule de terrain (damier de parcelles), indépendante de la saison. */
+const _fieldPatch=new THREE.Color(),FIELD_PATCH_COS=Math.cos(.45),FIELD_PATCH_SIN=Math.sin(.45);
+function fieldPatchColour(x,z,out){
+  const cs=185,rx=x*FIELD_PATCH_COS-z*FIELD_PATCH_SIN,rz=x*FIELD_PATCH_SIN+z*FIELD_PATCH_COS;
+  const ix=Math.floor(rx/cs),iz=Math.floor(rz/cs),h=fieldHash(ix*3.7,iz*5.1,7.3);
+  out.setHex(FIELD_CROP_TONES[Math.floor(h*FIELD_CROP_TONES.length)%FIELD_CROP_TONES.length]);
+  out.offsetHSL(0,0,(fieldHash(iz*1.1,ix*2.9,1.7)-.5)*.06+osmNoise(x*.09,z*.07)*.05); /* v200 : nuance fine dans la parcelle */
+  return out;
+}
 const terrainTiles=new Map();
 function terrainDecode(r,g,b){return r*256+g+b/256-32768;}
 function terrainBlend(a,b,c,d,u,v){return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
@@ -1209,13 +1233,16 @@ async function buildTerrain(target){
     const conformed=terrainRouteProfile(ground,route);
     for(let i=0;i<conformed.length;i++)pos.setY(i,conformed[i]);
     geo.computeVertexNormals();
-    const sp=SEASON_PALETTES[currentSeason()],normal=geo.attributes.normal,c=new THREE.Color(),forest=new THREE.Color(sp.forest),grass=new THREE.Color(sp.grass),rock=new THREE.Color(sp.rock),snow=new THREE.Color(sp.snow),crest=new THREE.Color(0xe4e9df),combe=new THREE.Color(0x2c372a);
+    const sp=SEASON_PALETTES[currentSeason()],patchWinter=currentSeason()==='hiver'?.5:1,normal=geo.attributes.normal,c=new THREE.Color(),forest=new THREE.Color(sp.forest),grass=new THREE.Color(sp.grass),rock=new THREE.Color(sp.rock),snow=new THREE.Color(sp.snow),crest=new THREE.Color(0xe4e9df),combe=new THREE.Color(0x2c372a);
     /* v188 : relief plus structuré — la courbure éclaire les crêtes et creuse les combes, et les seuils
        de roche/neige suivent la saison (montagnes blanches en hiver, vertes au printemps). */
     const H=(i,j)=>conformed[Math.max(0,Math.min(nz-1,j))*nx+Math.max(0,Math.min(nx-1,i))];
     for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){
-      const k=j*nx+i,height=altitudes[k],steep=1-Math.abs(normal.getY(k)),variation=.5+.5*osmNoise(pos.getX(k)*.004,pos.getZ(k)*.004);
+      const k=j*nx+i,height=altitudes[k],steep=1-Math.abs(normal.getY(k)),variation=.5+.5*osmNoise(pos.getX(k)*.004,pos.getZ(k)*.004),px=pos.getX(k),pz=pos.getZ(k);
       c.copy(forest).lerp(grass,Math.max(.12,Math.min(.9,variation*.5+(height-900)/1600)));
+      /* v200 : la campagne prend un damier de cultures — les champs ne sont plus d'une seule couleur de saison */
+      const cropWeight=.8*Math.max(0,Math.min(1,(sp.rockLine-250-height)/600))*Math.max(0,Math.min(1,(.42-steep)*4.5))*patchWinter;
+      if(cropWeight>.002)c.lerp(fieldPatchColour(px,pz,_fieldPatch),cropWeight);
       c.lerp(rock,Math.max(0,Math.min(1,(steep-.17)*2.8+(height-sp.rockLine)/1300)));
       if(height>sp.snowLine&&steep<.65)c.lerp(snow,Math.min(.9,(height-sp.snowLine)/600));
       const ridge=(H(i-1,j)+H(i+1,j)+H(i,j-1)+H(i,j+1))*.25-H(i,j),shade=Math.max(-1,Math.min(1,ridge*.09));
@@ -1244,17 +1271,18 @@ function recolorTerrainByOSM(data){
   const ud=mesh.userData.ground,pos=mesh.geometry.attributes.position,col=mesh.geometry.attributes.color;
   if(!pos||!col)return;
   const polys=[];
-  const push=(ring,colour)=>{if(ring&&ring.length>2)polys.push({ring:ring,colour:colour})};
+  /* v200 : boîte englobante par parcelle — le test point-dans-polygone ne tourne plus pour les parcelles lointaines */
+  const push=(ring,colour,vary)=>{if(!ring||ring.length<3)return;let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;for(const p of ring){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1]);}polys.push({ring:ring,c:colour,vary:vary||0,minX:minX,maxX:maxX,minZ:minZ,maxZ:maxZ})};
   const sp=SEASON_PALETTES[currentSeason()]; /* v188 : forêts et champs aux couleurs de la saison */
   for(const f of data.forests||[])push(Array.isArray(f[0])?f[0]:f,new THREE.Color(sp.forest));
-  const farmCol={farmland:sp.field,meadow:sp.meadow,orchard:sp.orchard,grass:sp.grass};
-  for(const item of data.farmland||[]){const ring=Array.isArray(item[0])?item[0]:item,tags=Array.isArray(item[0])?item[1]:{};push(ring,new THREE.Color(farmCol[String(tags.landuse||'').toLowerCase()]||sp.field))}
+  /* v200 : une teinte par parcelle — les champs ne partagent plus une seule couleur saisonnière */
+  for(const item of data.farmland||[]){const ring=Array.isArray(item[0])?item[0]:item,tags=Array.isArray(item[0])?item[1]:{};push(ring,fieldParcelColour(sp,String(tags.landuse||'').toLowerCase(),ring),true)}
   for(const r of data.residential||[])push(Array.isArray(r[0])?r[0]:r,new THREE.Color(sp.residential));
   if(!polys.length)return;
   let changed=0;
   for(let i=0;i<pos.count;i++){
     const x=pos.getX(i),z=pos.getZ(i);
-    for(const p of polys){if(osmPointInRing(x,z,p.ring)){col.setXYZ(i,p.colour.r,p.colour.g,p.colour.b);changed++;break;}}
+    for(const p of polys){if(x<p.minX||x>p.maxX||z<p.minZ||z>p.maxZ)continue;if(osmPointInRing(x,z,p.ring)){const k=p.vary?1+p.vary*osmNoise(x*.11,z*.09):1; /* v200 : micro-variation dans la parcelle, comme les rangs de culture */col.setXYZ(i,Math.min(1,p.c.r*k),Math.min(1,p.c.g*k),Math.min(1,p.c.b*k));changed++;break;}}
   }
   if(changed){col.needsUpdate=true;ud.aspinRoadBed?.refreshColors();}
 }
@@ -3399,7 +3427,8 @@ function freeBuildSceneryIndex(elements,center){
     const locality=element.type==='node'&&element.tags&&/^(city|town|village)$/.test(String(element.tags.place||''));
     /* v167 : coussin décor élargi pour les routes — les voies secondaires ne sont plus coupées */
     const hw=element.type==='way'&&element.tags&&element.tags.highway;
-    index.push({element,minX,minZ,maxX,maxZ,padding:locality?2000:(hw?520:240)});
+    const crops=element.type==='way'&&element.tags&&/^(farmland|meadow|orchard|grass)$/.test(String(element.tags.landuse||'')); /* v200 : champs voisins coloriés */
+    index.push({element,minX,minZ,maxX,maxZ,padding:locality?2000:(hw?520:(crops?900:240))});
   }
   return index;
 }
@@ -5743,7 +5772,7 @@ function buildFarmland(farmlandList,targetWorld){
     if(meanAlt>900||mx-mn>420)return 0;
   }catch(_){}
   const fills={farmland:[],meadow:[],orchard:[],grass:[]},rows=[];
-  const sp=SEASON_PALETTES[currentSeason()],fillColour={farmland:sp.field,meadow:sp.meadow,orchard:sp.orchard,grass:sp.grass};
+  const sp=SEASON_PALETTES[currentSeason()];
   let count=0;
   for(const [raw,tags] of farmlandList.slice(0,120)){
     if(!osmClosed(raw)||raw.length<4)continue;
@@ -5756,7 +5785,7 @@ function buildFarmland(farmlandList,targetWorld){
       const g=new THREE.ShapeGeometry(shape);g.rotateX(-Math.PI/2);
       const pos=g.attributes.position;
       for(let i=0;i<pos.count;i++){pos.setXYZ(i,pos.getX(i),y,pos.getZ(i));}
-      (fills[kind]||(fills[kind]=[])).push(g.attributes.position.array.slice());g.dispose();count++;
+      (fills[kind]||(fills[kind]=[])).push({pos:g.attributes.position.array.slice(),colour:fieldParcelColour(sp,kind,ring)});g.dispose();count++; /* v200 : couleur propre à la parcelle */
     }catch(_){}
     /* rangs de culture pour les champs labourés */
     if(kind==='farmland'){
@@ -5773,10 +5802,10 @@ function buildFarmland(farmlandList,targetWorld){
   }
   for(const kind of Object.keys(fills)){
     const list=fills[kind];if(!list.length)continue;
-    let total=0;list.forEach(f=>total+=f.length);const data=new Float32Array(total);let off=0;
-    list.forEach(f=>{data.set(f,off);off+=f.length;});
-    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(data,3));geometry.computeVertexNormals();
-    targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:fillColour[kind]||0x7fae57,side:THREE.DoubleSide})));
+    let total=0;list.forEach(f=>total+=f.pos.length);const data=new Float32Array(total),colours=new Float32Array(total);let off=0;
+    list.forEach(f=>{data.set(f.pos,off);const c=f.colour;for(let k=0;k<f.pos.length;k+=3){colours[k]=c.r;colours[k+1]=c.g;colours[k+2]=c.b;}off+=f.pos.length;});
+    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(data,3));geometry.setAttribute('color',new THREE.BufferAttribute(colours,3));geometry.computeVertexNormals();
+    targetWorld.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}))); /* v200 : une couleur par parcelle */
   }
   if(rows.length){
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(rows,3));geometry.computeVertexNormals();
@@ -6030,9 +6059,9 @@ function buildEiffelTower(requestedHeight){
   G.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
   return G;
 }
-function buildOSMLandmarks(items,targetWorld){let count=0,eiffelSpots=[];const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:350; /* v161 : stades visibles de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();
+function buildOSMLandmarks(items,targetWorld){let count=0,eiffelSpots=[];const matChurch=new THREE.MeshStandardMaterial({color:0xe7deca,roughness:.9}),matRoof=new THREE.MeshStandardMaterial({color:0x76504a,roughness:.9}),matStone=new THREE.MeshStandardMaterial({color:0xaaa99f,roughness:.85}),matDark=new THREE.MeshStandardMaterial({color:0x51483b,roughness:.9});for(const item of (items||[]).slice(0,420)){const pts=item.points;if(!pts||!pts.length)continue;let x=0,z=0;for(const p of pts){x+=p[0];z+=p[1]}x/=pts.length;z/=pts.length;const capK=item.kind==='stadium'?650:item.kind==='church'?480:350; /* v161 : stades visibles de plus loin · v200 : les grandes églises se voient de plus loin */const near=nearestOnRoute(x,z);if(!near||near.dist2>capK*capK)continue;const g=new THREE.Group();
 const _ground=terrainSample(window._terrain,x,z); /* v188 : les monuments suivent le relief du lieu */
-g.position.set(x,Number.isFinite(_ground)?_ground-.05:near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=7.5+seed*3.5,d=12+seed*5,h=7.5+seed*2.5; /* v155 : églises beaucoup plus grandes */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,4+seed*1.2,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+1.8,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(2.6,9,2.6),matChurch);tower.position.set(0,4.5,d*.44);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(1.8,4.6,8),matRoof);spire.position.set(0,11,d*.44);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.16,1.2,.12),matDark);crossV.position.set(0,13.55,d*.44);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(.78,.14,.12),matDark);crossH.position.set(0,13.68,d*.44);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.6,.12),matDark);door.position.set(0,1.3,d/2+.05);g.add(door);const found=new THREE.Mesh(new THREE.BoxGeometry(w+1.4,3.4,d+1.4),matStone);found.position.y=-1.5;g.add(found); /* v188 : soubassement enterré — l'église tient sur la pente */for(const sideX of [-w/2-.02,w/2+.02])for(let k=-1;k<=1;k++){const win=new THREE.Mesh(new THREE.BoxGeometry(.1,2.4,1.1),matDark);win.position.set(sideX,h*.45,k*d*.26);g.add(win);}}
+g.position.set(x,Number.isFinite(_ground)?_ground-.05:near.y-.03,z);const seed=Math.abs(osmNoise(x*2.3,z*3.1));if(item.kind==='church'){const w=14+seed*6,d=24+seed*10,h=13+seed*5,roofH=7+seed*2; /* v200 : églises nettement plus grandes — vraie nef de village, clocher haut */const nave=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matChurch);nave.position.y=h/2;g.add(nave);const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.74,roofH,4),matRoof);roof.rotation.y=Math.PI/4;roof.position.set(0,h+roofH/2-.3,d*.02);g.add(roof);const tower=new THREE.Mesh(new THREE.BoxGeometry(4.6,18,4.6),matChurch);tower.position.set(0,9,d*.42);g.add(tower);const spire=new THREE.Mesh(new THREE.ConeGeometry(3.4,9.5,8),matRoof);spire.position.set(0,22.75,d*.42);g.add(spire);const crossV=new THREE.Mesh(new THREE.BoxGeometry(.3,2.4,.24),matDark);crossV.position.set(0,28.7,d*.42);g.add(crossV);const crossH=new THREE.Mesh(new THREE.BoxGeometry(1.7,.32,.24),matDark);crossH.position.set(0,28.9,d*.42);g.add(crossH);const door=new THREE.Mesh(new THREE.BoxGeometry(2.4,5.2,.2),matDark);door.position.set(0,2.6,d/2+.08);g.add(door);const found=new THREE.Mesh(new THREE.BoxGeometry(w+2.2,6,d+2.2),matStone);found.position.y=-2.6;g.add(found); /* v188 : soubassement enterré — l'église tient sur la pente */for(const sideX of [-w/2-.02,w/2+.02])for(let k=-1;k<=1;k++){const win=new THREE.Mesh(new THREE.BoxGeometry(.16,4.6,2.2),matDark);win.position.set(sideX,h*.45,k*d*.26);g.add(win);}}
 else if(item.kind==='stadium'){ /* v140+v163 : tribunes sur les 4 côtés + terrain de foot coté (avant : simple bol rond sans tribunes ni lignes) */
   let rr=0,sxx=0,szz=0,sxz=0;
   for(const p of pts){const d=Math.hypot(p[0]-x,p[1]-z);if(d>rr)rr=d;const dx=p[0]-x,dz=p[1]-z;sxx+=dx*dx;szz+=dz*dz;sxz+=dx*dz;}
