@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v196 — estimation en direct dans les réglages</title>
+<title>Vélo 3D v199 — cheveux, barbe et casques au choix</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -498,7 +498,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v196</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v199</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -535,8 +535,9 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
         <label class="choice">Torse<input id="shTorse" type="range" min="0.8" max="1.3" step="0.01" value="1"></label>
         <label class="choice">Corpulence<input id="shCorp" type="range" min="0.8" max="1.3" step="0.01" value="1"></label>
         <button id="shReset" type="button" style="width:100%">Silhouette par défaut</button>
+        <label class="choice">Cheveux<select id="hairStyle"><option value="rase">Rasé</option><option value="court" selected>Court</option><option value="mi-long">Mi-long</option><option value="long">Long</option></select></label>
         <label class="choice">Couleur cheveux<input id="hairColor" type="color" value="#2e1f14"></label>
-        <label class="choice">Barbe<input id="beardOn" type="checkbox"></label>
+        <label class="choice">Barbe<select id="beardStyle"><option value="none" selected>Aucune</option><option value="moustache">Moustache</option><option value="bouc">Bouc</option><option value="courte">Barbe courte</option><option value="pleine">Barbe pleine</option></select></label>
         <label class="choice">Couleur de la barbe<input id="beardColor" type="color" value="#2b1a10"></label>
       </div>
       <div id="gridOutfit" class="customGrid hide">
@@ -584,7 +585,9 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
           <div class="editorRow"><button id="garmentAutoFit" type="button">✨ Ajuster parfaitement à la pièce</button></div>
           <small id="garmentEditStatus" class="editorHelp" aria-live="polite">Sélectionne une pièce et charge sa photo pour l’ajuster.</small>
         </section>
+        <label class="choice">Type de casque<select id="helmetStyle"><option value="route" selected>Route (aéré)</option><option value="aero">Aéro (profilé)</option><option value="vtt">VTT (visière)</option></select></label>
         <label class="choice">Casque<input id="helmetColor" type="color" value="#128f9a"></label>
+        <label class="choice">Chaussettes<select id="sockHeight"><option value="bas">Basses</option><option value="mi" selected>Mi-hautes</option><option value="haut">Hautes</option></select></label>
         <label class="choice">Maillot (couleur)<input id="jerseyColor" type="color" value="#007d91"></label>
         <label class="choice">Cuissard (couleur)<input id="shortColor" type="color" value="#13171c"></label>
         <label class="choice">Chaussures<input id="shoeColor" type="color" value="#e2e6e4"></label>
@@ -1385,14 +1388,21 @@ function r4ApplyCyclistStyle(data,style={}){
   if(style.frameColor&&data.materials.frame)data.materials.frame.color.set(style.frameColor);
   if(style.sunglassesColor&&data.materials.lens)data.materials.lens.color.set(style.sunglassesColor);
   if(style.sunglassesStyle){const hasPhoto=!!(data._sunglassesPhotoMaterial&&data._sunglassesPhotoMaterial.map),none=style.sunglassesStyle==='none';if(data._sunglassesBaseGroup)data._sunglassesBaseGroup.visible=!none&&!hasPhoto;else if(data._sunglassMeshes)data._sunglassMeshes.forEach(mesh=>mesh.visible=!none&&!hasPhoto);if(data._sunglassesPhotoMesh)data._sunglassesPhotoMesh.visible=!none&&hasPhoto;if(none){if(data._eyeMeshes)data._eyeMeshes.forEach(m=>m.visible=true)}else if(data._eyeMeshes)data._eyeMeshes.forEach(m=>m.visible=false)}
-  if(style.helmetColor)data.materials.helmet.color.set(style.helmetColor);
-  if(style.jerseyColor){data.materials.jersey.color.set(style.jerseyColor);data.materials.sleeve.color.set(style.jerseyColor)}
-  if(style.shortColor){data.materials.shorts.color.set(style.shortColor);data.materials.waist.color.set(style.shortColor)}
+  /* v199 : une pièce photographiée garde ses couleurs — la teinte plate ne s'applique qu'aux pièces unies */
+  if(style.helmetColor&&!data.materials.helmet.map)data.materials.helmet.color.set(style.helmetColor);
+  if(style.jerseyColor){if(!data.materials.jersey.map)data.materials.jersey.color.set(style.jerseyColor);if(!data.materials.sleeve.map)data.materials.sleeve.color.set(style.jerseyColor)}
+  if(style.shortColor){if(!data.materials.shorts.map)data.materials.shorts.color.set(style.shortColor);if(!data.materials.waist.map)data.materials.waist.color.set(style.shortColor)}
   if(style.shoeColor)data.materials.shoe.color.set(style.shoeColor);
-  if(style.sockColor)data.materials.sock.color.set(style.sockColor);
+  if(style.sockColor&&!data.materials.sock.map)data.materials.sock.color.set(style.sockColor);
   if(style.hairColor&&data.materials.hair)data.materials.hair.color.set(style.hairColor); /* v113 */
   if(style.beardColor&&data.materials.beard)data.materials.beard.color.set(style.beardColor); /* v113 */
-  if(data._beardMeshes)data._beardMeshes.forEach(m=>m.visible=!!style.beardOn); /* v113 */
+  /* v199 : cheveux, barbe, casque et chaussettes interchangeables */
+  if(data._hairByStyle){const hs=style.hairStyle||'court';for(const k of Object.keys(data._hairByStyle))data._hairByStyle[k].forEach(m=>m.visible=(k===hs));}
+  const beardStyle=style.beardStyle||(style.beardOn?'pleine':'none');
+  if(data._beardByStyle){const all=new Set();for(const k of Object.keys(data._beardByStyle))data._beardByStyle[k].forEach(m=>all.add(m));all.forEach(m=>m.visible=false);(data._beardByStyle[beardStyle]||[]).forEach(m=>m.visible=true);}
+  else if(data._beardMeshes)data._beardMeshes.forEach(m=>m.visible=beardStyle!=='none');
+  if(data._helmetByStyle){const hl=style.helmetStyle||'route';for(const k of Object.keys(data._helmetByStyle))data._helmetByStyle[k].forEach(m=>m.visible=(k===hl));}
+  if(style.sockHeight)data.sockHeight=style.sockHeight;
   if(style.rimDepth!=null)r4SetRimDepth(data,style.rimDepth);
 }
 
@@ -1436,19 +1446,21 @@ function r4PoseLegs(data, crankAngle) {
     leg.hip.rotation.x=r[0];
     leg.knee.rotation.x=r[1]-r[0];
     /* épaisseurs galbées réglées par les curseurs Jambes/Corpulence (rayons en mètres : profils normalisés) */
-    leg.thigh.scale.set(.078*mLeg,L1,.078*mLeg);
-    leg.cuissard.scale.set(.083*mLeg,L1*.55,.083*mLeg);
-    leg.shin.scale.set(.042*mLeg,L2*.72,.042*mLeg);
-    leg.sock.scale.set(.041*mLeg,L2*.30,.041*mLeg);
-    leg.kneeMesh.scale.setScalar(.041*mLeg);
-    leg.hipBall.scale.set(.076*mLeg,.076*mLeg,.076*mLeg);
+    leg.thigh.scale.set(.086*mLeg,L1,.086*mLeg);
+    leg.cuissard.scale.set(.092*mLeg,L1*.55,.092*mLeg);
+    leg.shin.scale.set(.050*mLeg,L2*.72,.050*mLeg);
+    const sockH=data.sockHeight==='bas'?{l:.18,c:.90}:(data.sockHeight==='haut'?{l:.46,c:.77}:{l:.30,c:.85}); /* v199 : chaussettes basses ou hautes */
+    leg.sock.scale.set(.048*mLeg,L2*sockH.l,.048*mLeg);
+    leg.sock.position.y=-L2*sockH.c;
+    leg.kneeMesh.scale.setScalar(.043*mLeg);
+    leg.hipBall.scale.set(.080*mLeg,.080*mLeg,.080*mLeg);
   }
 }
 
 function r4PoseArms(data,aeroBlend){
   /* IK 3D : cocottes en position normale, creux des drops lorsque le cycliste passe en aéro. */
   const A1=(data.armL&&data.armL.A1)||.30, A2=(data.armL&&data.armL.A2)||.28;
-  const shD=data.sh||{}, mArm=(shD.arms||1)*(shD.corp||1), shSh=shD.shoulders||1;
+  const shD=data.sh||{}, mCorp=shD.corp||1, mArm=(shD.arms||1)*Math.pow(mCorp,0.70), shSh=shD.shoulders||1;
   const storedBlend=data.posture&&Number.isFinite(data.posture.armAero)?data.posture.armAero:0;
   const blend=Math.max(0,Math.min(1,Number.isFinite(aeroBlend)?aeroBlend:storedBlend));
   const root=data.body.parent||data.body;
@@ -1456,7 +1468,7 @@ function r4PoseArms(data,aeroBlend){
   data.body.updateMatrixWorld(true);
   const down=new V3(0,-1,0);
   for(const arm of data.arms){
-    arm.sh.position.x=arm.side*.145*shSh;
+    arm.sh.position.x=arm.side*.148*shSh;
     /* Travailler dans le repère neutre de l'épaule évite de réutiliser l'angle de l'image précédente. */
     arm.sh.quaternion.identity();
     arm.sh.updateMatrix();
@@ -1485,10 +1497,13 @@ function r4PoseArms(data,aeroBlend){
     arm.sh.quaternion.copy(upperQ);
     arm.elbow.quaternion.copy(upperQ.clone().invert().multiply(foreQ));
     arm.wrist.quaternion.identity();
-    arm.upper.scale.set(.044*mArm,A1,.044*mArm);
-    arm.sleeve.scale.set(.056*mArm,A1*.45,.056*mArm);
-    arm.fore.scale.set(.036*mArm,A2,.036*mArm);
-    arm.cap.scale.set(.05*shSh,.05*mArm,.05*mArm);
+    arm.upper.scale.set(.054*mArm,A1,.054*mArm);
+    arm.sleeve.scale.set(.066*mArm,A1*.45,.066*mArm);
+    arm.fore.scale.set(.045*mArm,A2,.045*mArm);
+    /* v198 : deltoïde allongé le long du bras (plus une bille posée sur l'épaule) */
+    const mCap=Math.pow(mCorp,0.45);
+    arm.cap.scale.set(.064*shSh,.112*mCap,.072*mCap);
+    arm.cap.position.set(arm.side*.004,-.048,0);
   }
 }
 
@@ -1643,10 +1658,10 @@ function makeCyclist() {
   const steelMat = mat(0x8a969b, 0.22, 0.88);
   const darkMetalMat = mat(0x20262b, 0.3, 0.76);
   const chainMat = mat(0x9c8755, 0.28, 0.72);
-  const skinMat = mat(0xc98a6b, 0.32, 0.0);
-  const skinShadeMat = mat(0xad674f, 0.68, 0.0);
+  const skinMat = mat(0xc79a80, 0.42, 0.0);
+  const skinShadeMat = mat(0xa97a63, 0.68, 0.0);
   /* v98 : matériau du visage séparé — il reçoit la photo de visage (comme Cycliste 3D v16) */
-  const faceMat = mat(0xc98a6b, 0.32, 0.0);
+  const faceMat = mat(0xc79a80, 0.42, 0.0);
   const jerseyMat = mat(0xeef1f0, 0.48, 0.04);
   const sleeveMat = mat(0x075c88, 0.5, 0.04);
   const orangeMat = mat(0xf36b32, 0.45, 0.03);
@@ -1654,7 +1669,7 @@ function makeCyclist() {
   const gloveMat = mat(0x171c20, 0.48, 0.15);
   const shoeMat = mat(0xe2e6e4,0.48,0.06);
   const sockMat = mat(0xe7ecea, 0.6, 0.0);
-  const lensMat = new THREE.MeshStandardMaterial({color:0x0a0f14, roughness:0.08, metalness:0.9, transparent:false, opacity:1});
+  const lensMat = new THREE.MeshStandardMaterial({color:0x223240, roughness:0.12, metalness:0.75, transparent:false, opacity:1}); /* v198 : verre fumé bleuté, plus "bandeau noir" */
   const helmetMat = mat(0xe8e8e8, 0.36, 0.18);
 
   const wheelRadius = 0.35;
@@ -1811,15 +1826,26 @@ function makeCyclist() {
   const torso = new THREE.Group();
   pelvis.add(torso);
   torso.rotation.x=TORSO_PITCH;
+  /* v197 : torse redessiné — s’arrête à la ligne d’épaules, taille marquée, dos plat, sommet fermé */
   const torsoProfile = [
-    new V3(0.144, 0.010, 0), new V3(0.138, 0.102, 0), new V3(0.138, 0.193, 0),
-    new V3(0.150, 0.284, 0), new V3(0.163, 0.356, 0), new V3(0.176, 0.406, 0),
-    new V3(0.178, 0.442, 0), new V3(0.184, 0.462, 0), new V3(0.180, 0.475, 0),
-    new V3(0.168, 0.488, 0), new V3(0.140, 0.499, 0), new V3(0.092, 0.506, 0), /* v112 : haut du dos affiné — plus de bosse sous la nuque */
-    new V3(0.055, 0.508, 0)
-  ];
-  const torsoGeo = new THREE.LatheGeometry(torsoProfile, 32);
+    new V3(0.156, 0.000, 0), new V3(0.147, 0.075, 0), new V3(0.138, 0.150, 0),
+    new V3(0.144, 0.230, 0), new V3(0.157, 0.305, 0), new V3(0.168, 0.368, 0),
+    new V3(0.175, 0.408, 0), new V3(0.178, 0.430, 0), new V3(0.174, 0.452, 0),
+    new V3(0.160, 0.468, 0), new V3(0.128, 0.479, 0), new V3(0.082, 0.486, 0),
+    new V3(0.000, 0.492, 0)
+  ]; /* v198 : poitrine et haut du dos plus larges — silhouette d'adulte, pas de tube */
+  const torsoGeo = new THREE.LatheGeometry(torsoProfile, 40);
+  /* v197 : haut du dos aplati en profondeur — la masse des épaules ne fait plus "bosse" de profil */
+  {
+    const pa=torsoGeo.attributes.position;
+    for(let i=0;i<pa.count;i++){
+      const y=pa.getY(i);
+      if(y>0.34){const t=Math.min(1,(y-0.34)/0.13);pa.setZ(i,pa.getZ(i)*(1-0.30*t));}
+    }
+    pa.needsUpdate=true;torsoGeo.computeVertexNormals();
+  }
   const torsoMesh=addMesh(torso, torsoGeo, jerseyMat, new V3(0, 0, 0));
+  torsoMesh.scale.set(1.06, 1.0, 0.80); /* v198 : section elliptique large aux épaules, dos plat */
   /* v100 : cou droit posé sur le haut du torse — la tête garde sa place, sa photo de visage et ses lunettes */
   const neckGroup=new THREE.Group();neckGroup.position.set(0,T,0);neckGroup.rotation.x=.45-TORSO_PITCH;torso.add(neckGroup); /* v112 : tête levée dès la construction — regard vers l'avant, pas vers la roue */
   /* v102 : plus de bande sur les épaules — comme v16, ce sont les petites coiffes des bras qui dessinent l'épaule */
@@ -1827,98 +1853,180 @@ function makeCyclist() {
   /* v90 : plus de bretelles noires dans le dos — tenue neutre et nette */
 
   /* Neck, face, helmet, vents, ears, and sports sunglasses all remain forward (+Z). */
-  const hg=new THREE.Group();hg.position.set(0,-1.398,-0.061);neckGroup.add(hg);
-  const neckBase = new V3(0, 1.345, 0.135);
-  const neckTop = new V3(0, 1.415, 0.195);
-  addTube(hg, neckBase, neckTop, 0.052, skinMat, fineTubeGeo); /* v112 : cou un peu plus fin */
-  /* v96 : col du maillot — le maillot (ou sa photo) monte jusqu'au cou, plus de peau visible */
-  addTube(hg, new V3(0,1.26,0.108), neckBase, 0.058, jerseyMat, fineTubeGeo); /* v112 : col du maillot rentré dans le torse — plus de bosse en haut du dos */
+  const hg=new THREE.Group();hg.position.set(0,-1.380,-0.125);neckGroup.add(hg); /* v197 : tête remontée et ramenée au-dessus des épaules */
+  /* v197 : cou anatomique — base large dans le maillot, effilement sous la mâchoire */
+  const neckBase = new V3(0, 1.240, 0.112); /* v197 : le cou descend loin dans le maillot */
+  const neckTop  = new V3(0, 1.438, 0.170);
+  const neckProfile = [
+    new THREE.Vector2(0.000, 0.000),
+    new THREE.Vector2(0.068, 0.003),
+    new THREE.Vector2(0.065, 0.030),
+    new THREE.Vector2(0.064, 0.070),
+    new THREE.Vector2(0.060, 0.120),
+    new THREE.Vector2(0.058, 0.170),
+    new THREE.Vector2(0.0575, 0.200),
+    new THREE.Vector2(0.058, 0.206)
+  ];
+  const neckMesh = new THREE.Mesh(new THREE.LatheGeometry(neckProfile, 28), skinMat);
+  hg.add(neckMesh);
+  const neckAxis = new V3().subVectors(neckTop, neckBase);
+  neckMesh.position.copy(neckBase);
+  neckMesh.rotation.x = Math.atan2(neckAxis.z, neckAxis.y);
+  neckMesh.scale.y = neckAxis.length()/0.206;
+  hg.userData.neckMesh = neckMesh; /* v198 : le cou s'épaissit avec la corpulence */
   const headCenter = new V3(0, 1.515, 0.245);
+  /* v198 : tête redessinée — un seul crâne déformé (pommettes, mâchoire, menton, arcade) au lieu de boules empilées */
+  const headScale = new V3(0.0855, 0.126, 0.114);
+  const headShape = v => {
+    const x=v.x, y=v.y, z=v.z, front=Math.max(0,z);
+    const t=Math.max(0,Math.min(1,(-y-0.26)/0.60));   /* mâchoire large puis menton marqué */
+    const cheek=Math.exp(-Math.pow((y+0.18)/0.26,2));
+    const nx=x*(1-0.34*t*t)*(1+0.09*cheek*front);           /* mâchoire qui s'affine + pommettes */
+    let nz=z*(1-0.06*front);                                /* plan du visage légèrement aplati */
+    nz+=0.15*Math.exp(-Math.pow((y+0.70)/0.22,2))*front;    /* menton qui avance */
+    nz+=0.045*Math.exp(-Math.pow((y-0.30)/0.16,2))*front;   /* arcade sourcilière */
+    nz+=0.160*Math.exp(-Math.pow((y+0.02)/0.17,2))*Math.exp(-Math.pow(x/0.088,2))*front; /* nez sculpté dans la tête, pointe sous les lunettes */
+    if(nz<0)nz*=0.96;                                       /* arrière du crâne un peu plat */
+    let ny=y; if(y<-0.55)ny=-0.55+(y+0.55)*0.86;            /* menton moins étiré : vraie mâchoire */
+    return {x:nx,y:ny,z:nz};
+  };
+  const headGeo=new THREE.SphereGeometry(1,44,32);
+  {
+    const pa=headGeo.attributes.position,tmp=new THREE.Vector3();
+    for(let i=0;i<pa.count;i++){const s=headShape(tmp.set(pa.getX(i),pa.getY(i),pa.getZ(i)));pa.setXYZ(i,s.x,s.y,s.z);}
+    pa.needsUpdate=true;headGeo.computeVertexNormals();
+  }
+  const headMesh=addMesh(hg, headGeo, faceMat, headCenter, headScale);
+  /* surface avant du visage : nez, bouche et lunettes se posent pile sur la peau */
+  const faceZ=(y,x=0)=>{
+    const ny=(y-headCenter.y)/headScale.y, xu=(x||0)/headScale.x;
+    const r=Math.sqrt(Math.max(0,1-ny*ny-xu*xu));
+    return headCenter.z+headShape({x:xu,y:ny,z:r}).z*headScale.z;
+  };
   /* v98 : le visage a son propre matériau, et les détails dessinés partent dans un groupe qu'on masque quand une photo de visage est posée */
   const faceDetail = new THREE.Group(); hg.add(faceDetail); g.userData._faceDetail=faceDetail;
-  addMesh(hg, new THREE.SphereGeometry(1, 32, 24), faceMat, headCenter, new V3(0.094, 0.125, 0.112)); // v99 : crâne ovale du cycliste v16, plus réaliste
-  /* v99 : mâchoire du cycliste v16 — le menton et les joues sont dessinés par la forme, pas par la photo */
-  addMesh(hg, new THREE.SphereGeometry(1, 20, 16), skinMat, new V3(0, 1.472, 0.292), new V3(0.046, 0.034, 0.043));
-  // Visage : pommettes, front, menton plus marqués
-  addMesh(faceDetail, new THREE.SphereGeometry(1, 20, 14), skinMat, new V3(0, 1.485, 0.305), new V3(0.082, 0.105, 0.075));
-  addMesh(faceDetail, new THREE.SphereGeometry(1, 20, 14), skinShadeMat, new V3(0, 1.600, 0.300), new V3(0.085, 0.045, 0.060));
-  addMesh(faceDetail, new THREE.SphereGeometry(1, 16, 12), skinShadeMat, new V3(-0.078, 1.505, 0.300), new V3(0.010, 0.022, 0.012));
-  addMesh(faceDetail, new THREE.SphereGeometry(1, 16, 12), skinShadeMat, new V3(0.078, 1.505, 0.300), new V3(0.010, 0.022, 0.012));
-  // Bouche fine et modelée : un sourire discret et une lèvre inférieure, sans masse qui dépasse.
-  const mouthMat=new THREE.MeshStandardMaterial({color:0x542b28,roughness:0.58});
-  const mouthCurve=new THREE.QuadraticBezierCurve3(new V3(-0.027,1.466,0.377),new V3(0,1.461,0.381),new V3(0.027,1.466,0.377));
-  const mouth=new THREE.Mesh(new THREE.TubeGeometry(mouthCurve,12,0.0028,5,false),mouthMat);faceDetail.add(mouth);
-  const lips=new THREE.Mesh(new THREE.SphereGeometry(1,16,10),new THREE.MeshStandardMaterial({color:0x9b6257,roughness:0.68}));
-  lips.scale.set(0.022,0.004,0.0025);lips.position.set(0,1.456,0.378);faceDetail.add(lips);
-  const chin=new THREE.Mesh(new THREE.SphereGeometry(1,16,10),skinShadeMat);chin.scale.set(0.030,0.017,0.016);chin.position.set(0,1.437,0.354);faceDetail.add(chin);
-  /* v132 : barbe moulée en UNE seule pièce (menton + joues + moustache) — un seul mesh fusionné */
-  const beardMat=new THREE.MeshStandardMaterial({color:0x2b1a10,roughness:0.95});
+  /* v198 : le nez est entièrement sculpté dans le crâne — aucune pièce rapportée qui puisse faire "boule" */
+  /* bouche : lèvres fines posées sur la peau */
+  const lipMat=new THREE.MeshStandardMaterial({color:0x8a5c50,roughness:0.75});
+  const mouthY=1.4625,mouthZ=faceZ(mouthY);
+  addMesh(faceDetail,new THREE.SphereGeometry(1,20,12),lipMat,new V3(0,mouthY-0.0035,mouthZ-0.004),new V3(0.017,0.0035,0.005));
+  const mouthLine=new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new V3(-0.024,mouthY+0.001,mouthZ+0.006),new V3(0,mouthY-0.0015,mouthZ+0.008),new V3(0.024,mouthY+0.001,mouthZ+0.006)),12,0.0016,5,false),new THREE.MeshStandardMaterial({color:0x5b2f27,roughness:0.7}));
+  faceDetail.add(mouthLine);
+  /* v199 : barbe — quatre types, chacun un mesh fusionné (moustache, bouc, courte, pleine) */
+  const beardMat=new THREE.MeshStandardMaterial({color:0x2b1a10,roughness:0.95,side:THREE.DoubleSide});
   const bake=(geo,pos,scale)=>{const g=geo.toNonIndexed();const m=new THREE.Matrix4().makeScale(scale.x,scale.y,scale.z);m.setPosition(pos.x,pos.y,pos.z);g.applyMatrix4(m);return g;};
-  const beardGeo=new THREE.SphereGeometry(1,24,16,0,Math.PI*2,0,Math.PI*.54);beardGeo.rotateX(Math.PI);
-  const parts=[
-    bake(beardGeo,new V3(0,1.438,0.350),new V3(0.074,0.056,0.019)),
-    bake(new THREE.SphereGeometry(1,18,14),new V3(-0.078,1.482,0.337),new V3(0.016,0.042,0.028)),
-    bake(new THREE.SphereGeometry(1,18,14),new V3(0.078,1.482,0.337),new V3(0.016,0.042,0.028)),
-    bake(new THREE.SphereGeometry(1,16,10),new V3(0,1.482,0.387),new V3(0.024,0.005,0.0045)) /* moustache fusionnée à la barbe */
-  ];
-  let total=0;for(const pg of parts)total+=pg.attributes.position.array.length;
-  const merged=new Float32Array(total);let moff=0;for(const pg of parts){merged.set(pg.attributes.position.array,moff);moff+=pg.attributes.position.array.length;pg.dispose();}
-  const beardGeoMerged=new THREE.BufferGeometry();beardGeoMerged.setAttribute('position',new THREE.BufferAttribute(merged,3));beardGeoMerged.computeVertexNormals();
-  const beard=addMesh(hg,beardGeoMerged,beardMat,new V3(0,0,0),new V3(1,1,1));
-  beard.visible=false;
-  g.userData._beardMeshes=[beard];g.userData._beardMat=beardMat;
-  // Sourcils, cheveux, yeux (visibles quand les lunettes sont enlevées)
-  for(const side of [-1,1]){const brow=new THREE.Mesh(new THREE.BoxGeometry(0.045,0.008,0.008), new THREE.MeshStandardMaterial({color:0x2b1a10,roughness:0.8})); brow.position.set(side*0.052,1.575,0.355); brow.rotation.y=side*0.15; faceDetail.add(brow);}
+  const mergeParts=list=>{let total=0;for(const pg of list)total+=pg.attributes.position.array.length;const merged=new Float32Array(total);let moff=0;for(const pg of list){merged.set(pg.attributes.position.array,moff);moff+=pg.attributes.position.array.length;pg.dispose();}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(merged,3));geo.computeVertexNormals();return geo;};
+  /* la barbe est une fine coquille tirée du crâne v198 : elle épouse la mâchoire, sans boules */
+  const beardShell=(grow,mask)=>{
+    const geo=headGeo.clone();
+    const pa=geo.attributes.position;
+    for(let i=0;i<pa.count;i++)pa.setXYZ(i,pa.getX(i)*grow,pa.getY(i)*grow,pa.getZ(i)*grow);
+    const idx=geo.index?geo.index.array:null;
+    const keep=[];
+    if(idx)for(let t=0;t<idx.length;t+=3){
+      const a=idx[t],b=idx[t+1],c=idx[t+2];
+      const cx=(pa.getX(a)+pa.getX(b)+pa.getX(c))/3,cy=(pa.getY(a)+pa.getY(b)+pa.getY(c))/3,cz=(pa.getZ(a)+pa.getZ(b)+pa.getZ(c))/3;
+      if(mask(cx,cy,cz))keep.push(a,b,c);
+    }
+    const out=new THREE.BufferGeometry();out.setAttribute('position',pa.clone());out.setIndex(keep);
+    const flat=out.toNonIndexed();flat.computeVertexNormals();return flat;
+  };
+  const stachePart=()=>bake(new THREE.SphereGeometry(1,18,10),new V3(0,1.480,faceZ(1.480)+0.006),new V3(0.022,0.0055,0.0050));
+  const beardByStyle={
+    moustache:mergeParts([stachePart()]),
+    bouc:mergeParts([beardShell(1.030,(x,y,z)=>z>0.15&&y<-0.50&&Math.abs(x)<0.40),stachePart()]),
+    courte:mergeParts([beardShell(1.018,(x,y,z)=>z>-0.10&&y<-0.62+0.26*x*x)]),
+    pleine:mergeParts([beardShell(1.036,(x,y,z)=>z>-0.22&&y<-0.47+0.42*x*x),stachePart()])
+  };
+  /* les coquilles sont en coordonnées du crâne : elles reprennent la position et l'échelle de la tête */
+  const stacheMesh=addMesh(hg,beardByStyle.moustache,beardMat,new V3(0,0,0),new V3(1,1,1));
+  stacheMesh.visible=false;stacheMesh.name='barbe-moustache';
+  const beardMeshes={moustache:[stacheMesh]};
+  for(const k of ['bouc','courte','pleine']){
+    const mesh=addMesh(hg,beardByStyle[k],beardMat,headCenter.clone(),headScale.clone());
+    mesh.visible=false;mesh.name='barbe-'+k;
+    beardMeshes[k]=(k==='courte')?[mesh]:[mesh,stacheMesh];
+  }
+  g.userData._beardByStyle=beardMeshes;g.userData._beardMeshes=[stacheMesh,beardMeshes.bouc[0],beardMeshes.courte[0],beardMeshes.pleine[0]];g.userData._beardMat=beardMat;
+  /* v199 : cheveux — quatre longueurs accrochées au crâne (et non au groupe du visage, qui s'efface avec une photo) */
   const hairMat=new THREE.MeshStandardMaterial({color:0x2e1f14,roughness:0.95}); /* v113 : couleur de cheveux réglable */
-  const hair=new THREE.Mesh(new THREE.SphereGeometry(0.115,16,10,0,Math.PI*2,0,Math.PI*0.55), hairMat);
-  hair.scale.set(1.12,0.95,1.08); hair.position.set(0,1.560,0.195); hair.rotation.x=0.3; faceDetail.add(hair);
-  const noseBridge = new THREE.Mesh(new THREE.BoxGeometry(0.018,0.055,0.018), skinMat); noseBridge.position.set(0,1.545,0.362); noseBridge.rotation.x=0.25; faceDetail.add(noseBridge);
-  const noseTip = new THREE.Mesh(new THREE.SphereGeometry(0.018,12,10), skinMat); noseTip.position.set(0,1.505,0.375); faceDetail.add(noseTip);
-  /* v85 : oreilles visibles (la tête n'est plus lisse sur les côtés) */
+  const hairGroup=new THREE.Group();hairGroup.name='cheveux';hg.add(hairGroup);
+  const hairByStyle={rase:[],court:[],'mi-long':[],long:[]};
+  const addHair=(style,mesh)=>{mesh.visible=false;hairGroup.add(mesh);hairByStyle[style].push(mesh);return mesh;};
+  const hairShell=(phiStart,phiLen,thetaStart,thetaLen,sx,sy,sz)=>{
+    const m=new THREE.Mesh(new THREE.SphereGeometry(1,30,20,phiStart,phiLen,thetaStart,thetaLen),hairMat);
+    m.scale.set(sx,sy,sz);m.position.set(0,1.5155,0.2455);return m;
+  };
+  /* rasé : calotte très fine collée au crâne */
+  addHair('rase',hairShell(0,Math.PI*2,0,Math.PI*0.34,0.0875,0.1285,0.1165));
+  /* court : calotte + nuque (le rendu v197/v198) */
+  addHair('court',hairShell(0,Math.PI*2,0,Math.PI*0.30,0.0930,0.1315,0.1175));
+  addHair('court',hairShell(Math.PI*1.1667,Math.PI*0.667,0.75,0.70,0.0940,0.1325,0.1185));
+  /* mi-long : une masse qui couvre l'arrière du crâne jusqu'aux oreilles */
+  addHair('mi-long',hairShell(Math.PI*1.5-Math.PI*0.72,Math.PI*1.44,Math.PI*0.17,Math.PI*0.33,0.0945,0.1345,0.1205));
+  addHair('mi-long',hairShell(Math.PI*1.5-Math.PI*0.50,Math.PI*1.00,Math.PI*0.50,Math.PI*0.16,0.0945,0.1345,0.1205));
+  /* long : descend jusqu'à la nuque, avec une queue attachée derrière */
+  addHair('long',hairShell(Math.PI*1.5-Math.PI*0.72,Math.PI*1.44,Math.PI*0.17,Math.PI*0.33,0.0948,0.1350,0.1210));
+  addHair('long',hairShell(Math.PI*1.5-Math.PI*0.55,Math.PI*1.10,Math.PI*0.50,Math.PI*0.34,0.0948,0.1350,0.1210));
+  {const tail=new THREE.Mesh(new THREE.SphereGeometry(1,20,16),hairMat);tail.scale.set(0.030,0.072,0.026);tail.position.set(0,1.372,0.150);tail.rotation.x=-0.20;addHair('long',tail);}
+  g.userData._hairByStyle=hairByStyle;g.userData._hairMat=hairMat;
+  /* v198 : oreilles posées sur les côtés du crâne, avec le creux marqué */
   for(const side of [-1,1]){
-    const ear=new THREE.Mesh(new THREE.SphereGeometry(1,12,10), skinMat);
-    ear.scale.set(0.015,0.024,0.012); ear.position.set(side*0.096,1.502,0.232); ear.rotation.y=side*0.25; faceDetail.add(ear);
-    const earShade=new THREE.Mesh(new THREE.SphereGeometry(1,10,8), skinShadeMat);
-    earShade.scale.set(0.007,0.014,0.009); earShade.position.set(side*0.101,1.500,0.232); faceDetail.add(earShade);
+    const ear=addMesh(faceDetail,new THREE.SphereGeometry(1,14,12),skinMat,new V3(side*0.0825,1.503,0.240),new V3(0.0105,0.022,0.0095));
+    ear.rotation.y=side*0.28;
+    const earIn=addMesh(faceDetail,new THREE.SphereGeometry(1,10,8),skinShadeMat,new V3(side*0.0850,1.501,0.243),new V3(0.0045,0.012,0.005));
+    earIn.rotation.y=side*0.28;
   }
   /* v87 : les yeux ne doivent pas se voir à travers les lunettes de soleil */
   g.userData._eyeMeshes=[];
-  for(const side of [-1,1]){ const eyeW=new THREE.Mesh(new THREE.SphereGeometry(0.018,12,10), new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.2})); eyeW.position.set(side*0.045,1.560,0.358); faceDetail.add(eyeW); const pupil=new THREE.Mesh(new THREE.SphereGeometry(0.009,10,8), new THREE.MeshStandardMaterial({color:0x222222,roughness:0.2})); pupil.position.set(side*0.045,1.560,0.365); faceDetail.add(pupil); g.userData._eyeMeshes.push(eyeW,pupil); eyeW.visible=pupil.visible=false; }
-  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.146, 26, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), helmetMat);
-  helmet.scale.set(1.00, 0.88, 1.14);
-  helmet.position.set(0, 1.572, 0.218);
-  helmet.rotation.x = -0.08;
-  hg.add(helmet);
-  const ventGeo = new THREE.BoxGeometry(0.025, 0.010, 0.052);
-  for (const p of [
-    [0, 1.695, 0.245], [-0.060, 1.680, 0.265], [0.060, 1.680, 0.265],
-    [-0.085, 1.640, 0.220], [0.085, 1.640, 0.220]
-  ]) {
-    const vent = new THREE.Mesh(ventGeo, darkMetalMat);
-    vent.position.set(p[0], p[1], p[2]);
-    vent.rotation.x = -0.30;
-    hg.add(vent);
-  }
+  for(const side of [-1,1]){ const ez=faceZ(1.540,side*0.038); const eyeW=new THREE.Mesh(new THREE.SphereGeometry(0.015,14,10), new THREE.MeshStandardMaterial({color:0xf3efe9,roughness:0.35})); eyeW.position.set(side*0.038,1.540,ez-0.004); faceDetail.add(eyeW); const pupil=new THREE.Mesh(new THREE.SphereGeometry(0.0072,10,8), new THREE.MeshStandardMaterial({color:0x2a2018,roughness:0.3})); pupil.position.set(side*0.038,1.540,ez+0.006); faceDetail.add(pupil); g.userData._eyeMeshes.push(eyeW,pupil); eyeW.visible=pupil.visible=false; }
+  /* v198 : coque à la taille du crâne (plus de casque surdimensionné) qui dégage le front */
+  /* v199 : trois casques au choix — route aéré, aéro profilé, VTT avec visière */
+  const helmetRimMat=new THREE.MeshStandardMaterial({color:0x3a4248,roughness:0.72,metalness:0.15});
+  const makeHelmet=(o,extra)=>{
+    const m=new THREE.Mesh(new THREE.SphereGeometry(0.146,30,20,0,Math.PI*2,0,o.theta),helmetMat);
+    m.scale.set(o.sx,o.sy,o.sz);m.position.set(0,o.y,o.z);m.rotation.x=o.rx;
+    const rimR=0.146*Math.sin(o.theta)*1.022;
+    const rim=new THREE.Mesh(new THREE.CylinderGeometry(rimR,rimR,0.007,36,1,true),helmetRimMat);
+    rim.position.y=Math.cos(o.theta)*0.146; m.add(rim);
+    if(extra)extra(m);
+    hg.add(m);return m;
+  };
+  const helmetRoute=makeHelmet({theta:Math.PI*0.48,sx:0.73,sy:0.92,sz:0.88,y:1.556,z:0.238,rx:-0.10});
+  const helmetAero=makeHelmet({theta:Math.PI*0.46,sx:0.67,sy:0.855,sz:1.14,y:1.550,z:0.234,rx:-0.05});
+  const helmetVtt=makeHelmet({theta:Math.PI*0.62,sx:0.77,sy:0.97,sz:0.92,y:1.550,z:0.238,rx:-0.12},m=>{
+    const peak=new THREE.Mesh(new THREE.SphereGeometry(1,26,12),helmetMat);
+    peak.scale.set(0.098,0.009,0.058);peak.position.set(0,0.004,0.148);peak.rotation.x=-0.26;m.add(peak);
+  });
+  helmetAero.visible=false;helmetVtt.visible=false;
+  g.userData._helmetByStyle={route:[helmetRoute],aero:[helmetAero],vtt:[helmetVtt]};
+  /* v198 : plus d'écopes rapportées qui flottaient au-dessus de la coque — la coque et son bord sombre suffisent */
   /* v85 : jugulaire du casque (sangles sous les joues + sous le menton) */
   const strapMat = new THREE.MeshStandardMaterial({color:0x1b1e22, roughness:0.85});
+  /* v198 : sangles qui descendent le long du visage et passent derrière la mâchoire (plus de boucle devant le menton) */
   for (const side of [-1, 1]) {
-    addTube(hg, new V3(side*0.118, 1.572, 0.222), new V3(side*0.058, 1.405, 0.345), 0.0035, strapMat);
+    addTube(hg, new V3(side*0.092, 1.582, 0.248), new V3(side*0.058, 1.442, 0.226), 0.0030, strapMat);
   }
-  addTube(hg, new V3(-0.058, 1.405, 0.345), new V3(0.058, 1.405, 0.345), 0.0035, strapMat);
   const sunglassesBaseGroup=new THREE.Group();sunglassesBaseGroup.name='lunettes-originales';hg.add(sunglassesBaseGroup);
-  for(const side of [-1, 1]) {
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.110, 0.062, 0.008), darkMetalMat);
-    frame.position.set(side * 0.052, 1.552, 0.352); frame.rotation.y = side * 0.10; sunglassesBaseGroup.add(frame);
-    const lens = new THREE.Mesh(new THREE.BoxGeometry(0.100, 0.052, 0.012), lensMat);
-    lens.position.set(side * 0.052, 1.552, 0.357); lens.rotation.y = side * 0.10; sunglassesBaseGroup.add(lens);
-    const temple = new THREE.Mesh(new THREE.BoxGeometry(0.010, 0.008, 0.120), darkMetalMat);
-    temple.position.set(side * 0.108, 1.556, 0.295); sunglassesBaseGroup.add(temple);
-    const shine = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.010, 0.002), new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.1, metalness:0.4, transparent:true, opacity:0.55}));
-    shine.position.set(side * 0.035, 1.560, 0.363); shine.rotation.y = side * 0.10; sunglassesBaseGroup.add(shine);
+  /* v198 : lunettes en visière cintrée qui épouse le visage — plus de gros rectangles qui dépassent */
+  const eyewearY=1.540, lensR=0.084, eyewrap=1.15;
+  const lensFront=faceZ(eyewearY,0)+0.007, eyewearZ=lensFront-lensR*0.92;
+  const lensMesh=new THREE.Mesh(new THREE.CylinderGeometry(lensR,lensR,0.032,40,1,true,-eyewrap,eyewrap*2),lensMat);
+  lensMesh.scale.set(1.06,1,0.92);lensMesh.position.set(0,eyewearY,eyewearZ);sunglassesBaseGroup.add(lensMesh);
+  for(const dy of [0.017,-0.017]){
+    const rim=new THREE.Mesh(new THREE.CylinderGeometry(lensR+0.0025,lensR+0.0025,0.006,40,1,true,-eyewrap,eyewrap*2),darkMetalMat);
+    rim.scale.copy(lensMesh.scale);rim.position.set(0,eyewearY+dy,eyewearZ);sunglassesBaseGroup.add(rim);
   }
-  const sunglassBridge=addMesh(sunglassesBaseGroup, new THREE.BoxGeometry(0.030, 0.012, 0.012), darkMetalMat, new V3(0, 1.552, 0.355));
+  for(const side of [-1, 1]) {
+    addTube(sunglassesBaseGroup, new V3(side*0.079, eyewearY+0.012, eyewearZ+0.050), new V3(side*0.086, eyewearY+0.006, 0.236), 0.0032, darkMetalMat);
+    const shine = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.005, 0.002), new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.1, metalness:0.4, transparent:true, opacity:0.45}));
+    shine.position.set(side * 0.026, eyewearY+0.008, lensFront+0.001); shine.rotation.y = side * -0.18; sunglassesBaseGroup.add(shine);
+  }
+  const sunglassBridge=addMesh(sunglassesBaseGroup, new THREE.BoxGeometry(0.016, 0.008, 0.010), darkMetalMat, new V3(0, eyewearY+0.014, lensFront+0.002));
   const sunglassesPhotoMaterial=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:1,depthWrite:false,side:THREE.DoubleSide});
-  const sunglassesPhotoMesh=new THREE.Mesh(new THREE.PlaneGeometry(.25,.09),sunglassesPhotoMaterial);sunglassesPhotoMesh.name='photo-lunettes';sunglassesPhotoMesh.position.set(0,1.552,.377);sunglassesPhotoMesh.visible=false;hg.add(sunglassesPhotoMesh);
+  /* v199 : la photo de lunettes épouse le galbe de la visière et se pose pile sur les yeux */
+  const sunglassesPhotoMesh=new THREE.Mesh(new THREE.CylinderGeometry(lensR*1.018,lensR*1.018,0.0355,48,1,true,-eyewrap,eyewrap*2),sunglassesPhotoMaterial);
+  sunglassesPhotoMesh.name='photo-lunettes';sunglassesPhotoMesh.scale.copy(lensMesh.scale);sunglassesPhotoMesh.position.set(0,eyewearY,eyewearZ);sunglassesPhotoMesh.visible=false;hg.add(sunglassesPhotoMesh);
   g.userData._sunglassMeshes=[]; g.traverse(o=>{if(o.isMesh&&o.material===lensMat)g.userData._sunglassMeshes.push(o)});
   g.userData._sunglassesBaseGroup=sunglassesBaseGroup;g.userData._sunglassesPhotoMesh=sunglassesPhotoMesh;g.userData._sunglassesPhotoMaterial=sunglassesPhotoMaterial;
 
@@ -1941,13 +2049,15 @@ function makeCyclist() {
   };
   for(const side of[-1,1]){
     /* v100 : bras à deux segments comme v16 — l'épaule est sur le torse, le coude se plie tout seul vers le guidon */
-    const sh=new THREE.Group();sh.position.set(side*.145,T*.88,.01);torso.add(sh); /* épaule posée sur le torse; l'IK règle ensuite l'orientation */
-    const cap=addMesh(sh,new THREE.SphereGeometry(1,20,14),sleeveMat,null,new V3(.05,.05,.05));
-    const upper=new THREE.Mesh(upperArmGeo,skinMat);upper.scale.set(.044,A1,.044);upper.position.y=-A1/2;sh.add(upper);
-    const sleeve=new THREE.Mesh(sleeveGeo,sleeveMat);sleeve.scale.set(.056,A1*.45,.056);sleeve.position.y=-A1*.45/2;sh.add(sleeve);
+    const sh=new THREE.Group();sh.position.set(side*.148,T*.885,.004);torso.add(sh); /* v198 : épaule un peu plus large */
+    /* v198 : coiffe d’épaule pleine — manche raglan qui dessine la ligne d’épaules */
+    const cap=addMesh(sh,new THREE.SphereGeometry(1,24,16),sleeveMat,null,new V3(.084,.064,.076));
+    cap.rotation.z=side*0.22;
+    const upper=new THREE.Mesh(upperArmGeo,skinMat);upper.scale.set(.050,A1,.050);upper.position.y=-A1/2;sh.add(upper);
+    const sleeve=new THREE.Mesh(sleeveGeo,sleeveMat);sleeve.scale.set(.062,A1*.45,.062);sleeve.position.y=-A1*.45/2;sh.add(sleeve);
     const elbow=new THREE.Group();elbow.position.y=-A1;sh.add(elbow);
-    addMesh(elbow,new THREE.SphereGeometry(1,16,12),skinMat,null,new V3(.034,.034,.034));
-    const fore=new THREE.Mesh(forearmGeo,skinMat);fore.scale.set(.036,A2,.036);fore.position.y=-A2/2;elbow.add(fore);
+    addMesh(elbow,new THREE.SphereGeometry(1,16,12),skinMat,null,new V3(.036,.036,.036));
+    const fore=new THREE.Mesh(forearmGeo,skinMat);fore.scale.set(.041,A2,.041);fore.position.y=-A2/2;elbow.add(fore);
     const wrist=new THREE.Group();wrist.position.y=-A2;elbow.add(wrist);
     const hand=makeV16Hand(side);wrist.add(hand);
     arms.push({side,sh,elbow,wrist,cap,upper,sleeve,fore,hand,grip:new V3(side*.215,1.000,.500)});
@@ -1964,15 +2074,15 @@ function makeCyclist() {
     const strap=new THREE.Mesh(new THREE.BoxGeometry(.07,.005,.03),darkMetalMat);strap.position.set(0,-.012,.07);strap.rotation.x=.12;shoe.add(strap);
     return shoe;};
   for (const side of [-1, 1]) {
-    const hip=new THREE.Group();hip.position.set(side*.130,-.03,0);pelvis.add(hip);
-    const hipBall=addMesh(hip,new THREE.SphereGeometry(1,18,14),shortMat,null,new V3(.076,.076,.076));
-    const thigh=new THREE.Mesh(thighGeo,skinMat);thigh.scale.set(.078,L1,.078);thigh.position.y=-L1/2;hip.add(thigh);
-    const cuissard=new THREE.Mesh(shortGeo,shortMat);cuissard.scale.set(.083,L1*.55,.083);cuissard.position.y=-L1*.55/2;hip.add(cuissard);
+    const hip=new THREE.Group();hip.position.set(side*.134,-.03,0);pelvis.add(hip);
+    const hipBall=addMesh(hip,new THREE.SphereGeometry(1,18,14),shortMat,null,new V3(.080,.080,.080));
+    const thigh=new THREE.Mesh(thighGeo,skinMat);thigh.scale.set(.085,L1,.085);thigh.position.y=-L1/2;hip.add(thigh);
+    const cuissard=new THREE.Mesh(shortGeo,shortMat);cuissard.scale.set(.089,L1*.55,.089);cuissard.position.y=-L1*.55/2;hip.add(cuissard);
     const knee=new THREE.Group();knee.position.y=-L1;hip.add(knee);
     /* v102 : plus de boule qui dépasse — genou affleurant comme v16 (.041) */
-  const kneeMesh=addMesh(knee,new THREE.SphereGeometry(1,20,14),skinMat,null,new V3(.041,.041,.041));
-    const shin=new THREE.Mesh(calfGeo,skinMat);shin.scale.set(.042,L2*.72,.042);shin.position.y=-L2*.36;knee.add(shin);
-    const sock=new THREE.Mesh(sockGeo,sockMat);sock.scale.set(.041,L2*.30,.041);sock.position.y=-L2*.85;knee.add(sock);
+  const kneeMesh=addMesh(knee,new THREE.SphereGeometry(1,20,14),skinMat,null,new V3(.044,.044,.044));
+    const shin=new THREE.Mesh(calfGeo,skinMat);shin.scale.set(.046,L2*.72,.046);shin.position.y=-L2*.36;knee.add(shin);
+    const sock=new THREE.Mesh(sockGeo,sockMat);sock.scale.set(.045,L2*.30,.045);sock.position.y=-L2*.85;knee.add(sock);
     const ankle=new THREE.Group();ankle.position.y=-L2;knee.add(ankle);
     const shoe=makeShoe();ankle.add(shoe);
     legs.push({
@@ -2006,6 +2116,9 @@ function makeCyclist() {
     legL:{L1:L1,L2:L2},
     _sunglassMeshes:bodyRoot.userData._sunglassMeshes||[],_sunglassesBaseGroup:bodyRoot.userData._sunglassesBaseGroup,_sunglassesPhotoMesh:bodyRoot.userData._sunglassesPhotoMesh,_sunglassesPhotoMaterial:bodyRoot.userData._sunglassesPhotoMaterial,
     _beardMeshes:bodyRoot.userData._beardMeshes||[], /* v113 */
+    _beardByStyle:bodyRoot.userData._beardByStyle, /* v199 */
+    _hairByStyle:bodyRoot.userData._hairByStyle, /* v199 */
+    _helmetByStyle:bodyRoot.userData._helmetByStyle, /* v199 */
     wheels: wheels,
     rimDepth:50,
     materials:{rim:rimMat,frame:frameMat,helmet:helmetMat,jersey:jerseyMat,sleeve:sleeveMat,shorts:shortMat,waist:shortMat,shoe:shoeMat,sock:sockMat,lens:lensMat,rubber:rubberMat,steel:steelMat,darkMetal:darkMetalMat,chain:chainMat,frameAccent:frameAccentMat,skin:skinMat,skinShade:skinShadeMat,face:faceMat,glove:gloveMat,orange:orangeMat,hair:hairMat,beard:beardMat}, /* v113 : hair + beard */
@@ -2118,9 +2231,10 @@ rider.userData.cocotteMarkers=[];for(const sd of[-1,1]){const mk=new THREE.Mesh(
 for(const sd of[-1,1]){const hz=new THREE.Mesh(new THREE.SphereGeometry(0.095,10,8),new THREE.MeshBasicMaterial({visible:false}));hz.position.set(sd*.215,1.0,0.5);hz.userData.cocotte=sd<0?'left':'right';rider.userData.bike.add(hz);(window._cocotteHoods=window._cocotteHoods||[]).push(hz);}
 
 /* ---------- Personnalisation du vélo et de la tenue ---------- */
-const defaultRiderStyle={bikeModel:'classic',riderWeight:85,riderHeight:175,ftp:200,frameColor:'#2b2f33',rimColor:'#5b6670',rimDepth:50,helmetColor:'#e8e8e8',jerseyColor:'#eef1f0',shortColor:'#13171c',shoeColor:'#e6e9e7',sockColor:'#e7ecea',sunglassesColor:'#111a22',sunglassesStyle:'dark',hairColor:'#2e1f14',beardColor:'#2b1a10',beardOn:false}; /* v113 : cheveux, barbe et lunettes photo */
+const defaultRiderStyle={bikeModel:'classic',riderWeight:85,riderHeight:175,ftp:200,frameColor:'#2b2f33',rimColor:'#5b6670',rimDepth:50,helmetColor:'#e8e8e8',jerseyColor:'#eef1f0',shortColor:'#13171c',shoeColor:'#e6e9e7',sockColor:'#e7ecea',sunglassesColor:'#111a22',sunglassesStyle:'dark',hairColor:'#2e1f14',beardColor:'#2b1a10',beardOn:false,hairStyle:'court',beardStyle:'none',helmetStyle:'route',sockHeight:'mi'}; /* v199 : longueur de cheveux, type de barbe, casque et hauteur de chaussettes */
 const riderStyle={...defaultRiderStyle};
-try{const saved=JSON.parse(localStorage.getItem('velo3d-rider-style')||'null');if(saved&&typeof saved==='object')for(const key of Object.keys(defaultRiderStyle))if(saved[key]!=null){if(key==='rimDepth'){const n=Number(saved[key]);if([50,60,80].includes(n))riderStyle[key]=n}else if(key==='bikeModel'){if(['classic','modern'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='riderWeight'){const n=Number(saved[key]);if(n>=40&&n<=200)riderStyle[key]=n}else if(key==='riderHeight'){const n=Number(saved[key]);if(n>=130&&n<=225)riderStyle[key]=n}else if(key==='ftp'){const n=Number(saved[key]);if(n>=50&&n<=500)riderStyle[key]=n}else if(key==='sunglassesStyle'){if(['dark','blue','red','yellow','none'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='beardOn'){riderStyle[key]=!!saved[key]}else if(/^#[0-9a-f]{6}$/i.test(String(saved[key])))riderStyle[key]=String(saved[key])}}catch(e){}
+try{const saved=JSON.parse(localStorage.getItem('velo3d-rider-style')||'null');if(saved&&typeof saved==='object')for(const key of Object.keys(defaultRiderStyle))if(saved[key]!=null){if(key==='rimDepth'){const n=Number(saved[key]);if([50,60,80].includes(n))riderStyle[key]=n}else if(key==='bikeModel'){if(['classic','modern'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='riderWeight'){const n=Number(saved[key]);if(n>=40&&n<=200)riderStyle[key]=n}else if(key==='riderHeight'){const n=Number(saved[key]);if(n>=130&&n<=225)riderStyle[key]=n}else if(key==='ftp'){const n=Number(saved[key]);if(n>=50&&n<=500)riderStyle[key]=n}else if(key==='sunglassesStyle'){if(['dark','blue','red','yellow','none'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='beardOn'){riderStyle[key]=!!saved[key]}else if(key==='hairStyle'){if(['rase','court','mi-long','long'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='beardStyle'){if(['none','moustache','bouc','courte','pleine'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='helmetStyle'){if(['route','aero','vtt'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(key==='sockHeight'){if(['bas','mi','haut'].includes(String(saved[key])))riderStyle[key]=String(saved[key])}else if(/^#[0-9a-f]{6}$/i.test(String(saved[key])))riderStyle[key]=String(saved[key])}}catch(e){}
+try{if(riderStyle.beardStyle==='none'&&riderStyle.beardOn)riderStyle.beardStyle='pleine';}catch(e){}
 /* v195 : physique de la sortie — poids total roulant, CdA et CRR réglables.
    La puissance estimée (capteur de cadence), l’intégration de vitesse et la
    résistance du home-trainer lisent directement ces trois valeurs ; la formule
@@ -2305,12 +2419,15 @@ function applyRiderShape(){
   const torsoLength=Math.max(.89,Math.min(1.12,1+(h-175)*.0024));
   for(const data of _texDataSets()){
     data.sh=riderShape;
-    const c=riderShape.corp||1,w=(riderShape.torso||1)*Math.sqrt(c);
+    const c=riderShape.corp||1,w=(riderShape.torso||1)*Math.pow(c,0.85);
+    const shp=riderShape.shoulders||1;
     if(data.torsoGroup)data.torsoGroup.scale.y=torsoLength;
-    if(data.torsoMesh)data.torsoMesh.scale.set(1.02*w,1,.74*w);
-    if(data.pelvisMesh)data.pelvisMesh.scale.set(.160*c,.108*c,.130*c);
-    if(data.legL){data.legL.L1=.40*legLength;data.legL.L2=.32*legLength;for(const leg of data.legs||[]){leg.knee.position.y=-data.legL.L1;leg.ankle.position.y=-data.legL.L2;}}
-    if(data.armL){data.armL.A1=.30*armLength;data.armL.A2=.28*armLength;for(const arm of data.arms||[]){arm.elbow.position.y=-data.armL.A1;arm.wrist.position.y=-data.armL.A2;}}
+    if(data.torsoMesh)data.torsoMesh.scale.set(1.06*w,1,.80*w*Math.pow(c,-0.2)); /* v198 : largeur liée au poids, profondeur plus stable */
+    if(data.pelvisMesh)data.pelvisMesh.scale.set(.160*c,.108,.130*Math.pow(c,0.8));
+    if(data.legL){data.legL.L1=.40*legLength;data.legL.L2=.32*legLength;for(const leg of data.legs||[]){leg.knee.position.y=-data.legL.L1;leg.ankle.position.y=-data.legL.L2;leg.hip.position.x=leg.side*.134*Math.pow(c,0.35);}}
+    if(data.armL){data.armL.A1=.30*armLength;data.armL.A2=.28*armLength;for(const arm of data.arms||[]){arm.elbow.position.y=-data.armL.A1;arm.wrist.position.y=-data.armL.A2;arm.sh.position.x=arm.side*.148*shp*Math.pow(c,0.30);}}
+    const nm=data.headGroup&&data.headGroup.userData.neckMesh;
+    if(nm){const nf=Math.pow(c,0.4);nm.scale.x=nf;nm.scale.z=nf;}
     r4PoseLegs(data,data.crankAngle||0);r4PoseArms(data);
   }
 }
@@ -2407,6 +2524,22 @@ function _trimTransparent(img,margin=.035){
   out.getContext('2d').drawImage(src,x0,y0,out.width,out.height,0,0,out.width,out.height);
   return out;
 }
+/* v199 : prolonge les bords d'une photo de maillot jusqu'aux coutures — plus de bande de couleur unie entre le devant et le dos */
+function _extendEdgesHoriz(cv){
+  try{
+    const W=cv.width,H=cv.height,ctx=cv.getContext('2d',{willReadFrequently:true});
+    const id=ctx.getImageData(0,0,W,H),p=id.data;
+    for(let y=0;y<H;y++){
+      const row=y*W*4;let first=-1,last=-1;
+      for(let x=0;x<W;x++)if(p[row+x*4+3]>8){if(first<0)first=x;last=x;}
+      if(first<0)continue;
+      if(first>0){const i=row+first*4,r=p[i],g=p[i+1],b=p[i+2],a=p[i+3];for(let x=0;x<first;x++){const j=row+x*4;p[j]=r;p[j+1]=g;p[j+2]=b;p[j+3]=a;}}
+      if(last<W-1){const i=row+last*4,r=p[i],g=p[i+1],b=p[i+2],a=p[i+3];for(let x=last+1;x<W;x++){const j=row+x*4;p[j]=r;p[j+1]=g;p[j+2]=b;p[j+3]=a;}}
+    }
+    ctx.putImageData(id,0,0);
+  }catch(e){}
+  return cv;
+}
 async function _coverCanvas(img,w,h,transform={scale:1,dx:0,dy:0,sx:1,sy:1}){
   const cv=document.createElement('canvas');cv.width=w;cv.height=h;const ctx=cv.getContext('2d');
   const source=_trimTransparent(img),fit=Math.min(w/source.width,h/source.height)*.94;
@@ -2475,44 +2608,100 @@ function _photoHalfCanvas(img,rh,transform={},baseColor='#ffffff'){
   g.save();g.beginPath();g.rect(0,0,w,h);g.clip();g.drawImage(source,(w-dw)/2+dx,(h-dh)/2+dy,dw,dh);g.restore();
   return c;
 }
+/* v199 : une photo de tenue n'est décodée, détourée et mise en texture qu'une seule fois — l'avatar
+   et l'aperçu partagent la même texture, et l'ancienne est libérée dès qu'elle est remplacée ou retirée. */
+const _photoCache={};
+const _photoEntry=key=>_photoCache[key]||(_photoCache[key]={src:null,sig:'',tex:null,prev:null,img:null,imgSrc:'',cut:null,skin:null,skinSrc:'',gen:0,job:null,jobSrc:'',jobSig:''});
+function _photoSig(key){
+  const t=_garmentTransformFor(key);
+  /* la couleur de base du casque fait partie de l'image composée */
+  return [key==='helmet'?String(riderStyle.helmetColor||'#e8e8e8'):'',t.scale,t.dx,t.dy,t.sx,t.sy].join('|');
+}
+function _releasePhotoTex(e){if(!e)return;const prev=e.prev;e.prev=null;if(prev&&prev!==e.tex)prev.dispose();}
+function _dropPhotoTex(key){
+  const e=_photoCache[key];if(!e)return;
+  const tex=e.tex,prev=e.prev;
+  e.tex=null;e.prev=null;e.src=null;e.sig='';e.img=null;e.imgSrc='';e.cut=null;e.skin=null;e.skinSrc='';e.job=null;e.jobSrc='';e.jobSig='';
+  if(tex)tex.dispose();
+  if(prev&&prev!==tex)prev.dispose();
+}
+function _photoCanvas(key,cut){
+  if(key==='face')return {canvas:_photoHalfCanvas(cut,1,_garmentTransformFor('face'),'#c79a80'),repeat:true};
+  if(key==='helmet')return {canvas:_photoHalfCanvas(cut,.55,_garmentTransformFor('helmet'),riderStyle.helmetColor||'#e8e8e8'),repeat:true};
+  /* lunettes : bande à l'échelle de la visière (6,2:1), centrée sur les yeux */
+  const tr=_garmentTransformFor('sunglasses'),sh=_trimTransparent(cut),cv=document.createElement('canvas');
+  cv.width=1024;cv.height=164;const ctx=cv.getContext('2d');
+  const scale=Math.min(cv.width/sh.width,cv.height/sh.height)*.98*Math.max(.25,Math.min(3,Number(tr.scale)||1));
+  const dw=sh.width*scale*(Number(tr.sx)||1),dh=sh.height*scale*(Number(tr.sy)||1);
+  ctx.drawImage(sh,(cv.width-dw)/2+(Number(tr.dx)||0)*cv.width,(cv.height-dh)/2+(Number(tr.dy)||0)*cv.height,dw,dh);
+  return {canvas:cv};
+}
+function _photoInfo(key,src){
+  const e=_photoEntry(key),sig=_photoSig(key);
+  if(e.src===src&&e.sig===sig&&e.tex)return Promise.resolve(e); /* rien n'a changé : la texture reste en place */
+  if(e.job&&e.jobSrc===src&&e.jobSig===sig)return e.job;         /* même photo déjà en cours de décodage */
+  const gen=e.gen=(e.gen||0)+1;
+  const job=(async()=>{
+    if(!(e.img&&e.imgSrc===src)){const img=await _loadImg(src);if(!img)return e;e.img=img;e.imgSrc=src;e.cut=null;}
+    if(!e.cut)e.cut=_cutout(e.img);
+    if(key==='face'&&e.skinSrc!==src){e.skin=_dominantColor(e.cut);e.skinSrc=src;}
+    if(e.gen!==gen)return e; /* une demande plus récente a pris le relais */
+    const built=_photoCanvas(key,e.cut);
+    const tex=new THREE.CanvasTexture(built.canvas);
+    tex.encoding=THREE.sRGBEncoding;tex.anisotropy=4;
+    if(built.repeat){tex.wrapS=THREE.RepeatWrapping;tex.offset.x=.25;tex.repeat.x=1;}
+    tex.needsUpdate=true;
+    if(e.tex&&e.tex!==tex){if(e.prev&&e.prev!==e.tex)e.prev.dispose();e.prev=e.tex;}
+    e.tex=tex;e.src=src;e.sig=sig;
+    e.job=null;e.jobSrc='';e.jobSig='';
+    return e;
+  })();
+  e.job=job;e.jobSrc=src;e.jobSig=sig;
+  return job;
+}
 async function applyFacePhoto(){
   let src=null;try{src=localStorage.getItem('velo3d-tex-face')}catch(e){}
+  if(!src){
+    for(const data of _texDataSets()){
+      const mats=data.materials||{};
+      const fd=data.body?data.body.userData._faceDetail:null;
+      if(mats.face){mats.face.map=null;mats.face.color.set('#c79a80');mats.face.needsUpdate=true;}
+      if(fd)fd.visible=true;
+      if(mats.skin&&data._faceHadPhoto){mats.skin.color.set('#c79a80');mats.skin.needsUpdate=true;}
+    }
+    _dropPhotoTex('face'); /* v199 : plus de photo, plus de texture en mémoire */
+    return;
+  }
+  const entry=await _photoInfo('face',src);
+  if(!entry||!entry.tex)return;
   for(const data of _texDataSets()){
     const mats=data.materials||{};
     const fd=data.body?data.body.userData._faceDetail:null;
-    if(!src){
-      if(mats.face){mats.face.map=null;mats.face.color.set('#c98a6b');mats.face.needsUpdate=true;}
-      if(fd)fd.visible=true;
-      if(mats.skin&&data._faceHadPhoto){mats.skin.color.set('#c98a6b');mats.skin.needsUpdate=true;}
-    }else{
-      const img=await _loadImg(src);if(!img)continue;
-      const cut=_cutout(img);
-      const tex=new THREE.CanvasTexture(_photoHalfCanvas(cut,1,_garmentTransformFor('face'),'#c98a6b'));
-      tex.encoding=THREE.sRGBEncoding;tex.anisotropy=4;
-      tex.wrapS=THREE.RepeatWrapping;tex.offset.x=.25;tex.repeat.x=1;
-      if(mats.face){mats.face.map=tex;mats.face.color.set('#ffffff');mats.face.needsUpdate=true;data._faceHadPhoto=true;}
-      if(fd)fd.visible=false;
-      /* teint de peau pris sur la photo du visage */
-      if(mats.skin){const rgb=_dominantColor(cut);mats.skin.color.setRGB(rgb[0]/255,rgb[1]/255,rgb[2]/255);mats.skin.needsUpdate=true;}
-    }
+    if(mats.face){mats.face.map=entry.tex;mats.face.color.set('#ffffff');mats.face.needsUpdate=true;data._faceHadPhoto=true;}
+    if(fd)fd.visible=false;
+    /* teint de peau pris sur la photo du visage */
+    if(mats.skin&&entry.skin){mats.skin.color.setRGB(entry.skin[0]/255,entry.skin[1]/255,entry.skin[2]/255);mats.skin.needsUpdate=true;}
   }
+  _releasePhotoTex(entry); /* l'ancienne texture n'est libérée qu'une fois la nouvelle posée */
 }
 async function applyHelmetPhoto(){
   let src=null;try{src=localStorage.getItem('velo3d-tex-helmet')}catch(e){}
-  for(const data of _texDataSets()){
-    const mats=data.materials||{};
-    if(!src){
+  if(!src){
+    for(const data of _texDataSets()){
+      const mats=data.materials||{};
       if(mats.helmet){mats.helmet.map=null;mats.helmet.needsUpdate=true;}
       r4ApplyCyclistStyle(data,riderStyle);
-    }else{
-      const img=await _loadImg(src);if(!img)continue;
-      const cut=_cutout(img);
-      const tex=new THREE.CanvasTexture(_photoHalfCanvas(cut,.55,_garmentTransformFor('helmet'),riderStyle.helmetColor||'#e8e8e8'));
-      tex.encoding=THREE.sRGBEncoding;tex.anisotropy=4;
-      tex.wrapS=THREE.RepeatWrapping;tex.offset.x=.25;tex.repeat.x=1;
-      if(mats.helmet){mats.helmet.map=tex;mats.helmet.color.set('#ffffff');mats.helmet.needsUpdate=true;}
     }
+    _dropPhotoTex('helmet');
+    return;
   }
+  const entry=await _photoInfo('helmet',src);
+  if(!entry||!entry.tex)return;
+  for(const data of _texDataSets()){
+    const mats=data.materials||{};
+    if(mats.helmet){mats.helmet.map=entry.tex;mats.helmet.color.set('#ffffff');mats.helmet.needsUpdate=true;}
+  }
+  _releasePhotoTex(entry);
 }
 /* v89 : la photo « devant » s'affiche sur le devant du torse, la photo « arrière » sur le dos.
    Si une seule des deux est fournie, elle couvre aussi l'autre face. */
@@ -2528,14 +2717,32 @@ async function rebuildJerseyTexture(){
   const cv=document.createElement('canvas');cv.width=1024;cv.height=1024;const ctx=cv.getContext('2d');
   ctx.fillStyle=riderStyle.jerseyColor||'#eef1f0';ctx.fillRect(0,0,1024,1024);
   const frontKey=imgF?'jerseyFront':'jerseyBack';
-  const front=await _coverCanvas(imgF||imgB,1024,1024,_garmentTransformFor(frontKey));
+  const front=_extendEdgesHoriz(await _coverCanvas(imgF||imgB,1024,1024,_garmentTransformFor(frontKey)));
   /* v91 : couleur dominante du maillot pour les manches et les épaules */
   try{const dctx=front.getContext('2d');const px=dctx.getImageData(307,200,410,624).data;let r=0,g=0,b=0,n2=0;for(let i=0;i<px.length;i+=64){r+=px[i];g+=px[i+1];b+=px[i+2];n2++;}if(n2){_jerseyAccent='rgb('+Math.round(r/n2)+','+Math.round(g/n2)+','+Math.round(b/n2)+')';}else{_jerseyAccent=null;}}catch(e){_jerseyAccent=null;}
   ctx.drawImage(front,512,0,512,1024,0,0,256,1024);
   ctx.drawImage(front,0,0,512,1024,768,0,256,1024);
   const backKey=imgB?'jerseyBack':'jerseyFront';
-  const back=await _coverCanvas(imgB||imgF,1024,1024,_garmentTransformFor(backKey));
+  const back=_extendEdgesHoriz(await _coverCanvas(imgB||imgF,1024,1024,_garmentTransformFor(backKey)));
   ctx.drawImage(back,0,0,1024,1024,256,0,512,1024);
+  /* v199 : les coutures de côté sont fondues — le devant et le dos se raccordent sans marche visible,
+     chaque bord étant prolongé par son reflet pour que le motif continue de part et d'autre. */
+  const seamBand=(cvA,cvB,px)=>{
+    const out=document.createElement('canvas');out.width=px;out.height=1024;const og=out.getContext('2d');
+    const hw=px/2,sw=hw*2;
+    og.drawImage(cvA,1024-sw,0,sw,1024,0,0,hw,1024);
+    og.save();og.translate(px,0);og.scale(-1,1);og.drawImage(cvA,1024-sw,0,sw,1024,0,0,hw,1024);og.restore();
+    const b=document.createElement('canvas');b.width=px;b.height=1024;const bg=b.getContext('2d');
+    bg.drawImage(cvB,0,0,sw,1024,hw,0,hw,1024);
+    bg.save();bg.translate(hw,0);bg.scale(-1,1);bg.drawImage(cvB,0,0,sw,1024,0,0,hw,1024);bg.restore();
+    bg.globalCompositeOperation='destination-in';
+    const gr=bg.createLinearGradient(0,0,px,0);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,1)');
+    bg.fillStyle=gr;bg.fillRect(0,0,px,1024);
+    og.drawImage(b,0,0);
+    return out;
+  };
+  ctx.drawImage(seamBand(front,back,192),160,0);
+  ctx.drawImage(seamBand(back,front,192),672,0);
   const tex=new THREE.CanvasTexture(cv);tex.encoding=THREE.sRGBEncoding;tex.wrapS=THREE.ClampToEdgeWrapping;tex.wrapT=THREE.ClampToEdgeWrapping;tex.anisotropy=4;tex.needsUpdate=true;
   applyJerseyTexture(tex);
 }
@@ -2591,19 +2798,21 @@ _installPhotoRemoval();
 
 async function applySunglassesPhoto(){
   let src=null;try{src=localStorage.getItem('velo3d-tex-sunglasses')}catch(e){}
-  const img=src?await _loadImg(src):null;
+  const entry=src?await _photoInfo('sunglasses',src):null;
+  const tex=entry?entry.tex:null; /* v199 : même texture pour l'avatar et pour l'aperçu */
   for(const data of _texDataSets()){
     const mesh=data._sunglassesPhotoMesh,mat=data._sunglassesPhotoMaterial;if(!mesh||!mat)continue;
-    const old=mat.map||null;
-    if(img){const cut=_trimTransparent(_cutout(img)),tr=_garmentTransformFor('sunglasses'),cv=document.createElement('canvas');cv.width=768;cv.height=256;const ctx=cv.getContext('2d');const scale=Math.min(cv.width/cut.width,cv.height/cut.height)*.92*Math.max(.25,Math.min(3,Number(tr.scale)||1));const dw=cut.width*scale,dh=cut.height*scale;ctx.drawImage(cut,(cv.width-dw)/2+(Number(tr.dx)||0)*cv.width,(cv.height-dh)/2+(Number(tr.dy)||0)*cv.height,dw,dh);const tex=new THREE.CanvasTexture(cv);tex.encoding=THREE.sRGBEncoding;tex.anisotropy=4;tex.needsUpdate=true;mat.map=tex;mat.transparent=true;mat.alphaTest=.025;mat.depthWrite=false;mat.needsUpdate=true;mesh.position.set((Number(tr.dx)||0)*.14,1.552-(Number(tr.dy)||0)*.08,.377);mesh.scale.setScalar(Math.max(.25,Math.min(3,Number(tr.scale)||1)));mesh.visible=riderStyle.sunglassesStyle!=='none';}
-    else{mat.map=null;mat.transparent=false;mat.alphaTest=0;mat.depthWrite=true;mat.needsUpdate=true;mesh.visible=false;}
-    if(old&&old!==mat.map)old.dispose();
-    if(data._sunglassesBaseGroup)data._sunglassesBaseGroup.visible=!!(!img&&riderStyle.sunglassesStyle!=='none');
+    mat.map=tex;
+    mat.transparent=!!tex;mat.alphaTest=tex?0.025:0;mat.depthWrite=!tex;mat.needsUpdate=true;
+    mesh.visible=!!tex&&riderStyle.sunglassesStyle!=='none';
+    if(data._sunglassesBaseGroup)data._sunglassesBaseGroup.visible=!!(!tex&&riderStyle.sunglassesStyle!=='none');
     if(data._eyeMeshes)data._eyeMeshes.forEach(eye=>eye.visible=riderStyle.sunglassesStyle==='none');
   }
+  if(tex)_releasePhotoTex(entry);else if(!src)_dropPhotoTex('sunglasses');
   if(typeof rider!=='undefined'&&rider.userData)r4ApplyCyclistStyle(rider.userData,riderStyle);
   try{if(previewRider&&previewRider.userData)r4ApplyCyclistStyle(previewRider.userData,riderStyle)}catch(e){}
 }
+
 if($('outfitDefault'))$('outfitDefault').onclick=()=>{
   ['velo3d-tex-jerseyF','velo3d-tex-jerseyB','velo3d-tex-shorts','velo3d-tex-sock','velo3d-tex-face','velo3d-tex-helmet'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
   for(const key of Object.keys(_garmentPhotoKeys))_garmentTransforms[key]={..._garmentDefaults};_saveGarmentTransforms();_outfitEditMode=false;_activeGarmentKey='jerseyFront';_syncGarmentEditor();
@@ -2618,6 +2827,8 @@ if($('outfitDefault'))$('outfitDefault').onclick=()=>{
 function syncPreviewGarment(){
   if(_jerseyTexCurrent)applyJerseyTexture(_jerseyTexCurrent);
   for(const target of Object.values(_texTargets))if(_plainTexCache[target.key])applyPlainTexture(target,_plainTexCache[target.key]);
+  /* v199 : l'aperçu est construit après le chargement — on lui réapplique les photos visage, casque et lunettes */
+  applyFacePhoto();applyHelmetPhoto();applySunglassesPhoto();
 }
 (function restoreGarmentTex(){
   if(!_texDataSets().length){setTimeout(restoreGarmentTex,400);return;}
@@ -4128,7 +4339,7 @@ function drawPreview(){
 }
 
 
-for(const key of Object.keys(defaultRiderStyle)){const el=$(key);if(!el)continue;el.addEventListener(['rimDepth','sunglassesStyle','beardOn'].includes(key)?'change':'input',e=>{updateRiderStyle(key,el.type==='checkbox'?el.checked:e.target.value);if(key==='sunglassesStyle')applySunglassesPhoto();drawPreview()})}
+for(const key of Object.keys(defaultRiderStyle)){const el=$(key);if(!el)continue;el.addEventListener(['rimDepth','sunglassesStyle','beardOn','hairStyle','beardStyle','helmetStyle','sockHeight'].includes(key)?'change':'input',e=>{updateRiderStyle(key,el.type==='checkbox'?el.checked:e.target.value);if(key==='sunglassesStyle')applySunglassesPhoto();drawPreview()})}
 
 
 /* v104 : morphologie automatique — la silhouette se déduit du poids et de la taille */
@@ -4137,8 +4348,8 @@ function autoMorphology(){
   const h=Math.max(130,Math.min(225,Number(riderStyle.riderHeight)||175));
   const bmi=w/((h/100)*(h/100));
   const cl=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-  const corp=cl(Math.sqrt(bmi/22.5),.82,1.28),dh=h-175;
-  return {corp,legs:cl(1+dh*.0018,.92,1.09),torso:cl(1+dh*.0015,.93,1.07),arms:cl(1+dh*.0014,.93,1.07),shoulders:cl(1+dh*.0009,.94,1.06)};
+  const corp=cl(Math.sqrt(bmi/21.2),.84,1.34),dh=h-175;
+  return {corp,legs:cl(1+dh*.0018,.92,1.09),torso:cl(1+dh*.0015,.93,1.07),arms:cl(1+dh*.0014,.93,1.07),shoulders:cl((1+dh*.0009)*Math.pow(corp,0.25),.92,1.12)};
 }
 function applyAutoMorphology(){
   const m=autoMorphology();
