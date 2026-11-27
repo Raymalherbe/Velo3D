@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v191 — jardins, haies détaillées, parkings et lignes électriques</title>
+<title>Vélo 3D v192 — maisons de retour, jardins et haies</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -498,7 +498,7 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v191</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v192</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -5343,7 +5343,7 @@ function buildings(buildingParts,targetWorld){
       quad(.62,2.25,.04,OSM_DOOR_FRAME);quad(.5,2.1,.07,new THREE.Color(OSM_DOOR_COLOURS[Math.floor(random()*OSM_DOOR_COLOURS.length)]));
     }
     /* v191 : jardin autour des maisons — pelouse, haie taillée, portail et allée. */
-    if(!isImmeuble&&area>=8&&area<650&&gardenCount<260&&isFinite(minBX)&&near&&near.dist2<200*200){
+    if(!isImmeuble&&area>=8&&area<650&&gardenCount<260&&isFinite(minBX)&&item.d<200*200){
       let fi=0,flen=0;
       for(let i=0;i<m;i++){const a=c[i],b2=c[(i+1)%m],l=Math.hypot(b2[0]-a[0],b2[1]-a[1]);if(l>flen){flen=l;fi=i;}}
       if(flen>3.2){
@@ -5373,7 +5373,7 @@ function buildings(buildingParts,targetWorld){
         const ex0=gate[0]-ox*.9,ez0=gate[1]-oz*.9,ex1=fx+ox*(dn+.1),ez1=fz+oz*(dn+.1);
         door([[ex0-tx2*.55,gy+.035,ez0-tz2*.55],[ex1-tx2*.55,gy+.035,ez1-tz2*.55],[ex1+tx2*.55,gy+.035,ez1+tz2*.55]],pathColour);
         door([[ex0-tx2*.55,gy+.035,ez0-tz2*.55],[ex1+tx2*.55,gy+.035,ez1+tz2*.55],[ex0+tx2*.55,gy+.035,ez0+tz2*.55]],pathColour);
-        if(flen>6&&height>3.2&&near.dist2<130*130&&windowCount<240){
+        if(flen>6&&height>3.2&&item.d<130*130&&windowCount<240){
           const winColour=new THREE.Color(0x33434f),shutterColour=new THREE.Color().setHSL(.31,.30,.24);
           const placeWin=s2=>{
             const wx=fx+ux*s2+ox*(dn+.07),wz=fz+uz*s2+oz*(dn+.07);
