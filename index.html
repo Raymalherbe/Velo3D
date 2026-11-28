@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v206 — lampadaires réels, trafic fluide, terrains hors chaussée et sens de départ au choix</title>
+<title>Vélo 3D v207 — compteur lisible, vue cintre au plus près et cocottes tactiles</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -390,7 +390,8 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #bar{position:fixed}
 #bar #barHide{position:absolute;left:50%;top:-24px;transform:translateX(-50%);z-index:14;display:grid;place-items:center;width:58px;min-width:58px;height:22px;min-height:22px;padding:0;border:1px solid var(--bd);border-bottom:0;border-radius:12px 12px 0 0;background:var(--card);color:var(--ac);font-size:17px;line-height:1;backdrop-filter:blur(12px)}
 #barShow{left:50%;bottom:calc(5px + env(safe-area-inset-bottom,0px));z-index:18;width:58px;min-width:58px;height:27px;min-height:27px;padding:0;border:0;background:transparent;backdrop-filter:none;box-shadow:none;color:var(--ac);font-size:24px;line-height:1;opacity:.55;text-shadow:0 1px 6px rgba(0,0,0,.45)} /* v126+v132 : simple flèche, sans contour ni fond */
-#cockpitShifters{display:none!important} /* v126 : les boutons +/- flottants sont remplacés par le tap directement sur les cocottes 3D en vue cintre */
+/* v207 : les cocottes tactiles redeviennent visibles en vue cintre — le tap sur les cocottes 3D ne suffisait plus,
+   la caméra rapprochée les fait glisser sous le bandeau du bas. */
 #gearDock{position:fixed;left:10px;bottom:calc(35px + env(safe-area-inset-bottom,0px));z-index:18;transform:none;max-width:calc(100vw - 12px);padding:5px 8px;border:1px solid var(--bd);border-radius:14px;background:rgba(14,31,34,.94);box-shadow:0 8px 24px #0007;backdrop-filter:blur(12px)} /* v124 : ancré à gauche */
 #gearControls{gap:8px;justify-content:center;align-items:center;margin:0;min-width:0}
 .frontGearAssembly{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;flex:0 0 auto}
@@ -430,15 +431,17 @@ body.arrowsOn #hudToggle,body.arrowsOn #hud,body.arrowsOn #mapPanel:not(.expande
 #gearControls{align-items:center}
 #bar #barHide{top:-31px;width:68px;min-width:68px;height:31px;min-height:31px;z-index:46;touch-action:manipulation;border-radius:15px 15px 0 0;font-size:22px}
 #barShow{width:70px;min-width:70px;height:36px;min-height:36px;z-index:28;touch-action:manipulation;font-size:20px}
-#cockpitShifters{position:fixed;z-index:17;left:0;right:0;bottom:calc(var(--bar-height,150px) + 12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:flex-end;padding:0 clamp(30px,21vw,320px);pointer-events:none} /* v125 : boutons écartés pour se poser sur les cocottes visibles en vue cintre */
+#cockpitShifters{position:fixed;z-index:17;left:0;right:0;bottom:calc(var(--bar-height,150px) + 8px + env(safe-area-inset-bottom,0px));display:flex;justify-content:space-between;align-items:flex-end;gap:6px;padding:0 clamp(8px,7vw,140px);pointer-events:none} /* v207 : deux cocottes + le plateau, posés juste au-dessus du bandeau, à portée de pouce */
 #cockpitShifters.hide{display:none!important}
 #cockpitShifters button{pointer-events:auto;width:58px;min-width:58px;height:58px;min-height:58px;padding:5px;border:1px solid rgba(218,238,239,.55);border-radius:23px 23px 15px 15px;background:linear-gradient(145deg,rgba(20,48,52,.84),rgba(7,19,23,.9));color:#e8f4f3;box-shadow:0 5px 15px #0007;touch-action:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
 #cockpitShifters button:active{background:var(--ac);color:var(--acfg);transform:scale(.96)}
+#cocottePlateau{width:52px;min-width:52px;height:52px;min-height:52px;border-radius:50%!important;border-width:3px!important} /* v207 : plateau, entre les deux cocottes */
+#cocottePlateau span{font-size:21px!important}
 #cockpitShifters button span{font-size:24px;font-weight:900;line-height:1}
 #cockpitShifters button small{font-size:8px;line-height:1;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
 body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))} /* v123 : bandeau replié — les cocottes descendent vers le bas du cadre 3D */
 @media(max-width:700px){.cassetteDiagram{width:116px;height:116px}.cassetteScale{gap:3px}.cassetteScale>button{flex-basis:31px!important;width:31px;min-width:31px!important;height:36px;min-height:36px}}
-@media(max-width:700px) and (orientation:portrait){#cockpitShifters{justify-content:space-between;gap:4px;padding-left:clamp(30px,21vw,320px);padding-right:clamp(30px,21vw,320px)}#cockpitShifters button{width:46px;min-width:46px;height:48px;min-height:48px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}body.barFolded #cameraPanel{bottom:calc(170px + env(safe-area-inset-bottom,0px))}#gearDock{bottom:calc(44px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:700px) and (orientation:portrait){#cockpitShifters{justify-content:space-between;gap:4px;padding-left:clamp(6px,5vw,90px);padding-right:clamp(6px,5vw,90px)}#cockpitShifters button{width:46px;min-width:46px;height:48px;min-height:48px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}body.barFolded #cameraPanel{bottom:calc(170px + env(safe-area-inset-bottom,0px))}#gearDock{bottom:calc(44px + env(safe-area-inset-bottom,0px))}}
 @media(max-width:390px){.cassetteDiagram{width:102px;height:102px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:29px!important;width:29px;min-width:29px!important;height:34px;min-height:34px}#gearControls{gap:4px}}
 @media(orientation:landscape) and (max-height:620px){.cassetteDiagram{width:88px;height:88px}.cassetteScale{gap:2px}.cassetteScale>button{flex-basis:25px!important;width:25px;min-width:25px!important;height:28px;min-height:28px;font-size:17px}#gearControls{gap:4px}#bar #gearControls .cassetteHeader{font-size:7px}#cockpitShifters{justify-content:space-between;gap:4px;padding:0 clamp(30px,21vw,320px)}#cockpitShifters button{width:50px;min-width:50px;height:50px;min-height:50px}body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px))}}
 
@@ -496,10 +499,10 @@ body.barFolded #cockpitShifters{bottom:calc(9vh + env(safe-area-inset-bottom,0px
 <button id="barHide" type="button" title="Replier le bandeau du bas" aria-label="Replier le bandeau inférieur">▾</button><div id="exportPanel" class="hide"><b>Entraînement arrêté</b><br><span id="exportInfo"></span></div>
 </div>
 <button id="barShow" type="button" title="Faire réapparaître le bandeau du bas">▴</button><button id="cameraToggle" type="button" aria-label="Changer de vue caméra" title="Changer de vue caméra (suivi · paysage · profil · cintre)">📹</button><button id="turnAroundFloat" type="button" class="hide" title="Faire demi-tour" aria-label="Faire demi-tour">↶</button><div id="gearDock" class="hide" aria-label="Changement de vitesse virtuelle"></div>
-<div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignons plus grands; appuyer avec la droite pour changer de plateau"><span>−</span><small>Gauche</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignons plus petits; appuyer avec la gauche pour changer de plateau"><span>+</span><small>Droite</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
+<div id="cockpitShifters" class="hide" role="group" aria-label="Commandes des cocottes en vue cintre"><button id="cocotteLeft" type="button" aria-label="Cocotte gauche : pignon plus petit, plus dur"><span>−</span><small>Pignon</small></button><button id="cocottePlateau" type="button" aria-label="Changer de plateau, actuellement 48 dents" title="Passer au plateau 35 dents"><span id="cocottePlateauValue">48</span><small>Plateau</small></button><button id="cocotteRight" type="button" aria-label="Cocotte droite : pignon plus grand, plus facile"><span>+</span><small>Pignon</small></button></div><input id="fi" type="file" accept=".gpx,.xml,application/gpx+xml,text/xml,application/xml" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0">
 <div id="home">
   <div class="homeCard">
-    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v203</div>
+    <div class="eyebrow" id="appEyebrow">Home trainer · OpenStreetMap · v207</div>
     <h1>Vélo 3D<span style="color:var(--ac)">.</span></h1>
     <p>Votre trace, la route et le paysage.<br>Chargez un GPX pour préparer le décor réel autour du parcours.</p>
     <details id="customize" class="customize">
@@ -2023,19 +2026,22 @@ function makeCyclist() {
   // v84 : compteur déporté vers l'avant du cintre (support « out-front », écran incliné face au cycliste)
   // Pas de prolongateurs : cintre de course classique seulement
   addTube(g, new V3(0,0.982,0.505), new V3(0,0.968,0.588), 0.006, darkMetalMat);
-  const compBody = new THREE.Mesh(new THREE.BoxGeometry(0.065,0.018,0.055), new THREE.MeshStandardMaterial({color:0x111111,roughness:0.3})); compBody.position.set(0,0.968,0.60); compBody.rotation.x=-0.28; g.add(compBody);
+  /* v207 : boîtier agrandi — l'écran doit se lire d'un coup d'œil en vue cintre */
+  const compBody = new THREE.Mesh(new THREE.BoxGeometry(0.126,0.024,0.096), new THREE.MeshStandardMaterial({color:0x111111,roughness:0.3})); compBody.position.set(0,0.986,0.602); compBody.rotation.x=-0.28; g.add(compBody);
   /* v162 : écran du compteur — vraies données dessinées sur CanvasTexture (vitesse, puissance, pente, temps, distance) */
-  const compCanvas=document.createElement('canvas');compCanvas.width=320;compCanvas.height=240;
+  const compCanvas=document.createElement('canvas');compCanvas.width=512;compCanvas.height=384; /* v207 : 512 px pour des chiffres nets de près */
   const compTex=new THREE.CanvasTexture(compCanvas);compTex.anisotropy=4;
   { /* v163 : écran de veille dessiné dès la construction — jamais d'écran blanc même avant la première boucle */
-    const cctx=compCanvas.getContext('2d');cctx.fillStyle='#081008';cctx.fillRect(0,0,320,240);
+    const cctx=compCanvas.getContext('2d');cctx.setTransform(compCanvas.width/320,0,0,compCanvas.height/240,0,0);cctx.fillStyle='#081008';cctx.fillRect(0,0,320,240);
     cctx.fillStyle='#9cf59c';cctx.textAlign='center';
     cctx.font='700 34px system-ui,sans-serif';cctx.fillText('VÉLO 3D',160,108);
     cctx.font='600 26px system-ui,sans-serif';cctx.fillText('– km/h · – W',160,150);
   }
   const compScreenMat=new THREE.MeshBasicMaterial({map:compTex});
-  /* v203 : écran agrandi et incliné vers le cycliste — il était orienté vers la route, donc invisible */
-  const compScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.105,0.078), compScreenMat); compScreen.rotation.x=-Math.PI/2+0.34; compScreen.rotation.z=Math.PI; compScreen.position.set(0,0.9835,0.60); g.add(compScreen);
+  /* v207 : écran réellement tourné VERS LE CYCLISTE. La v203 le penchait de 0,34 rad vers l'avant :
+     sa face avant regardait la route, on n'en voyait que la tranche — d'où un compteur sans données.
+     rotation.x = -2,68 rad redresse l'écran vers l'œil (normale vers le haut et l'arrière). */
+  const compScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.118,0.0885), compScreenMat); compScreen.rotation.x=-2.68; compScreen.rotation.z=Math.PI; compScreen.position.set(0,1.0005,0.603); g.add(compScreen);
   g.userData.computerScreen = compScreen;g.userData.computerCanvas=compCanvas;g.userData.computerTex=compTex;
   addTube(g, new V3(0.02,0.92,0.40), new V3(0.02,0.70,0.36), 0.004, darkMetalMat);
   addTube(g, new V3(-0.02,0.92,0.40), new V3(-0.02,0.70,0.36), 0.004, darkMetalMat);
@@ -4972,9 +4978,9 @@ function decorateDemo(){
 const CAM_ZMIN=1.0,CAM_ZMAX=90,CAM_PITCH_MAX=1.30; /* v162 : dézoom paysage jusqu'à 90 m ; v205 : 1 m pour se placer sur le vélo en vue cintre */
 /* v205 : en vue cintre le zoom fait coulisser la caméra sur le vélo, de derrière le cintre (1,81 m)
    jusqu'au-dessus de la potence et des cocottes (1 m). On choisit sa place au lieu de rester aux épaules. */
-const CAM_COCKPIT_BACK=1.81,CAM_COCKPIT_BACK_Z=-0.34,CAM_COCKPIT_FRONT_Z=0.52;
+const CAM_COCKPIT_BACK=1.81,CAM_COCKPIT_BACK_Z=-0.12,CAM_COCKPIT_FRONT_Z=0.24; /* v207 : l'œil va jusqu'au ras du cintre */
 const cameraState={distance:6,view:'follow',yaw:0,pitch:.18,look:new THREE.Vector3(),ready:false};
-try{const saved=JSON.parse(localStorage.getItem('velo3d-camera')||'null');if(saved){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,Number(saved.distance)||6));if(['follow','wide','side','cockpit'].includes(saved.view))cameraState.view=saved.view;cameraState.yaw=Number(saved.yaw)||0;cameraState.pitch=Math.max(-.12,Math.min(CAM_PITCH_MAX,Number(saved.pitch)||.18));if(cameraState.view==='cockpit')cameraState.distance=1.25;} /* v205 : la vue cintre démarre au cintre, plus aux épaules */}catch(e){}
+try{const saved=JSON.parse(localStorage.getItem('velo3d-camera')||'null');if(saved){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,Number(saved.distance)||6));if(['follow','wide','side','cockpit'].includes(saved.view))cameraState.view=saved.view;cameraState.yaw=Number(saved.yaw)||0;cameraState.pitch=Math.max(-.12,Math.min(CAM_PITCH_MAX,Number(saved.pitch)||.18));if(cameraState.view==='cockpit')cameraState.distance=1.05;} /* v207 : la vue cintre démarre au ras du guidon */}catch(e){}
 function saveCamera(){try{localStorage.setItem('velo3d-camera',JSON.stringify({distance:cameraState.distance,view:cameraState.view,yaw:cameraState.yaw,pitch:cameraState.pitch}))}catch(e){}}
 function syncCockpitShifters(){const el=$('cockpitShifters');if(!el)return;const active=cameraState.view==='cockpit'&&$('home').classList.contains('hide')&&$('stopDialog').classList.contains('hide')&&$('freeStartDialog').classList.contains('hide');el.classList.toggle('hide',!active)}
 function refreshCameraControls(){
@@ -4987,7 +4993,7 @@ function refreshCameraControls(){
   syncCockpitShifters();
 }
 function setZoom(distance){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,distance));if(cameraState.distance<=CAM_COCKPIT_BACK)cameraState.view='cockpit';else if(cameraState.view==='cockpit')cameraState.view='follow';refreshCameraControls();saveCamera()} /* v205 : on entre et on sort de la vue cintre au zoom */
-function setView(view){cameraState.view=view;cameraState.yaw=0;if(view==='wide')cameraState.distance=45;else if(view==='side')cameraState.distance=10;else if(view==='cockpit')cameraState.distance=1.25;else cameraState.distance=6;refreshCameraControls();saveCamera()} /* v205 : la vue cintre s'ouvre sur le cintre */
+function setView(view){cameraState.view=view;cameraState.yaw=0;if(view==='wide')cameraState.distance=45;else if(view==='side')cameraState.distance=10;else if(view==='cockpit')cameraState.distance=1.05;else cameraState.distance=6;refreshCameraControls();saveCamera()} /* v205 : la vue cintre s'ouvre sur le cintre */
 $('zoom').oninput=e=>setZoom(CAM_ZMAX-(Number(e.target.value)-1)*(CAM_ZMAX-CAM_ZMIN)/11);$('zoomIn').onclick=()=>setZoom(cameraState.distance*.82);$('zoomOut').onclick=()=>setZoom(cameraState.distance/.82);
 $('viewFollow').onclick=()=>setView('follow');$('viewWide').onclick=()=>setView('wide');$('viewSide').onclick=()=>setView('side');$('viewCockpit').onclick=()=>setView('cockpit');
 $('c').addEventListener('wheel',e=>{e.preventDefault();setZoom(cameraState.distance*Math.exp(Math.max(-120,Math.min(120,e.deltaY))*.002))},{passive:false});
@@ -5030,7 +5036,7 @@ if($('hudToggle'))$('hudToggle').onclick=()=>{hudUserExpanded=!hudUserExpanded;s
 /* v121 : plus de panneau caméra — l'icône 📷 cycle les vues à chaque appui ; le zoom reste au pincement */
 function syncCameraPanel(){const panel=$('cameraPanel'),btn=$('cameraToggle');if(!panel||!btn)return;panel.classList.add('hide');btn.setAttribute('aria-label','Changer de vue caméra');btn.title='Changer de vue caméra (suivi · paysage · profil · cintre)';btn.textContent='📹';}
 /* v205 : chaque appui sur l'icône caméra annonce la vue choisie — on sait enfin où l'on est placé. */
-const CAMERA_LABELS={follow:'Suivi — derrière le cycliste',wide:'Paysage — vue large',side:'Profil — de côté',cockpit:'Cintre — pince pour te placer sur le vélo'};
+const CAMERA_LABELS={follow:'Suivi — derrière le cycliste',wide:'Paysage — vue large',side:'Profil — de côté',cockpit:'Cintre — au plus près du guidon, pince pour reculer'};
 $('cameraToggle').onclick=()=>{const views=['follow','wide','side','cockpit'];const i=views.indexOf(cameraState.view);const view=views[(i+1)%views.length];setView(view);toast('Caméra · '+CAMERA_LABELS[view]);buzz(15);};
 if(landscapeQuery.addEventListener)landscapeQuery.addEventListener('change',syncCompactHud);else if(landscapeQuery.addListener)landscapeQuery.addListener(syncCompactHud);
 $('mapMode').setAttribute('aria-label','Basculer entre vue globale et suivi du cycliste');syncCompactHud();syncCameraPanel();refreshCameraControls();
@@ -5039,6 +5045,7 @@ function updateBikeComputer(power,grade){ /* v203 : compteur complet — vitesse
   const bike=rider&&rider.userData&&rider.userData.bike;
   if(!bike||!bike.userData.computerCanvas)return;
   const cv=bike.userData.computerCanvas,ctx=cv.getContext('2d');
+  ctx.setTransform(cv.width/320,0,0,cv.height/240,0,0); /* v207 : le dessin reste en 320×240, rendu plus fin */
   const kmh=(running?v:0)*3.6,gpc=(grade||0)*100;
   const cad=Math.round((running&&typeof rideCadence==='function'?rideCadence(v,power):0)||0);
   const bpm=Number((typeof hr!=='undefined'?hr:0))||0;
@@ -5125,12 +5132,12 @@ function place(snap,dt=.016){
     /* v205 : l'œil coulisse sur le vélo avec le zoom — de derrière le cintre jusqu'au-dessus de la
        potence et des cocottes, au lieu de rester figé au niveau des épaules. */
     const eyeT=Math.max(0,Math.min(1,(CAM_COCKPIT_BACK-distance)/(CAM_COCKPIT_BACK-CAM_ZMIN)));
-    const eye=new THREE.Vector3(0,1.40+eyeT*.15,CAM_COCKPIT_BACK_Z+eyeT*(CAM_COCKPIT_FRONT_Z-CAM_COCKPIT_BACK_Z));
+    const eye=new THREE.Vector3(0,1.40-eyeT*.06,CAM_COCKPIT_BACK_Z+eyeT*(CAM_COCKPIT_FRONT_Z-CAM_COCKPIT_BACK_Z)); /* v207 : plus près du guidon, à hauteur de pilote */
     rider.localToWorld(eye);
     const fwd=new THREE.Vector3(0,0,1).applyQuaternion(rider.quaternion);
     /* plongée de base très faible : le cintre reste en bas de l'écran, la route occupe le reste ;
        glisser le doigt ajoute ou retire de la plongée */
-    const lookPitch=-0.205-eyeT*.055-(cameraState.pitch-0.18)*0.9;
+    const lookPitch=-0.235-eyeT*.075-(cameraState.pitch-0.18)*0.9; /* v207 : plongée un peu plus forte pour garder le compteur dans le cadre */
     /* v206 : même en vue cintre l'œil reste au-dessus du relief — plus de passage sous le décor. */
     try{const surface=window._terrain?terrainSample(window._terrain,eye.x,eye.z):null;if(Number.isFinite(surface)&&eye.y<surface+.9)eye.y=surface+.9;}catch(_){}
     cam.position.copy(eye);
@@ -8016,6 +8023,10 @@ function updateGearUI(){
   if(readout)readout.textContent=virtualFront+' × '+virtualRear();
   if(rearReadout)rearReadout.textContent=String(virtualRear());
   if(frontValue)frontValue.textContent=String(virtualFront);
+  /* v207 : cocotte « plateau » de la vue cintre */
+  const cocottePlateauValue=$('cocottePlateauValue'),cocottePlateauBtn=$('cocottePlateau');
+  if(cocottePlateauValue)cocottePlateauValue.textContent=String(virtualFront);
+  if(cocottePlateauBtn){cocottePlateauBtn.setAttribute('aria-label','Changer de plateau, actuellement '+virtualFront+' dents');cocottePlateauBtn.title='Passer au plateau '+(virtualFront===48?35:48)+' dents'}
   if(frontBtn){frontBtn.setAttribute('aria-label','Changer de plateau, actuellement '+virtualFront+' dents. Appuyer pour passer à '+(virtualFront===48?35:48));frontBtn.title='Passer au plateau '+(virtualFront===48?35:48)+' dents'}
   if(teeth){
     const rings=VIRTUAL_COGS.map((n,i)=>{const r=15+i*4.8,pitch=(Math.PI*2*r)/n,dash=(pitch*.58).toFixed(2)+' '+(pitch*.42).toFixed(2);return '<circle class="cassetteCog'+(i===virtualRearIndex?' selected':'')+'" cx="68" cy="68" r="'+r.toFixed(1)+'" stroke-dasharray="'+dash+'" data-cog-index="'+i+'" tabindex="0" role="button" aria-pressed="'+(i===virtualRearIndex)+'" aria-label="Pignon '+n+' dents'+(i===virtualRearIndex?' sélectionné':'')+'" title="'+n+' dents"></circle>';}).join('');
@@ -8303,6 +8314,9 @@ function bindCocotte(id,side){
   button.addEventListener('click',e=>{if(e.detail===0)shiftFromCocotte(side)});
 }
 bindCocotte('cocotteLeft','left');bindCocotte('cocotteRight','right');
+/* v207 : le plateau se change aussi d'un seul doigt, sur la cocotte centrale (les deux cocottes 3D
+   sont hors cadre ou sous le bandeau sur téléphone : le tap à deux doigts y était impossible). */
+if($('cocottePlateau'))$('cocottePlateau').onclick=()=>{virtualFront=virtualFront===48?35:48;updateGearUI();shiftClack();buzz(35);toast('Plateau '+virtualFront+' dents.');};
 $('cassetteTeeth').addEventListener('click',e=>{const cog=e.target.closest('[data-cog-index]');if(!cog)return;virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();shiftClack(); /* v139 */});
 $('cassetteTeeth').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const cog=e.target.closest('[data-cog-index]');if(cog){e.preventDefault();virtualRearIndex=Number(cog.dataset.cogIndex);updateGearUI();shiftClack(); /* v139 */;}}});
 updateGearUI();
