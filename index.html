@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#122f34">
 <meta name="description" content="Home trainer 3D personnalisable avec cycliste articulé, posture danseuse, caméra tactile et décor OpenStreetMap.">
-<title>Vélo 3D v204 — trottoirs réels, trafic à droite et carrefours fluides</title>
+<title>Vélo 3D v205 — bon sens de circulation, terrains hors chaussée et caméra libre</title>
 <style>
 :root{--fg:#f0f6f7;--muted:#a9bec3;--card:rgba(14,31,34,.90);--bd:rgba(206,229,229,.18);--ac:#79dfc5;--acfg:#102d29;color-scheme:dark;box-sizing:border-box}
 *{box-sizing:border-box}
@@ -891,10 +891,13 @@ function buildAmbiance(target){
     if(spans.length&&i%4!==3){const sp=spans[Math.floor(Math.random()*spans.length)];off=sp.s+(Math.random()*2-1)*sp.r*.9;}
     else off=Math.random()*maxD;
     off=Math.max(0,Math.min(route.len,off));
+    const carDir=Math.random()<.5?1:-1;
+    /* v205 : deux voitures ne naissent jamais au même endroit — plus de voitures collées. */
+    for(let guard=0;guard<10&&window._cars.some(o=>o.dir===carDir&&Math.abs(o.off-off)<50);guard++)off=Math.random()*maxD;
     const un=urbanAt(off);
     const car=new THREE.Mesh(trafficGeometry,new THREE.MeshStandardMaterial({color:carCols[i%carCols.length],roughness:.42,metalness:.22,vertexColors:true}));
     g.add(car);
-    window._cars.push({mesh:car,off,v:(7+un*2)+Math.random()*(6-un*3),dir:Math.random()<.5?1:-1});
+    window._cars.push({mesh:car,off,v:(7+un*2)+Math.random()*(6-un*3),dir:carDir,lane:1.35});
   }
   window._urbanDensity=urbanAt;
 }
@@ -971,28 +974,42 @@ function updateAmbiance(dt,t){
      d'en face pour le dépasser ; si une voiture arrive en face, elle attend derrière lui. */
   if(route){
     const rideDir=window._rideDir||1,cars=window._cars||[];
+    const CAR_LANE=1.35,PASS_LANE=-1.75,MIN_GAP=12;
     const oncomingNear=car=>cars.some(other=>other!==car&&other.dir!==car.dir&&(other.off-car.off)*car.dir>0&&(other.off-car.off)*car.dir<150);
+    /* v205 : une voiture ne colle jamais celle qui la précède — elle ralentit et garde ses distances. */
+    const gapAhead=car=>{
+      let gap=Infinity;
+      for(const other of cars){
+        if(other===car||other.dir!==car.dir)continue;
+        const d=(other.off-car.off)*car.dir;
+        if(d>0&&d<gap)gap=d;
+      }
+      /* le cycliste ne compte que si la voiture est restée dans sa voie */
+      if(car.dir===rideDir&&(car.lane==null||car.lane>-.4)){const d=(s-car.off)*car.dir;if(d>-1&&d<gap)gap=d;}
+      return gap;
+    };
     for(const c of cars){
       const ahead=(s-c.off)*c.dir,same=c.dir===rideDir;
-      let target=1.55,hold=false;
-      if(same&&ahead>0&&ahead<120){
-        if(oncomingNear(c)){target=1.55;hold=ahead<30;}
-        else target=-1.75; /* dépassement : elle mord la voie d'en face */
+      let target=CAR_LANE,hold=false;
+      if(same&&ahead>0&&ahead<160){
+        if(oncomingNear(c)){target=CAR_LANE;hold=ahead<26;} /* pas de place : elle attend derrière */
+        else target=PASS_LANE; /* dépassement : elle prend la voie d'en face */
       }
-      c.lane=c.lane==null?1.55:c.lane+(target-c.lane)*Math.min(1,dt*2.4);
-      if(hold){
-        const limit=s-8*c.dir;
-        c.off=c.dir>0?Math.min(c.off,limit):Math.max(c.off,limit);
-      }else{
-        c.off+=c.v*dt*c.dir;
-        if(c.dir===rideDir&&c.lane>-.4&&Math.abs(c.off-s)<7)c.off=s-8*c.dir; /* jamais sur le vélo */
+      c.lane=c.lane==null?CAR_LANE:c.lane+(target-c.lane)*Math.min(1,dt*2.4);
+      const gap=gapAhead(c),step=c.v*dt;
+      if(hold||gap<MIN_GAP)c.off+=Math.max(0,Math.min(step,gap-MIN_GAP))*c.dir; /* elle suit, sans se téléporter */
+      else c.off+=step*c.dir;
+      if(c.off<s-600||c.off>s+600||c.off<0||c.off>route.len){
+        let off=s+(Math.random()*900-450),tries=0;
+        while(tries++<12&&cars.some(other=>other!==c&&other.dir===c.dir&&Math.abs(other.off-off)<45))off=s+(Math.random()*900-450);
+        c.off=Math.max(0,Math.min(route.len,off));c.dir=Math.random()<.5?1:-1;c.v=8+Math.random()*7;c.lane=CAR_LANE;
       }
-      if(c.off<s-600||c.off>s+600||c.off<0||c.off>route.len){c.off=Math.max(0,Math.min(route.len,s+(Math.random()*900-450)));c.dir=Math.random()<.5?1:-1;c.v=8+Math.random()*7;c.lane=1.55;}
       const p=at(c.off),q=at(Math.max(0,Math.min(route.len,c.off+2*c.dir)));
       let fx=q[0]-p[0],fz=q[2]-p[2];const fl=Math.hypot(fx,fz)||1;fx/=fl;fz/=fl;
-      const lane=c.lane==null?1.55:c.lane;
-      c.mesh.position.set(p[0]+fz*lane,p[1]+.05,p[2]-fx*lane);
-      c.mesh.lookAt(p[0]+fz*lane+fx,p[1]+.05,p[2]-fx*lane+fz);
+      const lane=c.lane==null?CAR_LANE:c.lane;
+      /* v205 : chaque voiture roule à droite dans SON sens de marche — la droite d'un cap (fx,fz) est (-fz,fx). */
+      c.mesh.position.set(p[0]-fz*lane,p[1]+.05,p[2]+fx*lane);
+      c.mesh.lookAt(p[0]-fz*lane+fx,p[1]+.05,p[2]+fx*lane+fz);
     }
   }
   updatePrecip(dt,t); /* v138 : pluie / neige autour de la caméra */
@@ -4874,19 +4891,25 @@ function decorateDemo(){
 
 
 /* ---------- Caméra orbitale, zoom tactile et adaptation à l'orientation ---------- */
-const CAM_ZMIN=1.8,CAM_ZMAX=90,CAM_PITCH_MAX=1.30; /* v162 : dézoom paysage jusqu'à 90 m, caméra plus haute */
+const CAM_ZMIN=1.0,CAM_ZMAX=90,CAM_PITCH_MAX=1.30; /* v162 : dézoom paysage jusqu'à 90 m ; v205 : 1 m pour se placer sur le vélo en vue cintre */
+/* v205 : en vue cintre le zoom fait coulisser la caméra sur le vélo, de derrière le cintre (1,81 m)
+   jusqu'au-dessus de la potence et des cocottes (1 m). On choisit sa place au lieu de rester aux épaules. */
+const CAM_COCKPIT_BACK=1.81,CAM_COCKPIT_BACK_Z=-0.34,CAM_COCKPIT_FRONT_Z=0.52;
 const cameraState={distance:6,view:'follow',yaw:0,pitch:.18,look:new THREE.Vector3(),ready:false};
-try{const saved=JSON.parse(localStorage.getItem('velo3d-camera')||'null');if(saved){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,Number(saved.distance)||6));if(['follow','wide','side','cockpit'].includes(saved.view))cameraState.view=saved.view;cameraState.yaw=Number(saved.yaw)||0;cameraState.pitch=Math.max(-.12,Math.min(CAM_PITCH_MAX,Number(saved.pitch)||.18))}}catch(e){}
+try{const saved=JSON.parse(localStorage.getItem('velo3d-camera')||'null');if(saved){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,Number(saved.distance)||6));if(['follow','wide','side','cockpit'].includes(saved.view))cameraState.view=saved.view;cameraState.yaw=Number(saved.yaw)||0;cameraState.pitch=Math.max(-.12,Math.min(CAM_PITCH_MAX,Number(saved.pitch)||.18));if(cameraState.view==='cockpit')cameraState.distance=1.25;} /* v205 : la vue cintre démarre au cintre, plus aux épaules */}catch(e){}
 function saveCamera(){try{localStorage.setItem('velo3d-camera',JSON.stringify({distance:cameraState.distance,view:cameraState.view,yaw:cameraState.yaw,pitch:cameraState.pitch}))}catch(e){}}
 function syncCockpitShifters(){const el=$('cockpitShifters');if(!el)return;const active=cameraState.view==='cockpit'&&$('home').classList.contains('hide')&&$('stopDialog').classList.contains('hide')&&$('freeStartDialog').classList.contains('hide');el.classList.toggle('hide',!active)}
 function refreshCameraControls(){
-  $('zoom').value=Math.round(1+(CAM_ZMAX-cameraState.distance)*11/(CAM_ZMAX-CAM_ZMIN)); if(cameraState.view==='cockpit')cameraState.distance=1.8; /* v121 : vue cintre seulement très près du cycliste */
-  $('zoomValue').textContent=cameraState.view==='cockpit'?'🚴 Vue cintre — comme si tu étais sur le vélo':'Caméra à '+cameraState.distance.toFixed(1).replace('.0','')+' m · glisser pour pivoter';
+  if(cameraState.view==='cockpit')cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_COCKPIT_BACK,cameraState.distance)); /* v205 : le zoom règle la place sur le vélo */
+  $('zoom').value=Math.round(1+(CAM_ZMAX-cameraState.distance)*11/(CAM_ZMAX-CAM_ZMIN));
+  $('zoomValue').textContent=cameraState.view==='cockpit'
+    ?'🚴 Vue cintre — pince pour avancer ou reculer sur le vélo ('+Math.round(100*Math.max(0,Math.min(1,(CAM_COCKPIT_BACK-cameraState.distance)/(CAM_COCKPIT_BACK-CAM_ZMIN))))+' % vers le cintre)'
+    :'Caméra à '+cameraState.distance.toFixed(1).replace('.0','')+' m · glisser pour pivoter';
   for(const [id,mode] of [['viewFollow','follow'],['viewWide','wide'],['viewSide','side'],['viewCockpit','cockpit']]){const active=cameraState.view===mode;$(id).classList.toggle('on',active);$(id).setAttribute('aria-pressed',String(active))}
   syncCockpitShifters();
 }
-function setZoom(distance){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,distance));if(cameraState.distance<=1.81)cameraState.view='cockpit';refreshCameraControls();saveCamera()} /* v121 : bascule en cintre seulement à moins de 1,8 m ; v162 : dézoom jusqu'à 90 m */
-function setView(view){cameraState.view=view;cameraState.yaw=0;if(view==='wide')cameraState.distance=45;else if(view==='side')cameraState.distance=10;else if(view==='cockpit')cameraState.distance=1.8;else cameraState.distance=6;refreshCameraControls();saveCamera()} /* v162 : vue paysage par défaut à 45 m */
+function setZoom(distance){cameraState.distance=Math.max(CAM_ZMIN,Math.min(CAM_ZMAX,distance));if(cameraState.distance<=CAM_COCKPIT_BACK)cameraState.view='cockpit';else if(cameraState.view==='cockpit')cameraState.view='follow';refreshCameraControls();saveCamera()} /* v205 : on entre et on sort de la vue cintre au zoom */
+function setView(view){cameraState.view=view;cameraState.yaw=0;if(view==='wide')cameraState.distance=45;else if(view==='side')cameraState.distance=10;else if(view==='cockpit')cameraState.distance=1.25;else cameraState.distance=6;refreshCameraControls();saveCamera()} /* v205 : la vue cintre s'ouvre sur le cintre */
 $('zoom').oninput=e=>setZoom(CAM_ZMAX-(Number(e.target.value)-1)*(CAM_ZMAX-CAM_ZMIN)/11);$('zoomIn').onclick=()=>setZoom(cameraState.distance*.82);$('zoomOut').onclick=()=>setZoom(cameraState.distance/.82);
 $('viewFollow').onclick=()=>setView('follow');$('viewWide').onclick=()=>setView('wide');$('viewSide').onclick=()=>setView('side');$('viewCockpit').onclick=()=>setView('cockpit');
 $('c').addEventListener('wheel',e=>{e.preventDefault();setZoom(cameraState.distance*Math.exp(Math.max(-120,Math.min(120,e.deltaY))*.002))},{passive:false});
@@ -4911,7 +4934,13 @@ $('c').addEventListener('pointermove',e=>{
     cameraState.yaw+=dx*.008;cameraState.pitch=Math.max(-.12,Math.min(CAM_PITCH_MAX,cameraState.pitch+dy*.006));if(cameraState.distance>1.81)cameraState.view='follow';refreshCameraControls();saveCamera();
   }else if(cameraPointers.size===2){
     const points=[...cameraPointers.values()],gap=Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y);
-    if(previousPinch>0&&gap>0){cameraState.view='follow';setZoom(cameraState.distance*previousPinch/gap);} /* v121 : zoom à deux doigts = retour en vue suivi */previousPinch=gap;
+    if(previousPinch>0&&gap>0){
+      const next=cameraState.distance*previousPinch/gap;
+      /* v205 : en vue cintre le pincement déplace la caméra sur le vélo au lieu de quitter la vue */
+      if(cameraState.view==='cockpit')setZoom(Math.max(CAM_ZMIN,Math.min(CAM_COCKPIT_BACK,next)));
+      else{cameraState.view='follow';setZoom(next);}
+    } /* v121 : zoom à deux doigts = retour en vue suivi */
+    previousPinch=gap;
   }
 });
 for(const type of ['pointerup','pointercancel','lostpointercapture'])$('c').addEventListener(type,e=>{cameraPointers.delete(e.pointerId);previousPinch=0});
@@ -4922,7 +4951,9 @@ function syncCompactHud(){const landscape=landscapeQuery.matches;document.body.c
 if($('hudToggle'))$('hudToggle').onclick=()=>{hudUserExpanded=!hudUserExpanded;syncCompactHud()};
 /* v121 : plus de panneau caméra — l'icône 📷 cycle les vues à chaque appui ; le zoom reste au pincement */
 function syncCameraPanel(){const panel=$('cameraPanel'),btn=$('cameraToggle');if(!panel||!btn)return;panel.classList.add('hide');btn.setAttribute('aria-label','Changer de vue caméra');btn.title='Changer de vue caméra (suivi · paysage · profil · cintre)';btn.textContent='📹';}
-$('cameraToggle').onclick=()=>{const views=['follow','wide','side','cockpit'];const i=views.indexOf(cameraState.view);setView(views[(i+1)%views.length]);buzz(15);};
+/* v205 : chaque appui sur l'icône caméra annonce la vue choisie — on sait enfin où l'on est placé. */
+const CAMERA_LABELS={follow:'Suivi — derrière le cycliste',wide:'Paysage — vue large',side:'Profil — de côté',cockpit:'Cintre — pince pour te placer sur le vélo'};
+$('cameraToggle').onclick=()=>{const views=['follow','wide','side','cockpit'];const i=views.indexOf(cameraState.view);const view=views[(i+1)%views.length];setView(view);toast('Caméra · '+CAMERA_LABELS[view]);buzz(15);};
 if(landscapeQuery.addEventListener)landscapeQuery.addEventListener('change',syncCompactHud);else if(landscapeQuery.addListener)landscapeQuery.addListener(syncCompactHud);
 $('mapMode').setAttribute('aria-label','Basculer entre vue globale et suivi du cycliste');syncCompactHud();syncCameraPanel();refreshCameraControls();
 addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||!$('home').classList.contains('hide'))return;if(e.key==='+'||e.key==='='){e.preventDefault();setZoom(cameraState.distance*.9)}if(e.key==='-'){e.preventDefault();setZoom(cameraState.distance/.9)}if(e.code==='Space'){e.preventDefault();$('pause').click()}});
@@ -4977,9 +5008,10 @@ function place(snap,dt=.016){
     turnLean=-.28*arc;
     if(k>=1)window._uTurn=null;
   }
-  /* v204 : le cycliste roule le plus à droite de sa voie (2,35 m de l'axe), plus au milieu. */
-  const laneSide=2.35*dir;
-  offX+=tz*laneSide;offZ-=tx*laneSide;
+  /* v205 : le cycliste roule à droite dans le sens de la marche, comme les voitures (2,55 m de l'axe,
+     au bord de la chaussée) — fini de rouler à gauche face au trafic. */
+  const laneSide=2.55*dir;
+  offX-=tz*laneSide;offZ+=tx*laneSide;
   rider.rotation.set(-Math.atan(p[3]*dir),effAngle,window._leanSmooth+turnLean,'YXZ');
   let rideY=p[1]+.045;
   const imported=!!(window._importedWheels&&window._importedWheels.length);
@@ -4992,7 +5024,7 @@ function place(snap,dt=.016){
   }
   rider.position.set(p[0]+offX,rideY,p[2]+offZ);
   const distance=cameraState.distance,baseYaw=cameraState.view==='side'?Math.PI/2:0,yaw=baseYaw+cameraState.yaw,pitch=cameraState.pitch;
-  const cockpit = cameraState.view==='cockpit' || distance<=1.81; /* v121 : seuil cintre à 1,8 m */
+  const cockpit = cameraState.view==='cockpit' || distance<=CAM_COCKPIT_BACK; /* v121 : seuil cintre à 1,8 m */
   if(cockpit){
     /* v203 : vraie vue cintre — la caméra est au-dessus de la potence, juste derrière le cintre :
        on voit le guidon, les cocottes et le compteur en bas du cadre, et toute la route devant.
@@ -5012,12 +5044,15 @@ function place(snap,dt=.016){
     const _blink=_now-window._cockpitSince;
     for(const mk of rider.userData.cocotteMarkers||[])mk.visible=_blink<4000&&(Math.floor(_now/280)%2===0);
     rider.updateMatrixWorld(true);
-    const eye=new THREE.Vector3(0,1.42,-0.16); /* 1,42 m au sol, 16 cm derrière la potence */
+    /* v205 : l'œil coulisse sur le vélo avec le zoom — de derrière le cintre jusqu'au-dessus de la
+       potence et des cocottes, au lieu de rester figé au niveau des épaules. */
+    const eyeT=Math.max(0,Math.min(1,(CAM_COCKPIT_BACK-distance)/(CAM_COCKPIT_BACK-CAM_ZMIN)));
+    const eye=new THREE.Vector3(0,1.40+eyeT*.15,CAM_COCKPIT_BACK_Z+eyeT*(CAM_COCKPIT_FRONT_Z-CAM_COCKPIT_BACK_Z));
     rider.localToWorld(eye);
     const fwd=new THREE.Vector3(0,0,1).applyQuaternion(rider.quaternion);
     /* plongée de base très faible : le cintre reste en bas de l'écran, la route occupe le reste ;
        glisser le doigt ajoute ou retire de la plongée */
-    const lookPitch=-0.205-(cameraState.pitch-0.18)*0.9;
+    const lookPitch=-0.205-eyeT*.055-(cameraState.pitch-0.18)*0.9;
     cam.position.copy(eye);
     cam.quaternion.setFromEuler(new THREE.Euler(lookPitch,effAngle+Math.PI-cameraState.yaw,0,'YXZ'));
     cam.fov=80;cam.updateProjectionMatrix(); /* champ large : guidon, compteur et route */
@@ -5035,6 +5070,12 @@ function place(snap,dt=.016){
   let floorY=p[1];
   try{const gnd=nearestOnRoute(targetPosition.x,targetPosition.z);if(gnd&&Number.isFinite(gnd.y))floorY=gnd.y;}catch(_){}
   floorY+=.55;
+  /* v205 : la caméra ne passe plus sous le décor — elle reste au-dessus du relief réellement affiché,
+     échantillonné exactement comme le terrain qui porte la scène. */
+  try{
+    const surface=window._terrain?terrainSample(window._terrain,targetPosition.x,targetPosition.z):null;
+    if(Number.isFinite(surface))floorY=Math.max(floorY,surface+1.1);
+  }catch(_){}
   if(targetPosition.y<floorY)targetPosition.y=floorY;
   const lookAhead=cameraState.view==='side'?0:Math.min(3,distance*.10),look=new THREE.Vector3(p[0]+offX+ctx*lookAhead,rider.position.y+1,p[2]+offZ+ctz*lookAhead),alpha=1-Math.exp(-dt*6);
   if(snap||!cameraState.ready){cam.position.copy(targetPosition);cameraState.look.copy(look);cameraState.ready=true}else{cam.position.lerp(targetPosition,alpha);cameraState.look.lerp(look,alpha)}
@@ -5953,8 +5994,14 @@ function buildings(buildingParts,targetWorld){
         }
         const grass=new THREE.Color(0x41601f);
         const lx0=Math.min(x0,x1),lx1=Math.max(x0,x1),lz0=Math.min(z0,z1),lz1=Math.max(z0,z1);
+        /* v205 : aucune tuile de pelouse ne touche la chaussée — on écarte les morceaux de parcelle dont
+           un coin ou le centre entre dans la bande de 5,35 m autour de l'axe. Un terrain en biais ou
+           traversé par la route ne déborde donc plus sur l'asphalte (l'ancien réglage ne voyait que la façade). */
+        const lawnGap=(xx,zz)=>{const near=nearestOnRoute(xx,zz);return near?Math.sqrt(near.dist2):Infinity;};
         for(let ix=0;ix<3;ix++)for(let iz=0;iz<3;iz++){
           const ax=lx0+(lx1-lx0)*ix/3,bx3=lx0+(lx1-lx0)*(ix+1)/3,az=lz0+(lz1-lz0)*iz/3,bz3=lz0+(lz1-lz0)*(iz+1)/3;
+          const gaps=[lawnGap(ax,az),lawnGap(bx3,az),lawnGap(bx3,bz3),lawnGap(ax,bz3),lawnGap((ax+bx3)/2,(az+bz3)/2)];
+          if(gaps.some(gap=>gap<5.35))continue;
           const p00=[ax,groundAt(ax,az)+.04,az],p10=[bx3,groundAt(bx3,az)+.04,az],p11=[bx3,groundAt(bx3,bz3)+.04,bz3],p01=[ax,groundAt(ax,bz3)+.04,bz3];
           roof([p00,p10,p11],grass);roof([p00,p11,p01],grass);
         }
